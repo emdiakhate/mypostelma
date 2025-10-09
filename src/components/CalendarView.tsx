@@ -7,7 +7,7 @@ import PostCreationModal from './PostCreationModal';
 import PostPreviewModal from './PostPreviewModal';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, addDays, startOfWeek, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +16,7 @@ interface CalendarViewProps {
   currentDate: Date;
   onPostsChange: (posts: Post[]) => void;
   onCreatePost: (dayColumn: string) => void;
+  onDateChange: (date: Date) => void;
 }
 
 const CalendarView: React.FC<CalendarViewProps> = ({
@@ -23,6 +24,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   currentDate,
   onPostsChange,
   onCreatePost,
+  onDateChange,
 }) => {
   // Hooks React Router
   const navigate = useNavigate();
@@ -149,6 +151,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     onPostsChange(newPosts);
   }, [posts, onPostsChange]);
 
+  const handlePreviousWeek = useCallback(() => {
+    onDateChange(addWeeks(currentDate, -1));
+  }, [currentDate, onDateChange]);
+
+  const handleNextWeek = useCallback(() => {
+    onDateChange(addWeeks(currentDate, 1));
+  }, [currentDate, onDateChange]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Header du calendrier */}
@@ -156,13 +166,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={handlePreviousWeek}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <h1 className="text-lg font-semibold whitespace-nowrap">
                 {format(currentDate, 'MMMM yyyy', { locale: fr })}
               </h1>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={handleNextWeek}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -188,11 +198,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       {/* Contenu du calendrier */}
       <div className="flex-1 overflow-hidden">
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex h-full overflow-x-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 h-full overflow-y-auto gap-px bg-gray-200">
             {weekDays.map((day) => (
-              <div key={day.key} className="flex-1 min-w-[200px] border-r border-gray-200 flex flex-col">
+              <div key={day.key} className="bg-white flex flex-col min-h-[300px]">
                 {/* Day Header */}
-                <div className="p-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                   <div className="flex items-center justify-between group">
                     <div>
                       <h3 className="font-medium text-xs text-gray-700">

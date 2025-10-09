@@ -5,7 +5,7 @@ import { samplePosts } from '@/data/sampleData';
 
 const Index = () => {
   const [posts, setPosts] = useState<Post[]>(samplePosts);
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2025, 0, 5));
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
 
   const handlePostsChange = (newPosts: Post[]) => {
@@ -16,6 +16,10 @@ const Index = () => {
     console.log('Create post for day:', dayColumn);
   };
 
+  const handleDateChange = (date: Date) => {
+    setCurrentDate(date);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CalendarView
@@ -23,6 +27,7 @@ const Index = () => {
         currentDate={currentDate}
         onPostsChange={handlePostsChange}
         onCreatePost={handleCreatePost}
+        onDateChange={handleDateChange}
       />
     </div>
   );
