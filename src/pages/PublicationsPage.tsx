@@ -26,140 +26,43 @@ import {
 import { Card } from '@/components/ui/card';
 import PublicationCard from '@/components/PublicationCard';
 import { toast } from 'sonner';
+import { usePosts } from '@/hooks/usePosts';
+import { Post } from '@/types/Post';
+import PostPreviewModal from '@/components/PostPreviewModal';
+import PostCreationModal from '@/components/PostCreationModal';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 type PostStatus = 'published' | 'draft' | 'failed';
 type SortBy = 'date-desc' | 'date-asc' | 'engagement' | 'platform';
 
 export default function PublicationsPage() {
-  // État
+  // Hook Supabase
+  const { posts, loading, deletePost, updatePost, createPost } = usePosts();
+  
+  // États locaux
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<PostStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<SortBy>('date-desc');
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // États modaux
+  const [previewPost, setPreviewPost] = useState<Post | null>(null);
+  const [editPost, setEditPost] = useState<Post | null>(null);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
   const POSTS_PER_PAGE = 12;
 
-  // Données mock avec 7 publiés, 2 brouillons, 1 échec
-  const mockPosts = [
-    // 7 Publications "Publié"
-    {
-      id: 'pub-1',
-      content: '🥩 Découvrez notre sélection premium de viandes fraîches chez Mata Viande ! Nos steaks de bœuf sont parfaits pour vos grillades du weekend. Livraison gratuite dès 50€ ! #MataViande #QualitéPremium #BoucherieEnLigne',
-      image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=400&fit=crop',
-      platforms: ['instagram', 'facebook'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-15T09:00:00'),
-      createdAt: new Date('2024-01-14T08:00:00'),
-      author: 'Mata Viande',
-      engagement: 150, likes: 120, comments: 20, shares: 10, engagementRate: 0.05
-    },
-    {
-      id: 'pub-2',
-      content: '🍗 Nos poulets fermiers élevés en plein air arrivent frais chaque matin ! Parfait pour un repas familial de qualité. Commandez maintenant et profitez de notre offre spéciale !',
-      image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=400&fit=crop',
-      platforms: ['facebook', 'twitter'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-14T14:30:00'),
-      createdAt: new Date('2024-01-13T13:00:00'),
-      author: 'Mata Viande',
-      engagement: 200, likes: 180, comments: 15, shares: 5, engagementRate: 0.07
-    },
-    {
-      id: 'pub-3',
-      content: '🥓 Bacon artisanal fumé au bois de hêtre - Une saveur incomparable ! Nos charcuteries sont préparées selon les méthodes traditionnelles. Disponible en magasin et en ligne.',
-      image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=400&fit=crop',
-      platforms: ['instagram'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-13T11:00:00'),
-      createdAt: new Date('2024-01-12T10:00:00'),
-      author: 'Mata Viande',
-      engagement: 180, likes: 150, comments: 25, shares: 5, engagementRate: 0.06
-    },
-    {
-      id: 'pub-4',
-      content: '🐟 Poisson frais du jour ! Saumon, cabillaud, dorade... Tous nos poissons sont sélectionnés avec soin pour leur fraîcheur. Idéal pour un dîner sain et savoureux.',
-      image: 'https://images.unsplash.com/photo-1574781330855-d0f35f2e55ed?w=400&h=400&fit=crop',
-      platforms: ['linkedin'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-12T10:00:00'),
-      createdAt: new Date('2024-01-11T09:00:00'),
-      author: 'Mata Viande',
-      engagement: 90, likes: 70, comments: 15, shares: 5, engagementRate: 0.03
-    },
-    {
-      id: 'pub-5',
-      content: '🍖 Côte de bœuf maturée 28 jours - Un délice pour les amateurs de viande ! Accompagnée de nos légumes de saison. Réservez votre table pour ce weekend.',
-      image: 'https://images.unsplash.com/photo-1588347818501-0d0b0b0b0b0b?w=400&h=400&fit=crop',
-      platforms: ['instagram', 'facebook'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-11T16:00:00'),
-      createdAt: new Date('2024-01-10T15:00:00'),
-      author: 'Mata Viande',
-      engagement: 160, likes: 130, comments: 20, shares: 10, engagementRate: 0.055
-    },
-    {
-      id: 'pub-6',
-      content: 'Un grand merci à tous nos clients fidèles ! Votre soutien nous motive chaque jour. 🙏 #CustomerLove #ThankYou',
-      image: 'https://images.unsplash.com/photo-1509785307050-dc87a7f0633e?w=400&h=400&fit=crop',
-      platforms: ['facebook'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-10T12:00:00'),
-      createdAt: new Date('2024-01-09T11:00:00'),
-      author: 'Mata Viande',
-      engagement: 190, likes: 160, comments: 20, shares: 10, engagementRate: 0.06
-    },
-    {
-      id: 'pub-7',
-      content: 'Notre équipe est passionnée par la qualité et ça se voit ! Venez nous rencontrer. 😊 #QualityTeam #Passion',
-      image: 'https://images.unsplash.com/photo-1509785307050-dc87a7f0633e?w=400&h=400&fit=crop',
-      platforms: ['instagram', 'twitter'],
-      status: 'published',
-      scheduledTime: new Date('2024-01-09T10:00:00'),
-      createdAt: new Date('2024-01-08T09:00:00'),
-      author: 'Mata Viande',
-      engagement: 170, likes: 140, comments: 20, shares: 10, engagementRate: 0.058
-    },
-    // 2 Publications "Brouillon"
-    {
-      id: 'draft-1',
-      content: 'Idée de post pour la nouvelle collection de saucisses artisanales. À revoir avec le chef.',
-      image: 'https://images.unsplash.com/photo-1509785307050-dc87a7f0633e?w=400&h=400&fit=crop',
-      platforms: ['instagram'],
-      status: 'draft',
-      scheduledTime: null,
-      createdAt: new Date('2024-01-08T14:00:00'),
-      author: 'Mata Viande',
-      engagement: 0, likes: 0, comments: 0, shares: 0, engagementRate: 0
-    },
-    {
-      id: 'draft-2',
-      content: 'Promotion spéciale hiver. Texte à finaliser et image à choisir.',
-      image: 'https://images.unsplash.com/photo-1509785307050-dc87a7f0633e?w=400&h=400&fit=crop',
-      platforms: ['facebook', 'twitter'],
-      status: 'draft',
-      scheduledTime: null,
-      createdAt: new Date('2024-01-07T10:00:00'),
-      author: 'Mata Viande',
-      engagement: 0, likes: 0, comments: 0, shares: 0, engagementRate: 0
-    },
-    // 1 Publication "Échec"
-    {
-      id: 'failed-1',
-      content: 'Problème de connexion lors de la publication. À vérifier.',
-      image: 'https://images.unsplash.com/photo-1509785307050-dc87a7f0633e?w=400&h=400&fit=crop',
-      platforms: ['linkedin'],
-      status: 'failed',
-      scheduledTime: new Date('2024-01-06T11:00:00'),
-      createdAt: new Date('2024-01-06T10:59:00'),
-      author: 'Mata Viande',
-      engagement: 0, likes: 0, comments: 0, shares: 0, engagementRate: 0
-    }
-  ];
-
-  // Force l'utilisation des données mock pour cette démo
-  // En production, vous pourriez vouloir charger depuis localStorage
-  const allPosts = mockPosts;
+  const allPosts = posts;
 
   // Filtres et tri
   const filteredAndSortedPosts = useMemo(() => {
@@ -168,15 +71,14 @@ export default function PublicationsPage() {
     // Filtre recherche
     if (searchTerm) {
       filtered = filtered.filter(post =>
-        post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.author?.toLowerCase().includes(searchTerm.toLowerCase())
+        post.content?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filtre plateforme
     if (filterPlatform !== 'all') {
       filtered = filtered.filter(post =>
-        post.platforms?.includes(filterPlatform)
+        post.platforms?.includes(filterPlatform as any)
       );
     }
 
@@ -193,7 +95,7 @@ export default function PublicationsPage() {
         case 'date-asc':
           return getDateValue(a) - getDateValue(b);
         case 'engagement':
-          return (b.engagement || 0) - (a.engagement || 0);
+          return 0; // Pas encore implémenté
         case 'platform':
           return (a.platforms?.[0] || '').localeCompare(b.platforms?.[0] || '');
         default:
@@ -391,10 +293,40 @@ export default function PublicationsPage() {
       </Card>
 
       {/* Grille de publications */}
-      {paginatedPosts.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="aspect-square bg-gray-200" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : paginatedPosts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {paginatedPosts.map(post => (
-            <PublicationCard key={post.id} post={post} />
+            <PublicationCard 
+              key={post.id} 
+              post={post}
+              onView={() => setPreviewPost(post)}
+              onEdit={() => setEditPost(post)}
+              onDuplicate={async () => {
+                try {
+                  const { id, ...postWithoutId } = post;
+                  await createPost({
+                    ...postWithoutId,
+                    status: 'draft'
+                  });
+                  toast.success('Post dupliqué avec succès');
+                } catch (error) {
+                  toast.error('Erreur lors de la duplication');
+                }
+              }}
+              onDelete={() => setDeletePostId(post.id)}
+            />
           ))}
         </div>
       ) : (

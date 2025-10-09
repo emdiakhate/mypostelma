@@ -16,12 +16,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { Post } from '@/types/Post';
 
 interface PublicationCardProps {
-  post: any; // Type Post à définir selon votre structure
+  post: Post;
+  onView?: (post: Post) => void;
+  onEdit?: (post: Post) => void;
+  onDuplicate?: (post: Post) => void;
+  onDelete?: (post: Post) => void;
 }
 
-export default function PublicationCard({ post }: PublicationCardProps) {
+export default function PublicationCard({ post, onView, onEdit, onDuplicate, onDelete }: PublicationCardProps) {
   const statusConfig = {
     published: { 
       label: 'Publié', 
@@ -103,7 +108,10 @@ export default function PublicationCard({ post }: PublicationCardProps) {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => handleView(post)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.(post);
+            }}
             className="bg-white/90 hover:bg-white"
           >
             <Eye className="w-4 h-4 mr-1" />
@@ -112,7 +120,10 @@ export default function PublicationCard({ post }: PublicationCardProps) {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => handleEdit(post)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(post);
+            }}
             className="bg-white/90 hover:bg-white"
           >
             <Pencil className="w-4 h-4 mr-1" />
@@ -131,11 +142,7 @@ export default function PublicationCard({ post }: PublicationCardProps) {
         {/* Date et auteur */}
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
           <CalendarIcon className="w-3 h-3" />
-          {post.status === 'published' ? (
-            <span>Publié le {formatDate(post.scheduledTime)}</span>
-          ) : (
-            <span>Créé le {formatDate(post.createdAt)}</span>
-          )}
+          <span>Programmé le {formatDate(post.scheduledTime)}</span>
           <span className="ml-2">par {post.author}</span>
         </div>
 
@@ -145,22 +152,33 @@ export default function PublicationCard({ post }: PublicationCardProps) {
             {/* Total Engagements - Style similaire à l'image */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Total Engagements</span>
-              <span className="text-lg font-bold text-gray-900">{post.engagement || 0}</span>
+              <span className="text-lg font-bold text-gray-900">
+                {typeof post.engagement === 'object' 
+                  ? Object.values(post.engagement).reduce((a, b) => a + b, 0)
+                  : 0
+                }
+              </span>
             </div>
 
             {/* Métriques détaillées - Style vertical comme dans l'image */}
             <div className="space-y-1 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Likes</span>
-                <span className="font-medium text-gray-900">{post.likes || 0}</span>
+                <span className="font-medium text-gray-900">
+                  {typeof post.engagement === 'object' ? post.engagement.likes : post.likes || 0}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Commentaires</span>
-                <span className="font-medium text-gray-900">{post.comments || 0}</span>
+                <span className="font-medium text-gray-900">
+                  {typeof post.engagement === 'object' ? post.engagement.comments : post.comments || 0}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Partages</span>
-                <span className="font-medium text-gray-900">{post.shares || 0}</span>
+                <span className="font-medium text-gray-900">
+                  {typeof post.engagement === 'object' ? post.engagement.shares : post.shares || 0}
+                </span>
               </div>
             </div>
           </div>
@@ -173,7 +191,10 @@ export default function PublicationCard({ post }: PublicationCardProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 hover:bg-gray-100"
-              onClick={() => handleView(post)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView?.(post);
+              }}
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -181,7 +202,10 @@ export default function PublicationCard({ post }: PublicationCardProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 hover:bg-gray-100"
-              onClick={() => handleDuplicate(post)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate?.(post);
+              }}
             >
               <Copy className="w-4 h-4" />
             </Button>
@@ -194,17 +218,26 @@ export default function PublicationCard({ post }: PublicationCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(post)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(post);
+              }}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Éditer
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDuplicate(post)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate?.(post);
+              }}>
                 <Copy className="w-4 h-4 mr-2" />
                 Dupliquer
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => handleDelete(post)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(post);
+                }}
                 className="text-red-600"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -216,27 +249,6 @@ export default function PublicationCard({ post }: PublicationCardProps) {
       </div>
     </Card>
   );
-}
-
-// Handlers
-function handleView(post: any) {
-  // TODO: Ouvrir PreviewModal
-  toast.info('Fonctionnalité à venir: Aperçu du post');
-}
-
-function handleEdit(post: any) {
-  // TODO: Ouvrir PostCreationModal en mode édition
-  toast.info('Fonctionnalité à venir: Édition du post');
-}
-
-function handleDuplicate(post: any) {
-  // TODO: Dupliquer le post
-  toast.success('Post dupliqué avec succès');
-}
-
-function handleDelete(post: any) {
-  // TODO: Confirmer et supprimer
-  toast.error('Fonctionnalité à venir: Suppression du post');
 }
 
 // Helper function pour formater les dates de manière sécurisée
