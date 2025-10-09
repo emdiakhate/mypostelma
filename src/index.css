@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animations personnalisées pour les comptes sociaux */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Hover effects pour les cards */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* App Background */
+    --background: 0 0% 98%;
+    --foreground: 210 11% 15%;
+
+    /* Cards and surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
+
+    /* Popovers and dropdowns */
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 15%;
+
+    /* Primary brand colors - Blue accent */
+    --primary: 214 100% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 214 100% 54%;
+
+    /* Secondary surfaces */
+    --secondary: 210 17% 95%;
+    --secondary-foreground: 210 11% 15%;
+
+    /* Muted text and backgrounds */
+    --muted: 210 17% 95%;
+    --muted-foreground: 210 11% 46%;
+
+    /* Accent colors */
+    --accent: 214 100% 97%;
+    --accent-foreground: 214 100% 47%;
+
+    /* Destructive actions */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 214 100% 59%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar - Dark theme */
+    --sidebar-background: 210 24% 16%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-muted: 210 20% 25%;
+    --sidebar-border: 210 20% 20%;
+    --sidebar-accent: 214 100% 59%;
+    --sidebar-accent-foreground: 0 0% 100%;
+
+    /* Social platform colors */
+    --twitter: 203 89% 53%;
+    --instagram: 329 70% 58%;
+    --facebook: 221 44% 41%;
+    --linkedin: 201 100% 35%;
+    --youtube: 0 100% 50%;
+    --tiktok: 348 83% 47%;
+
+    /* Campaign and status colors */
+    --campaign-primary: 214 100% 59%;
+    --campaign-secondary: 142 76% 36%;
+    --status-scheduled: 214 100% 59%;
+    --status-published: 142 76% 36%;
+    --status-draft: 45 93% 47%;
+    --status-failed: 0 84% 60%;
+    --status-pending: 38 92% 50%;
+
+    /* Drop zones and drag feedback */
+    --drop-zone: 214 100% 97%;
+    --drop-zone-active: 214 100% 94%;
+    --drag-shadow: 210 20% 10%;
+  }
+
+  .dark {
+    --background: 210 11% 15%;
+    --foreground: 0 0% 90%;
+    --card: 210 24% 16%;
+    --card-foreground: 0 0% 90%;
+    --sidebar-background: 210 31% 12%;
+    --sidebar-foreground: 0 0% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Drag and drop styles */
+  .drag-preview {
+    @apply opacity-75 transform rotate-2 shadow-lg;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-lg;
+  }
+
+  .drop-zone-active {
+    @apply border-blue-500 bg-blue-100/50;
+  }
+
+  /* Social platform badge styles */
+  .platform-twitter { @apply bg-blue-500 text-white; }
+  .platform-instagram { @apply bg-gradient-to-r from-purple-500 to-pink-500 text-white; }
+  .platform-facebook { @apply bg-blue-600 text-white; }
+  .platform-linkedin { @apply bg-blue-700 text-white; }
+  .platform-youtube { @apply bg-red-600 text-white; }
+  .platform-tiktok { @apply bg-black text-white; }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
