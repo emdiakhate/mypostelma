@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { X, Briefcase, Smile, Zap, DollarSign, BookOpen, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,8 +10,12 @@ import { cn } from '@/lib/utils';
 import { FacebookPreview, TwitterPreview, InstagramPreview, LinkedInPreview, TikTokPreview, YouTubePreview } from './PreviewModal';
 import { useBestTime, useEngagementChart } from '@/hooks/useBestTime';
 import { useHashtagSuggestions, useHashtagSets } from '@/hooks/useHashtagStats';
+import { useAiImageGeneration } from '@/hooks/useAiImageGeneration';
+import { useAiCaptionGeneration } from '@/hooks/useAiCaptionGeneration';
+import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing';
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
+import { TONE_OPTIONS } from '@/data/toneOptions';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
@@ -26,13 +30,6 @@ interface PostCreationModalProps {
   isEditing?: boolean;
 }
 
-// Configuration des webhooks IA
-const AI_WEBHOOKS = {
-  simple: 'https://malick000.app.n8n.cloud/webhook/ai-simple',
-  edit: 'https://malick000.app.n8n.cloud/webhook/ai-edit', 
-  combine: 'https://malick000.app.n8n.cloud/webhook/ai-combine',
-  ugc: 'https://malick000.app.n8n.cloud/webhook/ai-ugc'
-};
 
 // Sous-composant mémorisé pour la sélection des plateformes
 // Évite les re-rendus inutiles lors des changements d'autres états
@@ -239,60 +236,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   }, [isEditing, initialData, selectedImages]);
 
-  // Configuration des tones de voix
-  const toneOptions = [
-    { 
-      id: 'professional', 
-      label: '💼 Professionnel', 
-      description: 'Formel et expert',
-      icon: Briefcase,
-      color: 'text-blue-600'
-    },
-    { 
-      id: 'casual', 
-      label: '😊 Décontracté', 
-      description: 'Décontracté et amical',
-      icon: Smile,
-      color: 'text-green-600'
-    },
-    { 
-      id: 'inspiring', 
-      label: '⚡ Inspirant', 
-      description: 'Motivant et énergique',
-      icon: Zap,
-      color: 'text-yellow-600'
-    },
-    { 
-      id: 'sales', 
-      label: '💰 Vendeur', 
-      description: 'Persuasif et commercial',
-      icon: DollarSign,
-      color: 'text-red-600'
-    },
-    { 
-      id: 'storytelling', 
-      label: '📖 Storytelling', 
-      description: 'Narratif et captivant',
-      icon: BookOpen,
-      color: 'text-purple-600'
-    },
-    { 
-      id: 'automatic', 
-      label: '🎭 Automatique', 
-      description: 'Laisse l\'IA choisir',
-      icon: Sparkles,
-      color: 'text-gray-600'
-    }
-  ];
-
-
-  // Types pour la génération IA
-  const aiGenerationTypes = [
-    { id: 'simple', name: 'Génération simple', description: 'Créer une image à partir d\'un prompt', requiresImages: 0 },
-    { id: 'edit', name: 'Édition d\'image', description: 'Modifier une image existante', requiresImages: 1 },
-    { id: 'combine', name: 'Combinaison', description: 'Combiner deux images', requiresImages: 2 },
-    { id: 'ugc', name: 'UGC', description: 'Contenu généré par utilisateur', requiresImages: 1 }
-  ];
 
   // Callbacks optimisés avec useCallback pour éviter les re-rendus inutiles
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -631,21 +574,20 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                   <SelectValue placeholder="Sélectionner un tone" />
                 </SelectTrigger>
                 <SelectContent>
-                  {toneOptions.map((tone) => {
+                  {TONE_OPTIONS.map((tone) => {
                     const IconComponent = tone.icon;
                     return (
                       <SelectItem key={tone.id} value={tone.id}>
                         <div className="flex items-center gap-2">
                           <IconComponent className={`w-4 h-4 ${tone.color}`} />
                           <span>{tone.label}</span>
-                          <span className="text-xs text-gray-500 ml-auto">{tone.description}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{tone.description}</span>
                         </div>
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-            </div>
             
             {/* Bouton Générer les captions IA */}
             <div className="mt-4">
