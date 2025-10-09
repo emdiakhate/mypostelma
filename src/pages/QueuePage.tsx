@@ -9,7 +9,8 @@ import {
   Calendar,
   Filter,
   CheckCheck,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -328,11 +329,15 @@ const QueuePage: React.FC = () => {
   };
 
   const handleConfirmReject = (reason: string) => {
+    // Déplacer le post dans l'onglet "Rejetés"
     setPosts(prev => prev.map(post => 
       post.id === selectedPostId 
         ? { ...post, status: 'rejected' as const }
         : post
     ));
+    
+    // Changer le filtre actif vers "rejected" pour voir le résultat
+    setActiveFilter('rejected');
   };
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -437,8 +442,8 @@ const QueuePage: React.FC = () => {
         />
 
         {/* Modal d'aperçu */}
-        {editingPost && (
-          <PostPreviewModal
+        {editingPost && previewModalOpen && (
+          <QueuePostPreviewModal
             isOpen={previewModalOpen}
             onClose={() => {
               setPreviewModalOpen(false);
@@ -449,8 +454,8 @@ const QueuePage: React.FC = () => {
         )}
 
         {/* Modal d'édition */}
-        {editingPost && (
-          <PostEditModal
+        {editingPost && editModalOpen && (
+          <QueuePostEditModal
             isOpen={editModalOpen}
             onClose={() => {
               setEditModalOpen(false);
@@ -465,8 +470,8 @@ const QueuePage: React.FC = () => {
   );
 };
 
-// Composant PostPreviewModal
-const PostPreviewModal: React.FC<{
+// Composant QueuePostPreviewModal
+const QueuePostPreviewModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   post: PendingPost;
@@ -541,8 +546,8 @@ const PostPreviewModal: React.FC<{
   );
 };
 
-// Composant PostEditModal
-const PostEditModal: React.FC<{
+// Composant QueuePostEditModal
+const QueuePostEditModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   post: PendingPost;
