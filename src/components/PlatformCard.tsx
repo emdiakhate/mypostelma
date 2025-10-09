@@ -21,6 +21,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getPlatformConfig } from '@/config/platforms';
 
 interface PlatformCardProps {
   platform: SocialPlatform;
@@ -36,6 +37,7 @@ const PlatformCard: React.FC<PlatformCardProps> = ({
   onUpgrade
 }) => {
   const config = PLATFORM_CONFIG[platform];
+  const platformStyles = getPlatformConfig(platform as any);
   
   const getPlatformIcon = (platform: SocialPlatform) => {
     switch (platform) {
@@ -124,8 +126,7 @@ const PlatformCard: React.FC<PlatformCardProps> = ({
     return (
       <Button 
         onClick={() => onConnect(platform)}
-        className="w-full"
-        style={{ backgroundColor: config.color }}
+        className={cn("w-full", platformStyles.bgClass, platformStyles.textClass)}
       >
         Connecter
       </Button>

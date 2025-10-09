@@ -14,6 +14,7 @@ import { useBestTime, useEngagementChart } from '@/hooks/useBestTime';
 import { useHashtagSuggestions, useHashtagSets } from '@/hooks/useHashtagStats';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
+import { PLATFORMS, getPlatformConfig } from '@/config/platforms';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -38,15 +39,6 @@ const PlatformSelector = memo<{
   selectedPlatforms: string[];
   onPlatformChange: (platforms: string[]) => void;
 }>(({ selectedPlatforms, onPlatformChange }) => {
-  const platforms = [
-    { id: 'instagram', name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 'facebook', name: 'Facebook', color: 'bg-blue-600' },
-    { id: 'twitter', name: 'X (Twitter)', color: 'bg-black' },
-    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-700' },
-    { id: 'youtube', name: 'YouTube', color: 'bg-red-600' },
-    { id: 'tiktok', name: 'TikTok', color: 'bg-black' },
-  ];
-
   const handlePlatformToggle = (platformId: string) => {
     if (selectedPlatforms.includes(platformId)) {
       onPlatformChange(selectedPlatforms.filter(p => p !== platformId));
@@ -59,15 +51,16 @@ const PlatformSelector = memo<{
     <div className="space-y-3">
       <label className="block text-sm font-medium">Plateformes</label>
       <div className="flex flex-wrap gap-2">
-        {platforms.map((platform) => (
+        {PLATFORMS.map((platform) => (
           <button
             key={platform.id}
             onClick={() => handlePlatformToggle(platform.id)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium text-white transition-all",
-              platform.color,
+              "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+              platform.bgClass,
+              platform.textClass,
               selectedPlatforms.includes(platform.id) 
-                ? "ring-2 ring-offset-2 ring-blue-500" 
+                ? "ring-2 ring-offset-2 ring-primary" 
                 : "opacity-70 hover:opacity-100"
             )}
           >
@@ -89,14 +82,6 @@ const PreviewSection = memo<{
   selectedImages: string[];
   generatedCaptions: any;
 }>(({ selectedPlatforms, activePreview, onPreviewChange, content, selectedImages, generatedCaptions }) => {
-  const platforms = [
-    { id: 'instagram', name: 'Instagram' },
-    { id: 'facebook', name: 'Facebook' },
-    { id: 'twitter', name: 'X' },
-    { id: 'linkedin', name: 'LinkedIn' },
-    { id: 'youtube', name: 'YouTube' },
-    { id: 'tiktok', name: 'TikTok' },
-  ];
 
   const renderPreview = () => {
     const currentCaption = generatedCaptions?.[activePreview as keyof typeof generatedCaptions];
@@ -137,7 +122,7 @@ const PreviewSection = memo<{
       {selectedPlatforms.length > 0 && (
         <div className="mb-4">
           <div className="flex gap-2">
-            {platforms
+            {PLATFORMS
               .filter(p => selectedPlatforms.includes(p.id))
               .map((platform) => (
                 <Button
@@ -299,14 +284,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   ];
 
-  const platforms = [
-    { id: 'instagram', name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 'facebook', name: 'Facebook', color: 'bg-blue-600' },
-    { id: 'twitter', name: 'X', color: 'bg-black' },
-    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-700' },
-    { id: 'youtube', name: 'YouTube', color: 'bg-red-600' },
-    { id: 'tiktok', name: 'TikTok', color: 'bg-black' }
-  ];
 
   // Types pour la génération IA
   const aiGenerationTypes = [
