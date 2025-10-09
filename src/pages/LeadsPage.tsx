@@ -129,54 +129,64 @@ const LeadsPage: React.FC = () => {
     }
   };
 
-  // Gestion de la recherche
+  // Gestion de la recherche avec webhook N8N
   const handleSearch = async (searchParams: any) => {
     setIsSearching(true);
     setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
 
     try {
-      // TODO: Intégration N8N
-      // const response = await fetch(N8N_WEBHOOK_URL, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(searchParams)
-      // });
+      // Call N8N webhook
+      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/scrapping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(searchParams)
+      });
 
-      // Simulation de recherche
-      const interval = setInterval(() => {
-        setSearchProgress(prev => {
-          const newFound = Math.min(prev.found + Math.floor(Math.random() * 5) + 1, searchParams.maxResults);
-          const newPercentage = (newFound / searchParams.maxResults) * 100;
-          const newElapsed = prev.elapsed + 2;
+      if (!response.ok) {
+        throw new Error('Erreur lors de la recherche N8N');
+      }
 
-          if (newFound >= searchParams.maxResults) {
-            clearInterval(interval);
-            setIsSearching(false);
-            
-            // Générer des leads mock
-            const newLeads = generateMockLeads(searchParams);
-            const mergedLeads = mergeLeads(leads, newLeads);
-            
-            // Sauvegarder
-            localStorage.setItem('postelma_leads', JSON.stringify(mergedLeads));
-            loadLeads();
-            
-            toast.success(
-              `✓ ${newLeads.length} nouveaux leads trouvés !`,
-              { description: `Recherche: ${searchParams.query} à ${searchParams.city}` }
-            );
-          }
+      const result = await response.json();
+      
+      // Process results
+      if (result.leads && Array.isArray(result.leads)) {
+        const newLeads: Lead[] = result.leads.map((lead: any) => ({
+          id: lead.id || `lead_${Date.now()}_${Math.random()}`,
+          name: lead.name || lead.business_name || 'Sans nom',
+          category: searchParams.query || 'Non catégorisé',
+          address: lead.address || '',
+          city: searchParams.city || lead.city || '',
+          postalCode: lead.postal_code || lead.postalCode,
+          phone: lead.phone,
+          email: lead.email,
+          website: lead.website,
+          socialMedia: lead.social_media || lead.socialMedia,
+          status: 'new' as LeadStatus,
+          notes: '',
+          tags: ['recherche_automatique', 'n8n'],
+          addedAt: new Date(),
+          source: 'google_maps'
+        }));
 
-          return {
-            found: newFound,
-            percentage: newPercentage,
-            elapsed: newElapsed
-          };
-        });
-      }, 2000);
-
+        // Merge with existing leads (avoid duplicates)
+        const mergedLeads = mergeLeads(leads, newLeads);
+        
+        // Save to localStorage
+        localStorage.setItem('postelma_leads', JSON.stringify(mergedLeads));
+        loadLeads();
+        
+        toast.success(
+          `✓ ${newLeads.length} nouveaux leads trouvés !`,
+          { description: `Recherche: ${searchParams.query} à ${searchParams.city}` }
+        );
+      }
+      
+      setIsSearching(false);
     } catch (error) {
       setIsSearching(false);
+      console.error('Error with N8N search:', error);
       toast.error('Erreur lors de la recherche', {
         description: error instanceof Error ? error.message : 'Erreur inconnue'
       });

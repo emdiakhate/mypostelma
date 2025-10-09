@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      media_archives: {
+        Row: {
+          created_at: string | null
+          dimensions: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          source: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dimensions?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          source: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dimensions?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          source?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_analytics: {
         Row: {
           comments: number | null

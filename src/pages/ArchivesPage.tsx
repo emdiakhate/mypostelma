@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import PostCreationModal from '@/components/PostCreationModal';
+import { useMediaArchives } from '@/hooks/useMediaArchives';
 
 // Types
 interface MediaItem {
@@ -218,7 +219,8 @@ const MediaCard: React.FC<{
 
 // Page principale ArchivesPage
 const ArchivesPage: React.FC = () => {
-  const [media, setMedia] = useState<MediaItem[]>(mockArchiveMedia);
+  const { media: dbMedia, loading, uploadMedia, updateMedia, deleteMedia } = useMediaArchives();
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterType, setFilterType] = useState<'all' | 'image' | 'video'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -239,7 +241,20 @@ const ArchivesPage: React.FC = () => {
   
   // États pour le modal "Créer un post"
   const [showPostCreationModal, setShowPostCreationModal] = useState(false);
-  const [selectedMediaForPost, setSelectedMediaForPost] = useState<MediaItem | null>(null);
+  const [selectedMediaForPost, setSelectedMediaForPost] = useState<any>(null);
+  
+  // Convert dbMedia to MediaItem format for compatibility
+  const media: MediaItem[] = dbMedia.map(m => ({
+    id: m.id,
+    type: m.file_type,
+    url: m.url || '',
+    thumbnail: m.file_type === 'video' ? m.url : undefined,
+    title: m.title,
+    createdAt: m.created_at,
+    source: m.source,
+    size: m.file_size ? `${(m.file_size / (1024 * 1024)).toFixed(1)} MB` : undefined,
+    dimensions: m.dimensions || undefined
+  }));
 
   // Fonctions pour l'upload de fichiers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,29 +270,16 @@ const ArchivesPage: React.FC = () => {
     
     setIsUploading(true);
     try {
-      // Simulation de l'upload
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Créer de nouveaux éléments média à partir des fichiers uploadés
-      const newMediaItems: MediaItem[] = uploadedFiles.map((file, index) => {
-        const url = URL.createObjectURL(file);
-        const isVideo = file.type.startsWith('video/');
-        
-        return {
-          id: `upload-${Date.now()}-${index}`,
-          type: isVideo ? 'video' : 'image',
-          url: url,
-          thumbnail: isVideo ? url : undefined,
-          title: file.name.replace(/\.[^/.]+$/, ""), // Retirer l'extension
-          createdAt: new Date().toISOString(),
-          source: 'uploaded',
-          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-          dimensions: isVideo ? '1920x1080' : '1920x1080' // Dimensions par défaut
-        };
-      });
-      
-      // Ajouter les nouveaux éléments à la liste
-      setMedia(prev => [...newMediaItems, ...prev]);
+      // Upload each file to Supabase Storage
+      await Promise.all(
+        uploadedFiles.map(file => 
+          uploadMedia(
+            file,
+            file.name.replace(/\.[^/.]+$/, ""),
+            'uploaded'
+          )
+        )
+      );
       
       // Réinitialiser l'upload
       setUploadedFiles([]);
@@ -341,19 +343,9 @@ const ArchivesPage: React.FC = () => {
     }
   };
 
-  const handleAddGeneratedImage = (imageUrl: string) => {
-    const newMediaItem: MediaItem = {
-      id: `ai-${Date.now()}`,
-      type: 'image',
-      url: imageUrl,
-      title: `Image IA - ${aiPrompt.substring(0, 30)}...`,
-      createdAt: new Date().toISOString(),
-      source: 'ai-generated',
-      size: '2.1 MB',
-      dimensions: '1024x1024'
-    };
-    
-    setMedia(prev => [newMediaItem, ...prev]);
+  const handleAddGeneratedImage = async (imageUrl: string) => {
+    // TODO: Convert imageUrl (blob or external) to file and upload
+    // For now, just close modal
     setGeneratedImages([]);
     setAiPrompt('');
     setAiModalOpen(false);
@@ -394,41 +386,30 @@ const ArchivesPage: React.FC = () => {
     console.log('Aperçu média:', media);
   };
 
-  const handleRenameMedia = (media: MediaItem) => {
-    const newTitle = prompt('Nouveau nom:', media.title);
+  const handleRenameMedia = async (mediaItem: MediaItem) => {
+    const newTitle = prompt('Nouveau nom:', mediaItem.title);
     if (newTitle && newTitle.trim()) {
-      setMedia(prev => prev.map(item => 
-        item.id === media.id ? { ...item, title: newTitle.trim() } : item
-      ));
+      await updateMedia(mediaItem.id, { title: newTitle.trim() });
     }
   };
 
   const handleDownloadMedia = (media: MediaItem) => {
-    // Simulation de téléchargement
+    if (!media.url) return;
     const link = document.createElement('a');
     link.href = media.url;
     link.download = media.title;
     link.click();
   };
 
-  const handleDeleteMedia = (media: MediaItem) => {
+  const handleDeleteMedia = async (mediaItem: MediaItem) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce média ?')) {
-      setMedia(prev => prev.filter(item => item.id !== media.id));
+      await deleteMedia(mediaItem.id);
     }
   };
 
-  const handleSaveToArchive = (imageUrl: string, title: string) => {
-    const newMedia: MediaItem = {
-      id: Date.now().toString(),
-      type: 'image',
-      url: imageUrl,
-      title,
-      createdAt: new Date().toISOString(),
-      source: 'ai-generated',
-      size: '2.1 MB',
-      dimensions: '1024x1024'
-    };
-    setMedia(prev => [newMedia, ...prev]);
+  const handleSaveToArchive = async (imageUrl: string, title: string) => {
+    // TODO: Convert imageUrl to file and upload
+    // For now, just show toast
   };
 
   return (
