@@ -3,7 +3,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { AI_WEBHOOKS, AI_GENERATION_TYPES, AiGenerationType } from '@/data/aiConfig';
+import { supabase } from '@/integrations/supabase/client';
+import { AI_GENERATION_TYPES, AiGenerationType } from '@/data/aiConfig';
 
 interface UseAiImageGenerationResult {
   isGenerating: boolean;
@@ -42,35 +43,25 @@ export const useAiImageGeneration = (): UseAiImageGenerationResult => {
         throw new Error(`Ce type de génération nécessite ${typeConfig.requiresImages} image(s)`);
       }
 
-      // Validation pour le prompt (sauf UGC)
-      if (type !== 'ugc' && !prompt.trim()) {
+      // Validation pour le prompt (sauf UGC et edit)
+      if (type !== 'ugc' && type !== 'edit' && !prompt.trim()) {
         throw new Error('Veuillez saisir un prompt pour la génération');
       }
 
-      const webhookUrl = AI_WEBHOOKS[type];
-      const payload = {
-        prompt,
-        images: sourceImages,
-        type
-      };
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: { 
+          prompt: prompt || 'Generate a professional social media image',
+          type, 
+          sourceImages 
+        }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.imageUrl) {
-          setGeneratedImages(prev => [...prev, data.imageUrl]);
-        } else {
-          throw new Error(data.message || 'Erreur inconnue');
-        }
+      if (error) throw error;
+      
+      if (data?.imageUrl) {
+        setGeneratedImages(prev => [...prev, data.imageUrl]);
       } else {
-        throw new Error('Erreur lors de la génération');
+        throw new Error('Aucune image générée');
       }
     } catch (error) {
       console.error('Erreur génération IA:', error);

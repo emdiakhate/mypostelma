@@ -477,19 +477,24 @@ const Analytics: React.FC = () => {
                   </div>
                   {Array.from({ length: 7 }, (_, day) => {
                     const bestTime = data.bestTimes.find(bt => bt.day === day && bt.hour === hour);
-                    const intensity = bestTime ? Math.min(bestTime.avgEngagement / 200, 1) : 0;
+                    const maxEngagement = Math.max(...data.bestTimes.map(t => t.avgEngagement), 1);
+                    const intensity = bestTime ? Math.min(bestTime.avgEngagement / maxEngagement, 1) : 0;
                     
                     return (
-                      <div
+                      <button
                         key={`${day}-${hour}`}
                         className={cn(
-                          "w-8 h-8 rounded border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors",
+                          "w-8 h-8 rounded cursor-pointer hover:scale-110 hover:z-10 transition-all relative group",
                           intensity > 0.7 ? "bg-green-500" :
                           intensity > 0.4 ? "bg-yellow-400" :
-                          intensity > 0 ? "bg-orange-300" : "bg-gray-100"
+                          intensity > 0.2 ? "bg-orange-300" : 
+                          intensity > 0 ? "bg-blue-200" : "bg-gray-100"
                         )}
-                        title={bestTime ? `${bestTime.avgEngagement.toFixed(0)} likes en moyenne` : 'Aucune donnée'}
-                      />
+                      >
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
+                          {bestTime ? `${bestTime.avgEngagement.toFixed(0)} eng. moy.` : 'Aucune donnée'}
+                        </div>
+                      </button>
                     );
                   })}
                 </React.Fragment>

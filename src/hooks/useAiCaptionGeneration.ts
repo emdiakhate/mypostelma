@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { AI_WEBHOOKS } from '@/data/aiConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedCaptions {
   [platform: string]: string;
@@ -43,29 +43,21 @@ export const useAiCaptionGeneration = (): UseAiCaptionGenerationResult => {
     setIsGenerating(true);
     
     try {
-      const payload = {
-        prompt: content,
-        tone,
-        platform,
-        context: {
-          product: campaign,
-          target: 'audience générale'
+      const { data, error } = await supabase.functions.invoke('generate-captions', {
+        body: { 
+          content, 
+          tone, 
+          platforms: ['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok', 'youtube'],
+          campaign 
         }
-      };
-
-      const response = await fetch(AI_WEBHOOKS.captions, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        setGeneratedCaptions(result.captions);
+      if (error) throw error;
+      
+      if (data?.captions) {
+        setGeneratedCaptions(data.captions);
       } else {
-        throw new Error('Erreur lors de la génération des captions');
+        throw new Error('Aucune caption générée');
       }
     } catch (error) {
       console.error('Erreur génération captions:', error);
