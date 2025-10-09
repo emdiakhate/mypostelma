@@ -252,6 +252,40 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }, {} as Record<string, string>);
     
     try {
+      // Si on est en mode édition et qu'on a une date programmée, on met à jour le post
+      if (isEditing && scheduledDateTime) {
+        const scheduledPost = {
+          id: initialData?.id || `post-${Date.now()}`,
+          content: finalCaptions[selectedPlatforms[0]] || content,
+          platforms: selectedPlatforms,
+          image: selectedImages[0],
+          images: selectedImages,
+          scheduledTime: scheduledDateTime,
+          dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
+          timeSlot: calculateTimeSlot(scheduledDateTime),
+          status: 'scheduled' as const,
+          captions: finalCaptions,
+          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+          campaign,
+          campaignColor: initialData?.campaignColor
+        };
+
+        // Mettre à jour le post dans la base de données
+        await publishPost({
+          type: 'scheduled',
+          captions: finalCaptions,
+          accounts: selectedAccounts,
+          images: selectedImages,
+          scheduledDateTime
+        });
+
+        onSave(scheduledPost);
+        alert('Post modifié avec succès !');
+        onClose();
+        // Redirection vers le calendrier géré par le parent
+        return;
+      }
+
       if (publishType === 'now') {
         if (hasPermission('canPublish')) {
           await publishPost({
@@ -284,16 +318,19 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         });
 
         const scheduledPost = {
-          id: isEditing && initialData?.id ? initialData.id : `post-${Date.now()}`,
+          id: `post-${Date.now()}`,
           content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
           image: selectedImages[0],
+          images: selectedImages,
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
-          status: 'scheduled',
+          status: 'scheduled' as const,
           captions: finalCaptions,
-          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown'
+          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+          campaign,
+          campaignColor: initialData?.campaignColor
         };
 
         onSave(scheduledPost);
@@ -318,7 +355,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     initialData, 
     selectedPlatforms, 
     content, 
-    onSave
+    onSave,
+    campaign
   ]);
 
   if (!isOpen) return null;

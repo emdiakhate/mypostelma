@@ -127,6 +127,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const newPosts = posts.map(p => p.id === updatedPost.id ? updatedPost : p);
     onPostsChange(newPosts);
     setEditingPost(null);
+    // Le calendrier est déjà affiché, pas besoin de redirection
   }, [posts, onPostsChange]);
 
   const handlePreview = useCallback((post: Post) => {
