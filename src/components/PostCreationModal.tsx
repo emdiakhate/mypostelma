@@ -30,15 +30,23 @@ interface PostCreationModalProps {
   isEditing?: boolean;
 }
 
-// Sous-composant mémorisé pour la section d'aperçu
-const PreviewSection = memo<{
+interface PreviewSectionProps {
   selectedPlatforms: string[];
   activePreview: string;
   onPreviewChange: (platform: string) => void;
   content: string;
   selectedImages: string[];
-  generatedCaptions: any;
-}>(({ selectedPlatforms, activePreview, onPreviewChange, content, selectedImages, generatedCaptions }) => {
+  generatedCaptions: Record<string, string> | null;
+}
+
+const PreviewSection = memo<PreviewSectionProps>(({ 
+  selectedPlatforms, 
+  activePreview, 
+  onPreviewChange, 
+  content, 
+  selectedImages, 
+  generatedCaptions 
+}) => {
   const renderPreview = () => {
     const currentCaption = generatedCaptions?.[activePreview as keyof typeof generatedCaptions];
     const displayContent = currentCaption || content || 'Votre contenu apparaîtra ici...';
@@ -123,7 +131,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const { hasPermission, currentUser } = useAuth();
   const [content, setContent] = useState(initialData?.content || '');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialData?.platforms || ['instagram']);
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>(initialData?.accounts || []);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>(
+    initialData?.accounts || initialData?.platforms || []
+  );
   const [selectedImages, setSelectedImages] = useState<string[]>(
     initialData?.images || (initialData?.image ? [initialData.image] : [])
   );
@@ -198,7 +208,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   }, [hashtagSets]);
 
-  const handleAiImageGeneration = async () => {
+  const handleAiImageGeneration = useCallback(async () => {
     try {
       await generateImage({
         type: aiGenerationType,
@@ -208,14 +218,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
     }
-  };
+  }, [aiGenerationType, aiPrompt, aiSourceImages, generateImage]);
 
-  const handleAddGeneratedImage = (imageUrl: string) => {
+  const handleAddGeneratedImage = useCallback((imageUrl: string) => {
     setSelectedImages([imageUrl]);
     setMediaSource('upload');
-  };
+  }, []);
 
-  const generateCaptions = async () => {
+  const generateCaptions = useCallback(async () => {
     try {
       await generateCaptionsHook({
         content,
@@ -226,9 +236,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
     }
-  };
+  }, [content, selectedTone, selectedPlatforms, campaign, generateCaptionsHook]);
 
-  const publishPosts = async () => {
+  const publishPosts = useCallback(async () => {
     if (!generatedCaptions || selectedAccounts.length === 0) return;
     
     try {
@@ -264,7 +274,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         });
 
         const scheduledPost = {
-          id: isEditing ? initialData?.id : `post-${Date.now()}`,
+          id: isEditing && initialData?.id ? initialData.id : `post-${Date.now()}`,
           content: generatedCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
           image: selectedImages[0],
@@ -272,7 +282,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
           status: 'scheduled',
-          captions: generatedCaptions
+          captions: generatedCaptions,
+          author: currentUser?.name || 'Unknown'
         };
 
         onSave(scheduledPost);
@@ -283,7 +294,22 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       console.error('Erreur:', error);
       alert('Erreur lors de la publication');
     }
-  };
+  }, [
+    generatedCaptions, 
+    selectedAccounts, 
+    publishType, 
+    hasPermission, 
+    publishPost, 
+    selectedImages, 
+    onClose, 
+    currentUser, 
+    scheduledDateTime, 
+    isEditing, 
+    initialData, 
+    selectedPlatforms, 
+    content, 
+    onSave
+  ]);
 
   if (!isOpen) return null;
 
