@@ -12,15 +12,15 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Affiche loader pendant vérification
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Redirige vers login si pas authentifié
+  // Redirige vers /auth si pas authentifié
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   // Affiche contenu si authentifié

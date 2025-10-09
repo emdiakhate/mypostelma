@@ -48,7 +48,7 @@ const UserMenu: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     navigate('/logout');
   };
 
@@ -75,13 +75,13 @@ const UserMenu: React.FC = () => {
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
             <span className="text-sm font-semibold">
-              {currentUser.name.split(' ').map(n => n[0]).join('')}
+              {(currentUser.user_metadata?.name || currentUser.email || 'U').split(' ').map((n: string) => n[0]).join('')}
             </span>
           </div>
 
           {/* Infos utilisateur */}
           <div className="text-left hidden sm:block">
-            <div className="text-sm font-medium">{currentUser.name}</div>
+            <div className="text-sm font-medium">{currentUser.user_metadata?.name || currentUser.email}</div>
             {/* Badge du rôle à la place de l'email */}
             <Badge 
               variant="secondary" 
@@ -98,7 +98,7 @@ const UserMenu: React.FC = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{currentUser.name}</p>
+            <p className="text-sm font-medium">{currentUser.user_metadata?.name || 'User'}</p>
             <p className="text-xs text-muted-foreground">{currentUser.email}</p>
           </div>
         </DropdownMenuLabel>

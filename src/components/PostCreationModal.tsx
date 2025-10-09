@@ -258,7 +258,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             captions: generatedCaptions,
             accounts: selectedAccounts,
             images: selectedImages,
-            author: currentUser?.name,
+            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
             authorId: currentUser?.id
           });
           alert('Contenu soumis pour approbation !');
@@ -283,7 +283,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           timeSlot: calculateTimeSlot(scheduledDateTime),
           status: 'scheduled',
           captions: generatedCaptions,
-          author: currentUser?.name || 'Unknown'
+          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown'
         };
 
         onSave(scheduledPost);

@@ -15,7 +15,7 @@ import QueuePage from "./pages/QueuePage";
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
 import TeamPage from "./pages/TeamPage";
-import LoginPage from "./pages/LoginPage";
+import AuthPage from "./pages/AuthPage";
 import LogoutPage from "./pages/LogoutPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -54,7 +54,7 @@ const ProtectedRoutes = () => {
   return (
     <Routes>
       {/* Route publique */}
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth" element={<AuthPage />} />
       
       {/* Route de déconnexion - SANS Layout */}
       <Route path="/logout" element={<LogoutPage />} />
