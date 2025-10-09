@@ -1,20 +1,21 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { X, Upload, Image as ImageIcon, Calendar, Clock, TrendingUp, Lightbulb, Hash, Copy, Plus, Briefcase, Smile, Zap, DollarSign, BookOpen, Sparkles } from 'lucide-react';
+import { X, Briefcase, Smile, Zap, DollarSign, BookOpen, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { FacebookPreview, TwitterPreview, InstagramPreview, LinkedInPreview, TikTokPreview, YouTubePreview } from './PreviewModal';
 import { useBestTime, useEngagementChart } from '@/hooks/useBestTime';
 import { useHashtagSuggestions, useHashtagSets } from '@/hooks/useHashtagStats';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
-import { PLATFORMS, getPlatformConfig } from '@/config/platforms';
+import { PLATFORMS } from '@/config/platforms';
+import MediaUploadSection from './post-creation/MediaUploadSection';
+import BestTimeSection from './post-creation/BestTimeSection';
+import HashtagSection from './post-creation/HashtagSection';
+import PublishOptionsSection from './post-creation/PublishOptionsSection';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -658,221 +659,23 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             </div>
           </div>
 
-          {/* Image Upload */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
-              Images (optionnel)
-            </label>
-            
-            {/* Onglets Upload/IA */}
-            <div className="flex mb-4 border-b border-gray-200">
-              <button
-                onClick={() => setMediaSource('upload')}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-                  mediaSource === 'upload' 
-                    ? "border-blue-500 text-blue-600" 
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                )}
-              >
-                Upload d'images
-              </button>
-              <button
-                onClick={() => setMediaSource('ai')}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-                  mediaSource === 'ai' 
-                    ? "border-blue-500 text-blue-600" 
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                )}
-              >
-                Générer avec IA
-              </button>
-            </div>
-
-            {/* Contenu Upload */}
-            {mediaSource === 'upload' && (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                multiple
-                  className="hidden"
-                  id="image-upload"
-                />
-              <label htmlFor="image-upload" className="cursor-pointer block">
-                {selectedImages.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img 
-                          src={image} 
-                          alt={`Image ${index + 1}`} 
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            removeImage(index);
-                          }}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    {selectedImages.length < 4 && (
-                      <div className="border-2 border-dashed border-gray-300 rounded flex items-center justify-center h-24">
-                        <span className="text-gray-500 text-xs">+ Ajouter</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">Cliquer pour ajouter des images</p>
-                    <p className="text-xs text-gray-500">Jusqu'à 4 images</p>
-                </div>
-              )}
-              </label>
-            </div>
-            )}
-
-            {/* Contenu Génération IA */}
-            {mediaSource === 'ai' && (
-              <div className="space-y-4">
-                {/* Types de génération IA */}
-                <div className="grid grid-cols-2 gap-3">
-                  {aiGenerationTypes.map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => setAiGenerationType(type.id as any)}
-                      className={cn(
-                        "p-3 text-left border rounded-lg transition-colors",
-                        aiGenerationType === type.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      )}
-                    >
-                      <div className="font-medium text-sm">{type.name}</div>
-                      <div className="text-xs text-gray-600 mt-1">{type.description}</div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Prompt pour l'IA */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Prompt {aiGenerationType === 'ugc' ? '(optionnel)' : ''}
-                  </label>
-                  <Textarea
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder={aiGenerationType === 'ugc' 
-                      ? "Décrivez le contenu souhaité (optionnel)..." 
-                      : "Décrivez l'image que vous voulez générer..."
-                    }
-                    className="min-h-20"
-                  />
-          </div>
-
-                {/* Upload d'images sources pour édition/combinaison */}
-                {(aiGenerationType === 'edit' || aiGenerationType === 'combine' || aiGenerationType === 'ugc') && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Images sources {aiGenerationType === 'combine' ? '(2 images requises)' : '(1 image requise)'}
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAiSourceImageUpload}
-                        multiple={aiGenerationType === 'combine'}
-                        className="hidden"
-                        id="ai-source-upload"
-                      />
-                      <label htmlFor="ai-source-upload" className="cursor-pointer block">
-                        {aiSourceImages.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
-                            {aiSourceImages.map((image, index) => (
-                              <div key={index} className="relative group">
-                                <img 
-                                  src={image} 
-                                  alt={`Source ${index + 1}`} 
-                                  className="w-full h-24 object-cover rounded border"
-                                />
-                                <button
-                                  onClick={() => removeAiSourceImage(index)}
-                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                            {(aiGenerationType === 'combine' ? aiSourceImages.length < 2 : aiSourceImages.length < 1) && (
-                              <div className="border-2 border-dashed border-gray-300 rounded flex items-center justify-center h-24">
-                                <span className="text-gray-500 text-xs">
-                                  + Ajouter {aiGenerationType === 'combine' ? 'image' : 'image'}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600 mb-2">Cliquez pour sélectionner {aiGenerationType === 'combine' ? '2 images' : '1 image'}</p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                {/* Bouton de génération */}
-                <Button
-                  onClick={handleAiImageGeneration}
-                  disabled={isGeneratingImage || (aiGenerationType !== 'simple' && aiSourceImages.length === 0)}
-                  className="w-full"
-                >
-                  {isGeneratingImage ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Génération en cours...
-                    </>
-                  ) : (
-                    `Générer ${aiGenerationType === 'simple' ? 'une image' : aiGenerationType === 'combine' ? 'une combinaison' : 'une édition'}`
-                  )}
-                </Button>
-
-                {/* Images générées */}
-                {generatedImages.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Images générées</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {generatedImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={image} 
-                            alt={`Générée ${index + 1}`} 
-                            className="w-full h-24 object-cover rounded border"
-                          />
-                          <button
-                            onClick={() => handleAddGeneratedImage(image)}
-                            className="absolute inset-0 bg-blue-500 bg-opacity-0 hover:bg-opacity-20 text-white flex items-center justify-center text-xs transition-all"
-                          >
-                            <span className="bg-blue-500 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100">
-                              Utiliser
-                            </span>
-                          </button>
-                        </div>
-              ))}
-            </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Section Média */}
+          <MediaUploadSection 
+            mediaSource={mediaSource}
+            onMediaSourceChange={setMediaSource}
+            selectedImages={selectedImages}
+            onImagesChange={setSelectedImages}
+            aiGenerationType={aiGenerationType}
+            onAiGenerationTypeChange={setAiGenerationType}
+            aiPrompt={aiPrompt}
+            onAiPromptChange={setAiPrompt}
+            aiSourceImages={aiSourceImages}
+            onAiSourceImagesChange={setAiSourceImages}
+            generatedImages={generatedImages}
+            isGeneratingImage={isGeneratingImage}
+            onGenerateImage={handleAiImageGeneration}
+            onUseGeneratedImage={handleAddGeneratedImage}
+          />
 
           {/* Comptes connectés - Nouveau sélecteur */}
           <div className="mb-6">
@@ -882,363 +685,44 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             />
           </div>
 
-          {/* Meilleurs moments - Affiché seulement si un compte est sélectionné */}
+          {/* Section Meilleurs moments */}
           {selectedAccounts.length > 0 && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">💡 Meilleur moment</h3>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  Recommandé
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                {/* Moment recommandé */}
-                {bestTimeRecommendation ? (
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {format(bestTimeRecommendation.recommended, 'EEEE dd/MM à HH:mm', { locale: fr })}
-                        </p>
-                        <p className="text-sm text-gray-600">{bestTimeRecommendation.reason}</p>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleUseBestTime(bestTimeRecommendation.recommended)}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      Utiliser ce créneau
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Mardi 15/01 à 18:00
-                        </p>
-                        <p className="text-sm text-gray-600">Moment optimal général pour {selectedPlatforms[0]}</p>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => {
-                        const defaultDate = new Date();
-                        defaultDate.setDate(defaultDate.getDate() + 1);
-                        defaultDate.setHours(18, 0, 0, 0);
-                        handleUseBestTime(defaultDate);
-                      }}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      Utiliser ce créneau
-                    </Button>
-            </div>
-                )}
-            
-                {/* Alternatives */}
-                {bestTimeRecommendation ? (
-                  bestTimeRecommendation.alternatives.length > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Ou essayez :</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {bestTimeRecommendation.alternatives.map((alt, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUseAlternativeTime(alt)}
-                            className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50"
-                          >
-                            {format(alt, 'EEEE HH:mm', { locale: fr })}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Ou essayez :</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const altDate1 = new Date();
-                          altDate1.setDate(altDate1.getDate() + 2);
-                          altDate1.setHours(14, 0, 0, 0);
-                          handleUseAlternativeTime(altDate1);
-                        }}
-                        className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50"
-                      >
-                        Jeudi 14h
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const altDate2 = new Date();
-                          altDate2.setDate(altDate2.getDate() + 4);
-                          altDate2.setHours(19, 0, 0, 0);
-                          handleUseAlternativeTime(altDate2);
-                        }}
-                        className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50"
-                      >
-                        Vendredi 19h
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Graphique d'engagement */}
-                {engagementChartData.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Engagement par heure</p>
-                    <div className="h-32">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={engagementChartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="hour" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="engagement" fill="#3b82f6" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <BestTimeSection 
+              bestTimeRecommendation={bestTimeRecommendation}
+              engagementChartData={engagementChartData}
+              onUseBestTime={handleUseBestTime}
+              onUseAlternativeTime={handleUseAlternativeTime}
+              selectedPlatforms={selectedPlatforms}
+            />
           )}
 
-          {/* Hashtags suggérés - Affiché seulement si une plateforme est sélectionnée */}
+          {/* Section Hashtags */}
           {selectedPlatforms.length > 0 && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Hash className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-gray-900">🏷️ Hashtags suggérés</h3>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                  IA
-                </Badge>
-          </div>
-
-              <div className="space-y-4">
-                {/* Top 5 hashtags du moment */}
-                {hashtagSuggestions.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Top 5 du moment</p>
-                    <div className="flex flex-wrap gap-2">
-                      {hashtagSuggestions.slice(0, 5).map((suggestion, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddHashtag(suggestion.hashtag)}
-                          className="text-xs border-purple-200 text-purple-800 hover:bg-purple-50"
-                        >
-                          {suggestion.hashtag}
-                          <Badge variant="secondary" className="ml-1 text-xs">
-                            {suggestion.expectedEngagement.toFixed(1)}%
-                          </Badge>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Sets de hashtags */}
-                {hashtagSets.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Utiliser un set</p>
-                    <div className="flex gap-2">
-                      <Select value={selectedHashtagSet} onValueChange={setSelectedHashtagSet}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Sélectionner un set" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {hashtagSets.map((set) => (
-                            <SelectItem key={set.id} value={set.id}>
-                              {set.name} ({set.hashtags.length} hashtags)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        onClick={() => handleUseHashtagSet(selectedHashtagSet)}
-                        disabled={!selectedHashtagSet}
-                        className="bg-purple-500 hover:bg-purple-600 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ajouter
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggestions intelligentes */}
-                {hashtagSuggestions.length > 5 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Plus de suggestions</p>
-                    <div className="flex flex-wrap gap-2">
-                      {hashtagSuggestions.slice(5, 10).map((suggestion, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddHashtag(suggestion.hashtag)}
-                          className="text-xs border-gray-200 text-gray-700 hover:bg-gray-50"
-                        >
-                          {suggestion.hashtag}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Auto-complétion */}
-                <div className="text-xs text-gray-600">
-                  💡 Tapez # pour voir l'auto-complétion des hashtags
-                </div>
-              </div>
-            </div>
+            <HashtagSection 
+              hashtagSuggestions={hashtagSuggestions}
+              hashtagSets={hashtagSets}
+              selectedHashtagSet={selectedHashtagSet}
+              onHashtagSetChange={setSelectedHashtagSet}
+              onAddHashtag={handleAddHashtag}
+              onUseHashtagSet={handleUseHashtagSet}
+            />
           )}
 
-          {/* Auteur et Campagne - DÉPLACÉ ICI */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Auteur</label>
-              <Input value="Postelma" readOnly className="bg-gray-50" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Campagne (optionnel)</label>
-              <Input
-                value={campaign}
-                onChange={(e) => setCampaign(e.target.value)}
-                placeholder="Nom de la campagne"
-              />
-            </div>
-          </div>
-
-          {/* Options de publication */}
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <label className="block text-sm font-medium">Options de publication</label>
-              
-              <div className="space-y-2">
-                <label className="flex items-center gap-3">
-                  <input 
-                    type="radio" 
-                    name="publishType"
-                    value="now"
-                    checked={publishType === 'now'}
-                    onChange={(e) => setPublishType('now')}
-                    className="w-4 h-4"
-                  />
-                  <span>Publier immédiatement</span>
-                </label>
-                
-                <label className="flex items-center gap-3">
-                  <input 
-                    type="radio" 
-                    name="publishType"
-                    value="scheduled"
-                    checked={publishType === 'scheduled'}
-                    onChange={(e) => setPublishType('scheduled')}
-                    className="w-4 h-4"
-                  />
-                  <span>Programmer la publication</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Section date/heure conditionnelle */}
-            {publishType === 'scheduled' && (
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Date</label>
-                  <input
-                    type="date"
-                    value={scheduledDateTime ? format(scheduledDateTime, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => {
-                      const newDate = new Date(e.target.value);
-                      // Préserver l'heure existante ou utiliser l'heure actuelle
-                      const currentTime = scheduledDateTime || new Date();
-                      newDate.setHours(currentTime.getHours(), currentTime.getMinutes());
-                      setScheduledDateTime(newDate);
-                    }}
-                    className="w-full p-2 border rounded"
-                    min={format(new Date(), 'yyyy-MM-dd')}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Heure</label>
-                  <input
-                    type="time"
-                    value={scheduledDateTime ? format(scheduledDateTime, 'HH:mm') : ''}
-                    onChange={(e) => {
-                      const [hours, minutes] = e.target.value.split(':');
-                      const newDate = scheduledDateTime ? new Date(scheduledDateTime) : new Date();
-                      newDate.setHours(parseInt(hours), parseInt(minutes));
-                      setScheduledDateTime(newDate);
-                    }}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-              </div>
-            )}
-
-
-            {/* Boutons d'action */}
-            <div className="space-y-3">
-              {/* Bouton Publier - avec restrictions par rôle */}
-              <Button 
-                onClick={publishPosts}
-                disabled={
-                  selectedAccounts.length === 0 || 
-                  isPublishing || 
-                  (publishType === 'scheduled' && !scheduledDateTime)
-                }
-                className={cn(
-                  "w-full font-semibold py-3",
-                  hasPermission('canPublish') 
-                    ? (publishType === 'now' 
-                        ? 'bg-green-500 hover:bg-green-600' 
-                        : 'bg-blue-500 hover:bg-blue-600')
-                    : (publishType === 'now' 
-                        ? 'bg-orange-500 hover:bg-orange-600' 
-                        : 'bg-orange-500 hover:bg-orange-600')
-                )}
-              >
-                {isPublishing ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {publishType === 'now' ? 'Publication...' : 'Programmation...'}
-                  </div>
-                ) : (
-                  hasPermission('canPublish') 
-                    ? (publishType === 'now' ? 'Publier maintenant' : 'Programmer la publication')
-                    : (publishType === 'now' ? 'Soumettre pour approbation' : 'Programmer pour approbation')
-                )}
-            </Button>
-              
-              {/* Bouton Régénérer les captions - visible seulement si des captions ont été générées */}
-              {generatedCaptions && (
-            <Button 
-                  onClick={() => setGeneratedCaptions(null)}
-                  variant="outline"
-                  className="w-full"
-            >
-                  Régénérer les captions
-            </Button>
-              )}
-            </div>
-          </div>
+          {/* Section Options de publication */}
+          <PublishOptionsSection 
+            publishType={publishType}
+            onPublishTypeChange={setPublishType}
+            scheduledDateTime={scheduledDateTime}
+            onScheduledDateTimeChange={setScheduledDateTime}
+            campaign={campaign}
+            onCampaignChange={setCampaign}
+            generatedCaptions={generatedCaptions}
+            onRegenerateCaptions={() => setGeneratedCaptions(null)}
+            onPublish={publishPosts}
+            isPublishing={isPublishing}
+            hasPublishPermission={hasPermission('canPublish')}
+            selectedAccountsCount={selectedAccounts.length}
+          />
         </div>
 
         {/* Right Panel - Preview - Composant mémorisé */}
