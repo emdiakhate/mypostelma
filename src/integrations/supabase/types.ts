@@ -108,6 +108,7 @@ export type Database = {
           images: string[] | null
           platforms: string[]
           published_at: string | null
+          rejection_reason: string | null
           scheduled_time: string | null
           status: Database["public"]["Enums"]["post_status"]
           time_slot: number | null
@@ -126,6 +127,7 @@ export type Database = {
           images?: string[] | null
           platforms?: string[]
           published_at?: string | null
+          rejection_reason?: string | null
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null
@@ -144,6 +146,7 @@ export type Database = {
           images?: string[] | null
           platforms?: string[]
           published_at?: string | null
+          rejection_reason?: string | null
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null

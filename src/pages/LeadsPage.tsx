@@ -135,13 +135,22 @@ const LeadsPage: React.FC = () => {
     setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
 
     try {
-      // Call N8N webhook
+      // Envoyer toutes les données du formulaire à n8n
       const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/scrapping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(searchParams)
+        body: JSON.stringify({
+          query: searchParams.query,
+          city: searchParams.city,
+          maxResults: searchParams.maxResults,
+          includePhone: searchParams.includePhone,
+          includeEmail: searchParams.includeEmail,
+          includeSocial: searchParams.includeSocial,
+          radius: searchParams.radius,
+          category: searchParams.category
+        })
       });
 
       if (!response.ok) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   CheckCircle, 
   XCircle, 
@@ -18,60 +18,9 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-// Données mockées
-const mockPendingPosts = [
-  {
-    id: '1',
-    content: 'Découvrez notre nouvelle collection automne-hiver 2025 avec des designs innovants et des matières durables.',
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
-    author: 'Marie Dubois',
-    createdAt: '2025-10-02T10:30:00',
-    scheduledDate: '2025-10-05T14:00:00',
-    platforms: ['facebook', 'instagram', 'linkedin'],
-    status: 'pending' as const
-  },
-  {
-    id: '2',
-    content: 'Offre spéciale : -30% sur tous nos produits jusqu\'à la fin du mois. Profitez-en maintenant !',
-    image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&h=300&fit=crop',
-    author: 'Jean Martin',
-    createdAt: '2025-10-02T11:15:00',
-    scheduledDate: '2025-10-06T10:00:00',
-    platforms: ['twitter', 'facebook'],
-    status: 'pending' as const
-  },
-  {
-    id: '3',
-    content: 'Nouvelle étude : 85% de nos clients sont satisfaits de nos services. Merci pour votre confiance !',
-    image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop',
-    author: 'Sophie Laurent',
-    createdAt: '2025-10-02T14:20:00',
-    scheduledDate: '2025-10-07T09:00:00',
-    platforms: ['linkedin', 'twitter'],
-    status: 'approved' as const
-  },
-  {
-    id: '4',
-    content: 'Rejoignez notre webinar gratuit sur les stratégies de marketing digital moderne. Places limitées !',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-    author: 'Pierre Moreau',
-    createdAt: '2025-10-02T16:45:00',
-    scheduledDate: '2025-10-08T11:00:00',
-    platforms: ['linkedin', 'facebook'],
-    status: 'pending' as const
-  },
-  {
-    id: '5',
-    content: 'Témoignage client : "Un service exceptionnel qui a transformé notre approche marketing."',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
-    author: 'Claire Bernard',
-    createdAt: '2025-10-03T08:30:00',
-    scheduledDate: '2025-10-09T15:00:00',
-    platforms: ['instagram', 'facebook'],
-    status: 'pending' as const
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 // Types
 interface PendingPost {
@@ -80,9 +29,10 @@ interface PendingPost {
   image: string;
   author: string;
   createdAt: string;
-  scheduledDate: string;
+  scheduledDate: string | null;
   platforms: string[];
   status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string | null;
 }
 
 // Composant PendingPostCard
@@ -309,18 +259,101 @@ const QueueFilters: React.FC<{
 
 // Page principale QueuePage
 const QueuePage: React.FC = () => {
-  const [posts, setPosts] = useState<PendingPost[]>(mockPendingPosts);
+  const { hasPermission, isManager, isOwner } = useAuth();
+  const [posts, setPosts] = useState<PendingPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string>('');
 
-  const filteredPosts = posts.filter(post => {
-    if (activeFilter === 'all') return true;
-    return post.status === activeFilter;
-  });
+  // Charger les posts en attente depuis Supabase
+  useEffect(() => {
+    loadPosts();
+    
+    // S'abonner aux changements en temps réel
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: 'status=in.(pending,rejected)'
+        },
+        () => {
+          loadPosts();
+        }
+      )
+      .subscribe();
 
-  const handleApprove = (id: string) => {
-    setPosts(prev => prev.filter(post => post.id !== id));
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*, profiles(name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedPosts: PendingPost[] = (data || []).map((post: any) => ({
+        id: post.id,
+        content: post.content || '',
+        image: post.images?.[0] || '',
+        author: post.profiles?.name || 'Utilisateur inconnu',
+        createdAt: post.created_at,
+        scheduledDate: post.scheduled_time,
+        platforms: post.platforms || [],
+        status: 'pending' as const,
+        rejection_reason: post.rejection_reason
+      }));
+
+      setPosts(formattedPosts);
+    } catch (error) {
+      console.error('Erreur lors du chargement des posts:', error);
+      toast.error('Erreur lors du chargement des posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter(post => {
+      if (activeFilter === 'all') return true;
+      return post.status === activeFilter;
+    });
+  }, [posts, activeFilter]);
+
+  const handleApprove = async (id: string) => {
+    if (!isManager && !isOwner) {
+      toast.error('Vous n\'avez pas les permissions pour valider des posts');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ 
+          status: 'scheduled' as const,
+          rejection_reason: null 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Post validé avec succès');
+      setPosts(prev => prev.filter(post => post.id !== id));
+    } catch (error) {
+      console.error('Erreur lors de la validation:', error);
+      toast.error('Erreur lors de la validation du post');
+    }
   };
 
   const handleReject = (id: string) => {
@@ -328,16 +361,30 @@ const QueuePage: React.FC = () => {
     setRejectModalOpen(true);
   };
 
-  const handleConfirmReject = (reason: string) => {
-    // Déplacer le post dans l'onglet "Rejetés"
-    setPosts(prev => prev.map(post => 
-      post.id === selectedPostId 
-        ? { ...post, status: 'rejected' as const }
-        : post
-    ));
-    
-    // Changer le filtre actif vers "rejected" pour voir le résultat
-    setActiveFilter('rejected');
+  const handleConfirmReject = async (reason: string) => {
+    if (!isManager && !isOwner) {
+      toast.error('Vous n\'avez pas les permissions pour rejeter des posts');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ 
+          status: 'pending' as const,
+          rejection_reason: reason 
+        })
+        .eq('id', selectedPostId);
+
+      if (error) throw error;
+
+      toast.success('Post rejeté');
+      await loadPosts();
+      setActiveFilter('rejected');
+    } catch (error) {
+      console.error('Erreur lors du rejet:', error);
+      toast.error('Erreur lors du rejet du post');
+    }
   };
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -360,17 +407,76 @@ const QueuePage: React.FC = () => {
     }
   };
 
-  const handleSaveEdit = (updatedPost: PendingPost) => {
-    setPosts(prev => prev.map(post => 
-      post.id === updatedPost.id ? updatedPost : post
-    ));
-    setEditModalOpen(false);
-    setEditingPost(null);
+  const handleSaveEdit = async (updatedPost: PendingPost) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ 
+          content: updatedPost.content,
+          images: [updatedPost.image]
+        })
+        .eq('id', updatedPost.id);
+
+      if (error) throw error;
+
+      toast.success('Post modifié avec succès');
+      setEditModalOpen(false);
+      setEditingPost(null);
+    } catch (error) {
+      console.error('Erreur lors de la modification:', error);
+      toast.error('Erreur lors de la modification du post');
+    }
   };
 
-  const handleApproveAll = () => {
-    setPosts([]);
+  const handleApproveAll = async () => {
+    if (!isManager && !isOwner) {
+      toast.error('Vous n\'avez pas les permissions pour cette action');
+      return;
+    }
+
+    const pendingPosts = posts.filter(p => p.status === 'pending');
+    if (pendingPosts.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ status: 'scheduled', rejection_reason: null })
+        .in('id', pendingPosts.map(p => p.id));
+
+      if (error) throw error;
+
+      toast.success(`${pendingPosts.length} posts validés`);
+      setPosts(prev => prev.filter(p => p.status !== 'pending'));
+    } catch (error) {
+      console.error('Erreur lors de la validation groupée:', error);
+      toast.error('Erreur lors de la validation groupée');
+    }
   };
+
+  if (!hasPermission('canApproveContent')) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Accès refusé</h3>
+          <p className="text-gray-600">
+            Vous n'avez pas les permissions pour accéder à la file d'attente.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -4,14 +4,14 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { User, UserRole } from '@/types/user';
+import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
-import { loadUsersFromStorage, saveUsersToStorage, addUser, updateUser, deleteUser } from '@/data/mockUsers';
+import { useTeam } from '@/hooks/useTeam';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import UserCard from '@/components/UserCard';
 import UserInviteModal from '@/components/UserInviteModal';
 import TeamStats from '@/components/TeamStats';
@@ -19,39 +19,28 @@ import {
   Users, 
   UserPlus, 
   Search, 
-  Filter, 
   Crown,
   Shield,
   Pencil,
   Eye,
-  CheckCircle,
   XCircle
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const TeamPage: React.FC = () => {
-  const { currentUser, hasPermission } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const { hasPermission } = useAuth();
+  const { members, loading, error, refetch, updateMemberRole } = useTeam();
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [filters, setFilters] = useState({
     search: '',
     role: 'all' as string,
     sortBy: 'name' as string
   });
 
-  // Charger les utilisateurs au montage
-  React.useEffect(() => {
-    const loadUsers = () => {
-      const loadedUsers = loadUsersFromStorage();
-      setUsers(loadedUsers);
-    };
-    loadUsers();
-  }, []);
-
   // Filtrer et trier les utilisateurs
   const filteredUsers = useMemo(() => {
-    let filtered = [...users];
+    let filtered = [...members];
 
     // Filtre par recherche
     if (filters.search) {
@@ -82,15 +71,15 @@ const TeamPage: React.FC = () => {
     });
 
     return filtered;
-  }, [users, filters]);
+  }, [members, filters]);
 
   // Statistiques
   const stats = useMemo(() => {
-    const total = users.length;
-    const active = users.filter(u => u.isActive).length;
-    const suspended = users.filter(u => !u.isActive).length;
+    const total = members.length;
+    const active = members.filter(u => u.isActive).length;
+    const suspended = members.filter(u => !u.isActive).length;
     
-    const roleCounts = users.reduce((acc, user) => {
+    const roleCounts = members.reduce((acc, user) => {
       acc[user.role] = (acc[user.role] || 0) + 1;
       return acc;
     }, {} as Record<UserRole, number>);
@@ -101,22 +90,14 @@ const TeamPage: React.FC = () => {
       suspended,
       roleCounts
     };
-  }, [users]);
+  }, [members]);
 
   const handleInviteUser = async (userData: any) => {
-    try {
-      const newUser = addUser(userData);
-      setUsers(prev => [...prev, newUser]);
-      setShowInviteModal(false);
-      
-      // Toast de confirmation (à implémenter)
-      console.log(`✓ Invitation envoyée à ${userData.email}`);
-    } catch (error) {
-      console.error('Erreur lors de l\'invitation:', error);
-    }
+    toast.info('La gestion des invitations sera bientôt disponible');
+    setShowInviteModal(false);
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = (user: any) => {
     setEditingUser(user);
     setShowInviteModal(true);
   };
@@ -125,71 +106,60 @@ const TeamPage: React.FC = () => {
     if (!editingUser) return;
     
     try {
-      const updatedUser = updateUser(editingUser.id, userData);
-      if (updatedUser) {
-        setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
-        setShowInviteModal(false);
-        setEditingUser(null);
-        
-        console.log('✓ Utilisateur modifié avec succès');
+      if (userData.role && userData.role !== editingUser.role) {
+        await updateMemberRole(editingUser.id, userData.role);
+        toast.success('Rôle modifié avec succès');
       }
+      setShowInviteModal(false);
+      setEditingUser(null);
     } catch (error) {
       console.error('Erreur lors de la modification:', error);
+      toast.error('Erreur lors de la modification');
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      try {
-        const success = deleteUser(userId);
-        if (success) {
-          setUsers(prev => prev.filter(u => u.id !== userId));
-          console.log('✓ Utilisateur supprimé avec succès');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-      }
-    }
+    toast.info('La suppression d\'utilisateur sera bientôt disponible');
   };
 
   const handleSuspendUser = async (userId: string) => {
-    try {
-      const updatedUser = updateUser(userId, { isActive: false });
-      if (updatedUser) {
-        setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
-        console.log('✓ Utilisateur suspendu');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la suspension:', error);
-    }
+    toast.info('La suspension d\'utilisateur sera bientôt disponible');
   };
 
   const handleActivateUser = async (userId: string) => {
-    try {
-      const updatedUser = updateUser(userId, { isActive: true });
-      if (updatedUser) {
-        setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
-        console.log('✓ Utilisateur activé');
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'activation:', error);
-    }
+    toast.info('L\'activation d\'utilisateur sera bientôt disponible');
   };
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     try {
-      const updatedUser = updateUser(userId, { 
-        role, 
-        permissions: require('@/types/user').ROLE_PERMISSIONS[role] 
-      });
-      if (updatedUser) {
-        setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
-        console.log('✓ Rôle modifié avec succès');
-      }
+      await updateMemberRole(userId, role);
+      toast.success('Rôle modifié avec succès');
     } catch (error) {
       console.error('Erreur lors du changement de rôle:', error);
+      toast.error('Erreur lors du changement de rôle');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => refetch()}>Réessayer</Button>
+        </div>
+      </div>
+    );
+  }
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
@@ -298,7 +268,7 @@ const TeamPage: React.FC = () => {
 
       {/* Liste des utilisateurs */}
       <div className="space-y-4">
-        {filteredUsers.length === 0 ? (
+        {filteredUsers.length === 0 && !loading ? (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -322,10 +292,15 @@ const TeamPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((member) => (
               <UserCard
-                key={user.id}
-                user={user}
+                key={member.id}
+                user={{
+                  ...member,
+                  createdAt: new Date(member.createdAt),
+                  lastLogin: member.lastLogin ? new Date(member.lastLogin) : undefined,
+                  permissions: {} as any
+                }}
                 onEdit={handleEditUser}
                 onDelete={handleDeleteUser}
                 onSuspend={handleSuspendUser}

@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import PostCreationModal from '@/components/PostCreationModal';
+import AiImageGenerationModal from '@/components/AiImageGenerationModal';
 import { useMediaArchives } from '@/hooks/useMediaArchives';
 
 // Types
@@ -443,170 +444,12 @@ const ArchivesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Modal Générer avec IA */}
-          <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Générer avec IA
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-6">
-                {/* Types de génération */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    variant={selectedAiType === 'simple' ? 'default' : 'outline'}
-                    onClick={() => handleAiGenerationTypeChange('simple')}
-                    className="h-auto p-4 flex flex-col items-center gap-2"
-                  >
-                    <Wand2 className="w-6 h-6" />
-                    <div className="text-center">
-                      <div className="font-medium">Génération simple</div>
-                      <div className="text-sm text-gray-500">Créer une image à partir d'un prompt</div>
-                    </div>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedAiType === 'edit' ? 'default' : 'outline'}
-                    onClick={() => handleAiGenerationTypeChange('edit')}
-                    className="h-auto p-4 flex flex-col items-center gap-2"
-                  >
-                    <Edit className="w-6 h-6" />
-                    <div className="text-center">
-                      <div className="font-medium">Édition d'image</div>
-                      <div className="text-sm text-gray-500">Modifier une image existante</div>
-                    </div>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedAiType === 'combine' ? 'default' : 'outline'}
-                    onClick={() => handleAiGenerationTypeChange('combine')}
-                    className="h-auto p-4 flex flex-col items-center gap-2"
-                  >
-                    <Layers className="w-6 h-6" />
-                    <div className="text-center">
-                      <div className="font-medium">Combinaison</div>
-                      <div className="text-sm text-gray-500">Combiner deux images</div>
-                    </div>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedAiType === 'ugc' ? 'default' : 'outline'}
-                    onClick={() => handleAiGenerationTypeChange('ugc')}
-                    className="h-auto p-4 flex flex-col items-center gap-2"
-                  >
-                    <Users className="w-6 h-6" />
-                    <div className="text-center">
-                      <div className="font-medium">UGC</div>
-                      <div className="text-sm text-gray-500">Contenu généré par utilisateur</div>
-                    </div>
-                  </Button>
-                </div>
-
-                {/* Prompt */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Prompt</label>
-                  <Textarea
-                    placeholder="Décrivez l'image que vous voulez générer..."
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                {/* Upload d'images pour édition/combinaison */}
-                {(selectedAiType === 'edit' || selectedAiType === 'combine') && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Images sources</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleAiSourceImageUpload}
-                        className="hidden"
-                        id="ai-source-upload"
-                      />
-                      <label
-                        htmlFor="ai-source-upload"
-                        className="cursor-pointer flex flex-col items-center gap-2"
-                      >
-                        <Upload className="w-8 h-8 text-gray-400" />
-                        <span className="text-sm text-gray-600">Cliquez pour ajouter des images</span>
-                      </label>
-                    </div>
-                    
-                    {/* Aperçu des images uploadées */}
-                    {aiSourceImages.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2">
-                        {aiSourceImages.map((image, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={image}
-                              alt={`Source ${index + 1}`}
-                              className="w-full h-20 object-cover rounded"
-                            />
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="absolute -top-2 -right-2 w-6 h-6 p-0"
-                              onClick={() => setAiSourceImages(prev => prev.filter((_, i) => i !== index))}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Bouton de génération */}
-                <Button
-                  onClick={handleAiImageGeneration}
-                  disabled={!aiPrompt.trim() || isGeneratingImage}
-                  className="w-full"
-                >
-                  {isGeneratingImage ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Génération en cours...
-                    </div>
-                  ) : (
-                    'Générer une image'
-                  )}
-                </Button>
-
-                {/* Images générées */}
-                {generatedImages.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Images générées</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      {generatedImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`Générée ${index + 1}`}
-                            className="w-full h-32 object-cover rounded"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
-                            <Button
-                              size="sm"
-                              onClick={() => handleAddGeneratedImage(image)}
-                            >
-                              Sauvegarder
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Modal Générer avec IA - Réutilise le composant de PostCreationModal */}
+          <AiImageGenerationModal
+            isOpen={aiModalOpen}
+            onClose={() => setAiModalOpen(false)}
+            onUseImage={handleAddGeneratedImage}
+          />
 
           {/* Modal Upload de fichiers */}
           <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
