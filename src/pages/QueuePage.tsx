@@ -125,30 +125,30 @@ const PendingPostCard: React.FC<{
       "bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all duration-200",
       getStatusColor(post.status)
     )}>
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+          <div className="flex items-start gap-3">
             <img 
               src={post.image} 
               alt="Post" 
-              className="w-16 h-16 object-cover rounded-lg"
+              className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg flex-shrink-0"
             />
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <User className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-900">{post.author}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <span className="text-sm font-medium text-gray-900 truncate">{post.author}</span>
                 <Badge className={statusBadge.color}>
                   {statusBadge.text}
                 </Badge>
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-500">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500">
                 <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>Créé le {format(new Date(post.createdAt), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+                  <Clock className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">Créé le {format(new Date(post.createdAt), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>Publié le {format(new Date(post.scheduledDate), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">Publié le {format(new Date(post.scheduledDate), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
                 </div>
               </div>
             </div>
@@ -156,13 +156,13 @@ const PendingPostCard: React.FC<{
         </div>
 
         <div className="mb-4">
-          <p className="text-gray-900 leading-relaxed">{post.content}</p>
+          <p className="text-gray-900 leading-relaxed line-clamp-3 md:line-clamp-none">{post.content}</p>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Plateformes :</span>
-            <div className="flex gap-1">
+            <span className="text-sm text-gray-600 flex-shrink-0">Plateformes:</span>
+            <div className="flex gap-1 flex-wrap">
               {post.platforms.map((platform) => (
                 <span key={platform} className="text-lg" title={platform}>
                   {platformIcons[platform as keyof typeof platformIcons]}
@@ -171,7 +171,7 @@ const PendingPostCard: React.FC<{
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -179,7 +179,7 @@ const PendingPostCard: React.FC<{
               className="flex items-center gap-1"
             >
               <Eye className="w-4 h-4" />
-              Aperçu
+              <span className="hidden sm:inline">Aperçu</span>
             </Button>
             <Button
               size="sm"
@@ -188,7 +188,7 @@ const PendingPostCard: React.FC<{
               className="flex items-center gap-1"
             >
               <Edit3 className="w-4 h-4" />
-              Modifier
+              <span className="hidden sm:inline">Modifier</span>
             </Button>
             <Button
               size="sm"
@@ -197,7 +197,7 @@ const PendingPostCard: React.FC<{
               className="flex items-center gap-1"
             >
               <XCircle className="w-4 h-4" />
-              Rejeter
+              <span className="hidden sm:inline">Rejeter</span>
             </Button>
             <Button
               size="sm"
@@ -205,7 +205,7 @@ const PendingPostCard: React.FC<{
               className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
             >
               <CheckCircle className="w-4 h-4" />
-              Valider
+              <span className="hidden sm:inline">Valider</span>
             </Button>
           </div>
         </div>
@@ -283,19 +283,19 @@ const QueueFilters: React.FC<{
   ];
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center gap-2 md:gap-4">
       {filters.map((filter) => (
         <button
           key={filter.id}
           onClick={() => onFilterChange(filter.id)}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors",
             activeFilter === filter.id
               ? "bg-blue-100 text-blue-700 border border-blue-200"
               : "text-gray-600 hover:bg-gray-100"
           )}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3 h-3 md:w-4 md:h-4" />
           {filter.label}
           <Badge variant="secondary" className="text-xs">
             {filter.count}
@@ -335,14 +335,32 @@ const QueuePage: React.FC = () => {
     ));
   };
 
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<PendingPost | null>(null);
+
   const handleEdit = (id: string) => {
-    // Ouvrir le modal d'édition
-    console.log('Edit post:', id);
+    const post = posts.find(p => p.id === id);
+    if (post) {
+      setEditingPost(post);
+      setEditModalOpen(true);
+    }
   };
 
   const handlePreview = (id: string) => {
-    // Ouvrir le modal d'aperçu
-    console.log('Preview post:', id);
+    const post = posts.find(p => p.id === id);
+    if (post) {
+      setEditingPost(post);
+      setPreviewModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = (updatedPost: PendingPost) => {
+    setPosts(prev => prev.map(post => 
+      post.id === updatedPost.id ? updatedPost : post
+    ));
+    setEditModalOpen(false);
+    setEditingPost(null);
   };
 
   const handleApproveAll = () => {
@@ -351,24 +369,25 @@ const QueuePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">File d'attente</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">File d'attente</h1>
+              <p className="text-gray-600 mt-1 text-sm md:text-base">
                 {posts.length} publication{posts.length > 1 ? 's' : ''} en attente
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Button 
                 onClick={handleApproveAll}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-sm md:text-base"
                 disabled={posts.length === 0}
               >
                 <CheckCheck className="w-4 h-4" />
-                Tout valider
+                <span className="hidden sm:inline">Tout valider</span>
+                <span className="sm:hidden">Valider</span>
               </Button>
             </div>
           </div>
@@ -416,6 +435,217 @@ const QueuePage: React.FC = () => {
           onConfirm={handleConfirmReject}
           postId={selectedPostId}
         />
+
+        {/* Modal d'aperçu */}
+        {editingPost && (
+          <PostPreviewModal
+            isOpen={previewModalOpen}
+            onClose={() => {
+              setPreviewModalOpen(false);
+              setEditingPost(null);
+            }}
+            post={editingPost}
+          />
+        )}
+
+        {/* Modal d'édition */}
+        {editingPost && (
+          <PostEditModal
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              setEditingPost(null);
+            }}
+            post={editingPost}
+            onSave={handleSaveEdit}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Composant PostPreviewModal
+const PostPreviewModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  post: PendingPost;
+}> = ({ isOpen, onClose, post }) => {
+  if (!isOpen) return null;
+
+  const platformIcons = {
+    facebook: '📘',
+    instagram: '📷',
+    twitter: '🐦',
+    linkedin: '💼',
+    tiktok: '🎵'
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">Aperçu de la publication</h3>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <XCircle className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Image */}
+            <div className="rounded-lg overflow-hidden">
+              <img 
+                src={post.image} 
+                alt="Preview" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+
+            {/* Contenu */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            </div>
+
+            {/* Métadonnées */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>Auteur: {post.author}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar className="w-4 h-4" />
+                <span>Publié le: {format(new Date(post.scheduledDate), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+              </div>
+            </div>
+
+            {/* Plateformes */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Plateformes:</span>
+              <div className="flex gap-2">
+                {post.platforms.map((platform) => (
+                  <span key={platform} className="text-2xl" title={platform}>
+                    {platformIcons[platform as keyof typeof platformIcons]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button onClick={onClose}>Fermer</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Composant PostEditModal
+const PostEditModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  post: PendingPost;
+  onSave: (post: PendingPost) => void;
+}> = ({ isOpen, onClose, post, onSave }) => {
+  const [editedContent, setEditedContent] = useState(post.content);
+  const [editedImage, setEditedImage] = useState(post.image);
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    onSave({
+      ...post,
+      content: editedContent,
+      image: editedImage
+    });
+  };
+
+  const platformIcons = {
+    facebook: '📘',
+    instagram: '📷',
+    twitter: '🐦',
+    linkedin: '💼',
+    tiktok: '🎵'
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">Modifier la publication</h3>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <XCircle className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Image */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL de l'image
+              </label>
+              <input
+                type="text"
+                value={editedImage}
+                onChange={(e) => setEditedImage(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {editedImage && (
+                <div className="mt-2 rounded-lg overflow-hidden">
+                  <img 
+                    src={editedImage} 
+                    alt="Preview" 
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Contenu */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contenu de la publication
+              </label>
+              <Textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="min-h-32"
+                placeholder="Écrivez votre contenu ici..."
+              />
+            </div>
+
+            {/* Métadonnées non éditables */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>Auteur: {post.author}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar className="w-4 h-4" />
+                <span>Publié le: {format(new Date(post.scheduledDate), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Plateformes:</span>
+                <div className="flex gap-1">
+                  {post.platforms.map((platform) => (
+                    <span key={platform} className="text-lg" title={platform}>
+                      {platformIcons[platform as keyof typeof platformIcons]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>Annuler</Button>
+            <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+              Enregistrer les modifications
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

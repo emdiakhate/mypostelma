@@ -206,31 +206,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   });
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden w-full">
       {/* Sidebar - Composant mémorisé */}
-      <Sidebar 
-        sidebarCollapsed={sidebarCollapsed}
-        activePage={activePage}
-        onPageChange={handlePageChange}
-        onToggleCollapse={handleToggleCollapse}
-      />
+      <div className={cn(
+        "hidden md:block flex-shrink-0",
+        sidebarCollapsed ? "w-16" : "w-72"
+      )}>
+        <Sidebar 
+          sidebarCollapsed={sidebarCollapsed}
+          activePage={activePage}
+          onPageChange={handlePageChange}
+          onToggleCollapse={handleToggleCollapse}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2"
+                className="p-2 flex-shrink-0"
               >
                 <Menu className="w-5 h-5" />
               </Button>
               
-              <h1 className="text-lg font-semibold text-gray-900">
+              <h1 className="text-base md:text-lg font-semibold text-gray-900 truncate">
                 {activePage === 'dashboard' && 'Dashboard'}
                 {activePage === 'calendar' && 'Calendrier'}
                 {activePage === 'analytics' && 'Analytics'}
@@ -245,14 +250,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </h1>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <UserMenu />
             </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       </div>
