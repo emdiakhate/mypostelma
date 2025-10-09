@@ -17,6 +17,7 @@ interface PublishOptionsSectionProps {
   isPublishing: boolean;
   hasPublishPermission: boolean;
   selectedAccountsCount: number;
+  isEditing?: boolean;
 }
 
 const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
@@ -31,7 +32,8 @@ const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
   onPublish,
   isPublishing,
   hasPublishPermission,
-  selectedAccountsCount
+  selectedAccountsCount,
+  isEditing = false
 }) => {
   return (
     <div className="space-y-4">
@@ -120,6 +122,28 @@ const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
 
       {/* Boutons d'action */}
       <div className="space-y-3">
+        {/* Bouton Enregistrer (en mode édition uniquement) */}
+        {isEditing && (
+          <Button 
+            onClick={onPublish}
+            disabled={
+              selectedAccountsCount === 0 || 
+              isPublishing || 
+              (publishType === 'scheduled' && !scheduledDateTime)
+            }
+            className="w-full font-semibold py-3 bg-blue-500 hover:bg-blue-600"
+          >
+            {isPublishing ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin"></div>
+                Enregistrement...
+              </div>
+            ) : (
+              'Enregistrer les modifications'
+            )}
+          </Button>
+        )}
+
         {/* Bouton Publier */}
         <Button 
           onClick={onPublish}

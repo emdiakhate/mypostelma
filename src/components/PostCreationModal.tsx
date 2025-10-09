@@ -440,6 +440,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             isPublishing={isPublishing}
             hasPublishPermission={hasPermission('canPublish')}
             selectedAccountsCount={selectedAccounts.length}
+            isEditing={isEditing}
           />
         </div>
 

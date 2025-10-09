@@ -9,8 +9,8 @@ export const AI_WEBHOOKS = {
   edit: 'https://malick000.app.n8n.cloud/webhook/ai-edit', 
   combine: 'https://malick000.app.n8n.cloud/webhook/ai-combine',
   ugc: 'https://malick000.app.n8n.cloud/webhook/ai-ugc',
-  captions: 'https://malick000.app.n8n.cloud/webhook/postelma',
-  publish: 'https://malick000.app.n8n.cloud/webhook/publish'
+  captions: 'https://n8n.srv837294.hstgr.cloud/webhook/captions',
+  publish: 'https://n8n.srv837294.hstgr.cloud/webhook/publish'
 } as const;
 
 // Types de génération IA disponibles

@@ -34,7 +34,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [previewingPost, setPreviewingPost] = useState<Post | null>(null);
 
   // Calculs optimisés avec useMemo pour éviter les recalculs inutiles
-  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate]);
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = addDays(weekStart, index);
@@ -128,9 +128,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }, [posts, onPostsChange]);
 
   const handlePreview = useCallback((post: Post) => {
-    // Navigation vers la page de détail du post
-    navigate(`/post/${post.id}`);
-  }, [navigate]);
+    setPreviewingPost(post);
+  }, []);
 
   const handleEdit = useCallback((post: Post) => {
     setEditingPost(post);
@@ -151,16 +150,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }, [posts, onPostsChange]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* Header du calendrier */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <h1 className="text-lg font-semibold">
+              <h1 className="text-lg font-semibold whitespace-nowrap">
                 {format(currentDate, 'MMMM yyyy', { locale: fr })}
               </h1>
               <Button variant="ghost" size="sm">
@@ -169,7 +168,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex bg-gray-100 rounded-lg p-1">
               <Button variant="ghost" size="sm" className="text-xs">Semaine</Button>
               <Button variant="ghost" size="sm" className="text-xs">Mois</Button>
@@ -187,69 +186,69 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex h-full">
+          <div className="flex h-full overflow-x-auto">
             {weekDays.map((day) => (
-              <div key={day.key} className="flex-1 border-r border-gray-200 flex flex-col min-w-0">
+              <div key={day.key} className="flex-1 min-w-[200px] border-r border-gray-200 flex flex-col">
                 {/* Day Header */}
-                <div className="p-2 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="p-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                  <div className="flex items-center justify-between group">
+                    <div>
                       <h3 className="font-medium text-xs text-gray-700">
-                      {day.name} {day.number}
-                    </h3>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                        {day.name} {day.number}
+                      </h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleCreatePost(day.key)}
                       className="h-5 w-5 p-0 hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </Button>
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
                 {/* Posts Column */}
                 <Droppable droppableId={day.key}>
-                {(provided, snapshot) => (
-                  <div
+                  {(provided, snapshot) => (
+                    <div
                       ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={cn(
-                        "flex-1 p-2 space-y-2 min-h-[200px]",
-                        snapshot.isDraggingOver && "bg-blue-50"
-                    )}
-                  >
-                    {postsByDay[day.key]?.map((post, index) => (
+                      {...provided.droppableProps}
+                      className={cn(
+                        "flex-1 p-2 space-y-2 overflow-y-auto",
+                        snapshot.isDraggingOver && "bg-blue-50 ring-2 ring-blue-300 ring-inset"
+                      )}
+                    >
+                      {postsByDay[day.key]?.map((post, index) => (
                         <Draggable key={post.id} draggableId={post.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={cn(
-                                "transition-transform",
-                                snapshot.isDragging && "rotate-2 scale-105"
-                            )}
-                          >
-                            <PostCard
-                              post={post}
-                              isDragging={snapshot.isDragging}
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={cn(
+                                "transition-all duration-200",
+                                snapshot.isDragging && "rotate-3 scale-105 opacity-80 shadow-lg"
+                              )}
+                            >
+                              <PostCard
+                                post={post}
+                                isDragging={snapshot.isDragging}
                                 onPreview={handlePreview}
                                 onEdit={handleEdit}
                                 onDuplicate={handleDuplicate}
                                 onDelete={handleDelete}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
             </div>
           ))}
         </div>
