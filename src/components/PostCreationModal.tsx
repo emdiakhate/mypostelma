@@ -239,14 +239,24 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [content, selectedTone, selectedPlatforms, campaign, generateCaptionsHook]);
 
   const publishPosts = useCallback(async () => {
-    if (!generatedCaptions || selectedAccounts.length === 0) return;
+    if (selectedAccounts.length === 0) {
+      alert('Veuillez sélectionner au moins un compte');
+      return;
+    }
+    
+    // Créer les captions finales (générées ou contenu par défaut)
+    const finalCaptions = generatedCaptions || 
+      selectedPlatforms.reduce((acc, platform) => {
+        acc[platform] = content;
+        return acc;
+      }, {} as Record<string, string>);
     
     try {
       if (publishType === 'now') {
         if (hasPermission('canPublish')) {
           await publishPost({
             type: 'immediate',
-            captions: generatedCaptions,
+            captions: finalCaptions,
             accounts: selectedAccounts,
             images: selectedImages
           });
@@ -255,7 +265,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         } else {
           await publishPost({
             type: 'approval',
-            captions: generatedCaptions,
+            captions: finalCaptions,
             accounts: selectedAccounts,
             images: selectedImages,
             author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
@@ -267,7 +277,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       } else if (scheduledDateTime) {
         await publishPost({
           type: 'scheduled',
-          captions: generatedCaptions,
+          captions: finalCaptions,
           accounts: selectedAccounts,
           images: selectedImages,
           scheduledDateTime
@@ -275,14 +285,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
         const scheduledPost = {
           id: isEditing && initialData?.id ? initialData.id : `post-${Date.now()}`,
-          content: generatedCaptions[selectedPlatforms[0]] || content,
+          content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
           image: selectedImages[0],
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
           status: 'scheduled',
-          captions: generatedCaptions,
+          captions: finalCaptions,
           author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown'
         };
 

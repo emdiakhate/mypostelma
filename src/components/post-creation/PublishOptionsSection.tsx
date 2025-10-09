@@ -148,7 +148,6 @@ const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
         <Button 
           onClick={onPublish}
           disabled={
-            selectedAccountsCount === 0 || 
             isPublishing || 
             (publishType === 'scheduled' && !scheduledDateTime)
           }
