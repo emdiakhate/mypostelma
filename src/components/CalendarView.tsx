@@ -15,7 +15,9 @@ interface CalendarViewProps {
   posts: Post[];
   currentDate: Date;
   onPostsChange: (posts: Post[]) => void;
-  onCreatePost: (dayColumn: string) => void;
+  onCreatePost: (post: Partial<Post>) => Promise<Post | undefined>;
+  onUpdatePost: (id: string, updates: Partial<Post>) => Promise<Post | undefined>;
+  onDeletePost: (id: string) => Promise<void>;
   onDateChange: (date: Date) => void;
 }
 
@@ -24,6 +26,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   currentDate,
   onPostsChange,
   onCreatePost,
+  onUpdatePost,
+  onDeletePost,
   onDateChange,
 }) => {
   // Hooks React Router
@@ -101,34 +105,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setShowCreateModal(true);
   }, []);
 
-  const handleSavePost = useCallback((postData: Partial<Post>) => {
-    const newPost: Post = {
-      id: `post-${Date.now()}`,
-      content: postData.content || '',
-      author: postData.author || 'Utilisateur',
-      image: postData.image || undefined,
-      scheduledTime: postData.scheduledTime || new Date(),
-      platforms: postData.platforms || ['facebook'],
-      status: 'scheduled' as const,
-      dayColumn: selectedDayForPost || 'lundi',
-      timeSlot: 9,
-    };
-    
-    onPostsChange([...posts, newPost]);
-    setShowCreateModal(false);
-    setSelectedDayForPost('');
-  }, [posts, onPostsChange, selectedDayForPost]);
+  const handleSavePost = useCallback(async (postData: Partial<Post>) => {
+    try {
+      await onCreatePost({
+        ...postData,
+        dayColumn: postData.dayColumn || selectedDayForPost || 'lundi',
+        timeSlot: postData.timeSlot || 9,
+      });
+      setShowCreateModal(false);
+      setSelectedDayForPost('');
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
+  }, [onCreatePost, selectedDayForPost]);
 
   const handlePostClick = useCallback((post: Post) => {
     setPreviewingPost(post);
   }, []);
 
-  const handleUpdatePost = useCallback((updatedPost: Post) => {
-    const newPosts = posts.map(p => p.id === updatedPost.id ? updatedPost : p);
-    onPostsChange(newPosts);
-    setEditingPost(null);
-    // Le calendrier est déjà affiché, pas besoin de redirection
-  }, [posts, onPostsChange]);
+  const handleUpdatePost = useCallback(async (updatedPost: Post) => {
+    try {
+      await onUpdatePost(updatedPost.id, updatedPost);
+      setEditingPost(null);
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
+  }, [onUpdatePost]);
 
   const handlePreview = useCallback((post: Post) => {
     setPreviewingPost(post);
@@ -138,19 +140,24 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setEditingPost(post);
   }, []);
 
-  const handleDuplicate = useCallback((post: Post) => {
-    const duplicatedPost: Post = {
-      ...post,
-      id: `post-${Date.now()}`,
-      status: 'draft' as const,
-    };
-    onPostsChange([...posts, duplicatedPost]);
-  }, [posts, onPostsChange]);
+  const handleDuplicate = useCallback(async (post: Post) => {
+    try {
+      await onCreatePost({
+        ...post,
+        status: 'draft' as const,
+      });
+    } catch (error) {
+      console.error('Error duplicating post:', error);
+    }
+  }, [onCreatePost]);
 
-  const handleDelete = useCallback((post: Post) => {
-    const newPosts = posts.filter(p => p.id !== post.id);
-    onPostsChange(newPosts);
-  }, [posts, onPostsChange]);
+  const handleDelete = useCallback(async (post: Post) => {
+    try {
+      await onDeletePost(post.id);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  }, [onDeletePost]);
 
   const handlePreviousWeek = useCallback(() => {
     onDateChange(addWeeks(currentDate, -1));

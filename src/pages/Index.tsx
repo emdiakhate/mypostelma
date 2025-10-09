@@ -12,10 +12,6 @@ const Index = () => {
     refetch();
   };
 
-  const handleCreatePost = (dayColumn: string) => {
-    console.log('Create post for day:', dayColumn);
-  };
-
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
   };
@@ -34,7 +30,9 @@ const Index = () => {
         posts={posts}
         currentDate={currentDate}
         onPostsChange={handlePostsChange}
-        onCreatePost={handleCreatePost}
+        onCreatePost={createPost}
+        onUpdatePost={updatePost}
+        onDeletePost={deletePost}
         onDateChange={handleDateChange}
       />
     </div>
