@@ -10,8 +10,6 @@ import { cn } from '@/lib/utils';
 import { FacebookPreview, TwitterPreview, InstagramPreview, LinkedInPreview, TikTokPreview, YouTubePreview } from './PreviewModal';
 import { useBestTime, useEngagementChart } from '@/hooks/useBestTime';
 import { useHashtagSuggestions, useHashtagSets } from '@/hooks/useHashtagStats';
-import { useAiImageGeneration } from '@/hooks/useAiImageGeneration';
-import { useAiCaptionGeneration } from '@/hooks/useAiCaptionGeneration';
 import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing';
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
@@ -155,22 +153,15 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const engagementChartData = useEngagementChart(selectedPlatforms[0] as any, []);
   const hashtagSuggestions = useHashtagSuggestions(content, selectedPlatforms[0] as any, []);
   const { hashtagSets } = useHashtagSets();
-  
-  // Hooks pour l'IA
-  const { 
-    isGenerating: isGeneratingImage, 
-    generatedImages,
-    generateImage 
-  } = useAiImageGeneration();
-
-  const {
-    isGenerating: isGeneratingCaptions,
-    generatedCaptions,
-    generateCaptions: generateCaptionsHook,
-    clearCaptions
-  } = useAiCaptionGeneration();
-
   const { isPublishing, publishPost } = usePostPublishing();
+
+  // États pour la génération d'images (désactivé - utiliser n8n)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+
+  // États pour les captions (désactivé - utiliser n8n)
+  const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
+  const [generatedCaptions, setGeneratedCaptions] = useState<any>(null);
 
   // Synchroniser selectedAccounts avec selectedPlatforms
   useEffect(() => {
@@ -209,16 +200,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [hashtagSets]);
 
   const handleAiImageGeneration = useCallback(async () => {
-    try {
-      await generateImage({
-        type: aiGenerationType,
-        prompt: aiPrompt,
-        sourceImages: aiSourceImages
-      });
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
-    }
-  }, [aiGenerationType, aiPrompt, aiSourceImages, generateImage]);
+    // Désactivé - utiliser n8n pour la génération d'images
+    alert('La génération d\'images est gérée via n8n. Veuillez configurer votre workflow n8n.');
+  }, []);
 
   const handleAddGeneratedImage = useCallback((imageUrl: string) => {
     setSelectedImages([imageUrl]);
@@ -226,17 +210,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, []);
 
   const generateCaptions = useCallback(async () => {
-    try {
-      await generateCaptionsHook({
-        content,
-        tone: selectedTone,
-        platform: selectedPlatforms[0] || 'instagram',
-        campaign
-      });
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
-    }
-  }, [content, selectedTone, selectedPlatforms, campaign, generateCaptionsHook]);
+    // Désactivé - utiliser n8n pour la génération de captions
+    alert('La génération de captions est gérée via n8n. Veuillez configurer votre workflow n8n.');
+  }, []);
+
+  const clearCaptions = useCallback(() => {
+    setGeneratedCaptions(null);
+  }, []);
 
   const publishPosts = useCallback(async () => {
     if (selectedAccounts.length === 0) {

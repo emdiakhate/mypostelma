@@ -36,7 +36,7 @@ export const useAuth = (): UseAuthReturn => {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading user role:', error);

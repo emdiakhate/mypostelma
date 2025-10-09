@@ -1,11 +1,10 @@
 /**
- * Hook pour gérer la publication de posts
+ * Hook pour gérer la publication de posts via webhook n8n
  */
 
 import { useState, useCallback } from 'react';
-import { AI_WEBHOOKS } from '@/data/aiConfig';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+
+const PUBLISH_WEBHOOK = 'https://n8n.srv837294.hstgr.cloud/webhook/publish';
 
 interface PublishParams {
   type: 'immediate' | 'scheduled' | 'approval';
@@ -43,7 +42,7 @@ export const usePostPublishing = (): UsePostPublishingResult => {
         })
       };
 
-      const response = await fetch(AI_WEBHOOKS.publish, {
+      const response = await fetch(PUBLISH_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
