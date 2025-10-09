@@ -14,16 +14,171 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      post_analytics: {
+        Row: {
+          comments: number | null
+          id: string
+          likes: number | null
+          post_id: string
+          reach: number | null
+          shares: number | null
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          comments?: number | null
+          id?: string
+          likes?: number | null
+          post_id: string
+          reach?: number | null
+          shares?: number | null
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          comments?: number | null
+          id?: string
+          likes?: number | null
+          post_id?: string
+          reach?: number | null
+          shares?: number | null
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          accounts: string[]
+          author_id: string
+          campaign: string | null
+          campaign_color: string | null
+          captions: Json | null
+          content: string
+          created_at: string
+          day_column: string | null
+          id: string
+          images: string[] | null
+          platforms: string[]
+          published_at: string | null
+          scheduled_time: string | null
+          status: Database["public"]["Enums"]["post_status"]
+          time_slot: number | null
+          updated_at: string
+        }
+        Insert: {
+          accounts?: string[]
+          author_id: string
+          campaign?: string | null
+          campaign_color?: string | null
+          captions?: Json | null
+          content: string
+          created_at?: string
+          day_column?: string | null
+          id?: string
+          images?: string[] | null
+          platforms?: string[]
+          published_at?: string | null
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          time_slot?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accounts?: string[]
+          author_id?: string
+          campaign?: string | null
+          campaign_color?: string | null
+          captions?: Json | null
+          content?: string
+          created_at?: string
+          day_column?: string | null
+          id?: string
+          images?: string[] | null
+          platforms?: string[]
+          published_at?: string | null
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          time_slot?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          name: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          email: string
+          id: string
+          is_active?: boolean
+          last_login?: string | null
+          name: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "manager" | "creator" | "viewer"
+      post_status: "pending" | "scheduled" | "published" | "failed" | "draft"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +305,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "manager", "creator", "viewer"],
+      post_status: ["pending", "scheduled", "published", "failed", "draft"],
+    },
   },
 } as const
