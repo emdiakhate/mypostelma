@@ -30,48 +30,7 @@ interface PostCreationModalProps {
   isEditing?: boolean;
 }
 
-
-// Sous-composant mémorisé pour la sélection des plateformes
-// Évite les re-rendus inutiles lors des changements d'autres états
-const PlatformSelector = memo<{
-  selectedPlatforms: string[];
-  onPlatformChange: (platforms: string[]) => void;
-}>(({ selectedPlatforms, onPlatformChange }) => {
-  const handlePlatformToggle = (platformId: string) => {
-    if (selectedPlatforms.includes(platformId)) {
-      onPlatformChange(selectedPlatforms.filter(p => p !== platformId));
-    } else {
-      onPlatformChange([...selectedPlatforms, platformId]);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium">Plateformes</label>
-      <div className="flex flex-wrap gap-2">
-        {PLATFORMS.map((platform) => (
-          <button
-            key={platform.id}
-            onClick={() => handlePlatformToggle(platform.id)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-              platform.bgClass,
-              platform.textClass,
-              selectedPlatforms.includes(platform.id) 
-                ? "ring-2 ring-offset-2 ring-primary" 
-                : "opacity-70 hover:opacity-100"
-            )}
-          >
-            {platform.name}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-});
-
 // Sous-composant mémorisé pour la section d'aperçu
-// Optimise les performances de l'aperçu qui se re-rend souvent
 const PreviewSection = memo<{
   selectedPlatforms: string[];
   activePreview: string;
@@ -80,7 +39,6 @@ const PreviewSection = memo<{
   selectedImages: string[];
   generatedCaptions: any;
 }>(({ selectedPlatforms, activePreview, onPreviewChange, content, selectedImages, generatedCaptions }) => {
-
   const renderPreview = () => {
     const currentCaption = generatedCaptions?.[activePreview as keyof typeof generatedCaptions];
     const displayContent = currentCaption || content || 'Votre contenu apparaîtra ici...';
@@ -116,7 +74,6 @@ const PreviewSection = memo<{
     <div className="w-1/2 bg-gray-50 p-6 border-l">
       <h3 className="text-lg font-semibold mb-4">Aperçu</h3>
       
-      {/* Platform Tabs */}
       {selectedPlatforms.length > 0 && (
         <div className="mb-4">
           <div className="flex gap-2">
@@ -128,9 +85,7 @@ const PreviewSection = memo<{
                   variant={activePreview === platform.id ? "default" : "ghost"}
                   size="sm"
                   onClick={() => onPreviewChange(platform.id)}
-                  className={cn(
-                    "text-xs flex-1 relative"
-                  )}
+                  className="text-xs flex-1 relative"
                 >
                   {platform.name}
                   {generatedCaptions?.[platform.id as keyof typeof generatedCaptions] && (
@@ -142,7 +97,6 @@ const PreviewSection = memo<{
         </div>
       )}
 
-      {/* Preview Content */}
       {selectedPlatforms.length > 0 ? (
         <div className="h-[calc(100vh-200px)] overflow-y-auto">
           <div className="scale-[0.9] origin-top-left">
@@ -170,115 +124,59 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [content, setContent] = useState(initialData?.content || '');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialData?.platforms || ['instagram']);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(initialData?.accounts || []);
-  const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.image || null);
   const [selectedImages, setSelectedImages] = useState<string[]>(
     initialData?.images || (initialData?.image ? [initialData.image] : [])
   );
   const [activePreview, setActivePreview] = useState('instagram');
-  const [author, setAuthor] = useState('Postelma');
   const [campaign, setCampaign] = useState(initialData?.campaign || '');
-  const [generatedCaptions, setGeneratedCaptions] = useState(initialData?.captions || null);
-  const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
   const [publishType, setPublishType] = useState<'now' | 'scheduled'>('now');
   const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
+  const [selectedTone, setSelectedTone] = useState<string>('automatic');
+  const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
 
-  // Nouveaux états pour la génération IA
+  // États pour la génération IA
   const [mediaSource, setMediaSource] = useState<'upload' | 'ai'>('upload');
   const [aiGenerationType, setAiGenerationType] = useState<'simple' | 'edit' | 'combine' | 'ugc'>('simple');
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiSourceImages, setAiSourceImages] = useState<string[]>([]);
-  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
 
-  // Hooks pour l'analyse des meilleurs moments
+  // Hooks pour l'analyse
   const bestTimeRecommendation = useBestTime(selectedPlatforms[0] as any, []);
   const engagementChartData = useEngagementChart(selectedPlatforms[0] as any, []);
-
-  // Hooks pour les hashtags
   const hashtagSuggestions = useHashtagSuggestions(content, selectedPlatforms[0] as any, []);
   const { hashtagSets } = useHashtagSets();
   
-  // États pour les hashtags
-  const [showHashtagSuggestions, setShowHashtagSuggestions] = useState(false);
-  const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
+  // Hooks pour l'IA
+  const { 
+    isGenerating: isGeneratingImage, 
+    generatedImages,
+    generateImage 
+  } = useAiImageGeneration();
 
-  // États pour le tone de voix
-  const [selectedTone, setSelectedTone] = useState<string>('automatic');
+  const {
+    isGenerating: isGeneratingCaptions,
+    generatedCaptions,
+    generateCaptions: generateCaptionsHook,
+    clearCaptions
+  } = useAiCaptionGeneration();
 
-  // Synchroniser selectedAccounts avec selectedPlatforms pour l'aperçu
+  const { isPublishing, publishPost } = usePostPublishing();
+
+  // Synchroniser selectedAccounts avec selectedPlatforms
   useEffect(() => {
     if (selectedAccounts.length > 0) {
-      // Convertir les IDs de comptes en plateformes
-      const platforms = selectedAccounts.map(accountId => {
-        // Pour l'instant, on utilise directement les IDs comme plateformes
-        // Dans une vraie implémentation, on récupérerait la plateforme depuis les données du compte
-        return accountId;
-      });
+      const platforms = selectedAccounts.map(accountId => accountId);
       setSelectedPlatforms(platforms);
     } else {
-      // Si aucun compte sélectionné, réinitialiser à Instagram par défaut
       setSelectedPlatforms(['instagram']);
     }
   }, [selectedAccounts]);
 
-  // Effet pour charger les données initiales en mode édition
-  useEffect(() => {
-    if (isEditing && initialData) {
-      // Charger l'image si elle existe
-      if (initialData.image && !selectedImages.includes(initialData.image)) {
-        setSelectedImages([initialData.image]);
-      }
-      // Charger les images multiples si elles existent
-      if (initialData.images && initialData.images.length > 0) {
-        setSelectedImages(initialData.images);
-      }
-    }
-  }, [isEditing, initialData, selectedImages]);
-
-
-  // Callbacks optimisés avec useCallback pour éviter les re-rendus inutiles
-  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const newImages: string[] = [];
-      Array.from(files).slice(0, 4 - selectedImages.length).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          newImages.push(e.target?.result as string);
-          if (newImages.length === Math.min(files.length, 4 - selectedImages.length)) {
-            setSelectedImages(prev => [...prev, ...newImages]);
-            setSelectedImage(newImages[0] || null);
-          }
-      };
-      reader.readAsDataURL(file);
-      });
-    }
-  }, [selectedImages.length]);
-
-  const removeImage = useCallback((index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    if (selectedImages.length > 1) {
-      setSelectedImage(selectedImages[index === 0 ? 1 : 0] || null);
-    } else {
-      setSelectedImage(null);
-    }
-  }, [selectedImages]);
-
-  // Callbacks optimisés pour les plateformes et l'aperçu
-  const handlePlatformChange = useCallback((platforms: string[]) => {
-    setSelectedPlatforms(platforms);
-    // Mettre à jour l'aperçu actif si la plateforme sélectionnée n'est plus disponible
-    if (platforms.length > 0 && !platforms.includes(activePreview)) {
-      setActivePreview(platforms[0]);
-    }
-  }, [activePreview]);
-
+  // Callbacks
   const handlePreviewChange = useCallback((platform: string) => {
     setActivePreview(platform);
   }, []);
 
-  // Fonctions pour les meilleurs moments
   const handleUseBestTime = useCallback((date: Date) => {
     setScheduledDateTime(date);
   }, []);
@@ -287,7 +185,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     setScheduledDateTime(date);
   }, []);
 
-  // Fonctions pour les hashtags
   const handleAddHashtag = useCallback((hashtag: string) => {
     const hashtagWithHash = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
     setContent(prev => prev + (prev.endsWith(' ') ? '' : ' ') + hashtagWithHash + ' ');
@@ -301,246 +198,98 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   }, [hashtagSets]);
 
-  const handleCopyHashtag = useCallback((hashtag: string) => {
-    navigator.clipboard.writeText(hashtag);
-  }, []);
-
-  // Fonctions pour la génération IA
-  const handleAiSourceImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const newImages: string[] = [];
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newImages.push(e.target?.result as string);
-          if (newImages.length === files.length) {
-            setAiSourceImages(prev => [...prev, ...newImages]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const removeAiSourceImage = (index: number) => {
-    setAiSourceImages(prev => prev.filter((_, i) => i !== index));
-  };
-
   const handleAiImageGeneration = async () => {
-    setIsGeneratingImage(true);
-    
     try {
-      const currentType = aiGenerationTypes.find(t => t.id === aiGenerationType);
-      if (!currentType) return;
-
-      // Validation pour les types qui nécessitent des images
-      if (currentType.requiresImages > 0 && aiSourceImages.length < currentType.requiresImages) {
-        alert(`Ce type de génération nécessite ${currentType.requiresImages} image(s)`);
-        return;
-      }
-
-      // Validation pour le prompt (sauf UGC)
-      if (aiGenerationType !== 'ugc' && !aiPrompt.trim()) {
-        alert('Veuillez saisir un prompt pour la génération');
-        return;
-      }
-
-      const webhookUrl = AI_WEBHOOKS[aiGenerationType];
-      const payload = {
+      await generateImage({
+        type: aiGenerationType,
         prompt: aiPrompt,
-        images: aiSourceImages,
-        type: aiGenerationType
-      };
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        sourceImages: aiSourceImages
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.imageUrl) {
-          setGeneratedImages(prev => [...prev, data.imageUrl]);
-        } else {
-          alert('Erreur lors de la génération: ' + (data.message || 'Erreur inconnue'));
-        }
-      } else {
-        alert('Erreur lors de la génération');
-      }
     } catch (error) {
-      console.error('Erreur génération IA:', error);
-      alert('Erreur lors de la génération');
-    } finally {
-      setIsGeneratingImage(false);
+      alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
     }
   };
 
   const handleAddGeneratedImage = (imageUrl: string) => {
     setSelectedImages([imageUrl]);
-    setSelectedImage(imageUrl);
-    setMediaSource('upload'); // Retourner à l'onglet upload
+    setMediaSource('upload');
   };
 
-  // Fonction pour calculer le slot temporel
-  const calculateTimeSlot = (date: Date) => {
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    return hour * 60 + minute; // Convertir en minutes depuis minuit
-  };
-
-  // Fonction pour générer les captions
   const generateCaptions = async () => {
-    if (!content.trim()) {
-      alert('Veuillez saisir du contenu pour votre publication.');
-      return;
-    }
-
-    setIsGeneratingCaptions(true);
-    
     try {
-      // Préparer le payload avec le tone de voix
-      const payload = {
-        prompt: content,
+      await generateCaptionsHook({
+        content,
         tone: selectedTone,
         platform: selectedPlatforms[0] || 'instagram',
-        context: {
-          product: campaign || 'Postelma',
-          target: 'audience générale'
-        }
-      };
-
-      const response = await fetch('https://malick000.app.n8n.cloud/webhook/postelma', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        campaign
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        setGeneratedCaptions(result.captions);
-      }
     } catch (error) {
-      console.error('Erreur génération:', error);
-    } finally {
-      setIsGeneratingCaptions(false);
+      alert(error instanceof Error ? error.message : 'Erreur lors de la génération');
     }
   };
 
-  // Fonction pour publier
   const publishPosts = async () => {
     if (!generatedCaptions || selectedAccounts.length === 0) return;
     
-    setIsPublishing(true);
-    
     try {
       if (publishType === 'now') {
-        // Vérifier les permissions pour la publication
         if (hasPermission('canPublish')) {
-          // Publication immédiate via N8N
-          const publishData = {
+          await publishPost({
+            type: 'immediate',
             captions: generatedCaptions,
-            accounts: selectedAccounts, // Utiliser les comptes sélectionnés
-            images: selectedImages,
-            type: 'immediate'
-          };
-
-          const response = await fetch('https://malick000.app.n8n.cloud/webhook/publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(publishData),
+            accounts: selectedAccounts,
+            images: selectedImages
           });
-
-          if (response.ok) {
-            alert('Publications envoyées avec succès !');
-            onClose();
-          } else {
-            alert('Erreur lors de la publication');
-          }
+          alert('Publications envoyées avec succès !');
+          onClose();
         } else {
-          // Soumission pour approbation (Creator)
-          const approvalData = {
-            captions: generatedCaptions,
-            accounts: selectedAccounts, // Utiliser les comptes sélectionnés
-            images: selectedImages,
+          await publishPost({
             type: 'approval',
+            captions: generatedCaptions,
+            accounts: selectedAccounts,
+            images: selectedImages,
             author: currentUser?.name,
             authorId: currentUser?.id
-          };
-
-          // TODO: Envoyer à la queue d'approbation
-          console.log('Soumission pour approbation:', approvalData);
+          });
           alert('Contenu soumis pour approbation !');
           onClose();
         }
-      } else {
-        // Publication programmée via N8N avec date
-        const publishData = {
-          captions: generatedCaptions,
-          accounts: selectedAccounts, // Utiliser les comptes sélectionnés
-          images: selectedImages,
+      } else if (scheduledDateTime) {
+        await publishPost({
           type: 'scheduled',
-          scheduledDateTime: scheduledDateTime?.toISOString()
-        };
-
-        const response = await fetch('https://malick000.app.n8n.cloud/webhook/publish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(publishData),
+          captions: generatedCaptions,
+          accounts: selectedAccounts,
+          images: selectedImages,
+          scheduledDateTime
         });
 
-        if (response.ok) {
-          // Ajout au calendrier local aussi
-          const scheduledPost = {
-            id: isEditing ? initialData?.id : `post-${Date.now()}`,
-            content: generatedCaptions[selectedPlatforms[0]] || content,
-            platforms: selectedPlatforms,
-            image: selectedImages[0],
-            scheduledTime: scheduledDateTime,
-            dayColumn: scheduledDateTime ? format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase() : selectedDay || 'monday',
-            timeSlot: scheduledDateTime ? calculateTimeSlot(scheduledDateTime) : 0,
-            status: 'scheduled',
-            captions: generatedCaptions
-          };
+        const scheduledPost = {
+          id: isEditing ? initialData?.id : `post-${Date.now()}`,
+          content: generatedCaptions[selectedPlatforms[0]] || content,
+          platforms: selectedPlatforms,
+          image: selectedImages[0],
+          scheduledTime: scheduledDateTime,
+          dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
+          timeSlot: calculateTimeSlot(scheduledDateTime),
+          status: 'scheduled',
+          captions: generatedCaptions
+        };
 
-          // Callback pour ajouter au calendrier
-          onSave(scheduledPost);
-          alert('Post programmé avec succès !');
-    onClose();
-        }
+        onSave(scheduledPost);
+        alert('Post programmé avec succès !');
+        onClose();
       }
     } catch (error) {
       console.error('Erreur:', error);
-    } finally {
-      setIsPublishing(false);
+      alert('Erreur lors de la publication');
     }
   };
-
-  const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platformId) 
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    );
-    // Update active preview logic
-    if (!selectedPlatforms.includes(platformId)) {
-      setActivePreview(platformId);
-    }
-  };
-
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex">
-        
-        {/* Left Panel - Form */}
         <div className="w-1/2 p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">
@@ -588,6 +337,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
                   })}
                 </SelectContent>
               </Select>
+            </div>
             
             {/* Bouton Générer les captions IA */}
             <div className="mt-4">
@@ -619,7 +369,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             onUseGeneratedImage={handleAddGeneratedImage}
           />
 
-          {/* Comptes connectés - Nouveau sélecteur */}
+          {/* Comptes connectés */}
           <div className="mb-6">
             <ConnectedAccountsSelector 
               selectedAccounts={selectedAccounts}
@@ -659,7 +409,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             campaign={campaign}
             onCampaignChange={setCampaign}
             generatedCaptions={generatedCaptions}
-            onRegenerateCaptions={() => setGeneratedCaptions(null)}
+            onRegenerateCaptions={clearCaptions}
             onPublish={publishPosts}
             isPublishing={isPublishing}
             hasPublishPermission={hasPermission('canPublish')}
@@ -667,7 +417,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           />
         </div>
 
-        {/* Right Panel - Preview - Composant mémorisé */}
         <PreviewSection 
           selectedPlatforms={selectedPlatforms}
           activePreview={activePreview}
