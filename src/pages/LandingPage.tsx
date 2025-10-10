@@ -59,6 +59,15 @@ const LandingPage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated, loading } = useAuth();
 
+  // 4. GESTION DU SCROLL
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Rediriger vers l'app si l'utilisateur est déjà connecté
   if (loading) {
     return (
@@ -71,15 +80,6 @@ const LandingPage: React.FC = () => {
   if (isAuthenticated) {
     return <Navigate to="/app/calendar" replace />;
   }
-
-  // 4. GESTION DU SCROLL
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // 5. ANIMATIONS FRAMER MOTION
   const fadeInUp = {
