@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback, useMemo } from 'react';
+import React, { useState, memo, useCallback, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { Post } from '@/types/Post';
@@ -10,6 +10,8 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, startOfWeek, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CalendarViewProps {
   posts: Post[];
@@ -32,12 +34,39 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   // Hooks React Router
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [draggedPost, setDraggedPost] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDayForPost, setSelectedDayForPost] = useState<string>('');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [previewingPost, setPreviewingPost] = useState<Post | null>(null);
+
+  // Subscribe to realtime updates for posts
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('calendar-posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => {
+          // Trigger a refetch by calling onPostsChange with current posts
+          // This will cause the parent to refetch
+          onPostsChange(posts);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // Calculs optimisés avec useMemo pour éviter les recalculs inutiles
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
