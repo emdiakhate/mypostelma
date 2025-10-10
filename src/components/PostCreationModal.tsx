@@ -141,7 +141,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [campaign, setCampaign] = useState(initialData?.campaign || '');
   const [publishType, setPublishType] = useState<'now' | 'scheduled'>('now');
   const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
-  const [selectedTone, setSelectedTone] = useState<string>('automatic');
+  const [tone, setTone] = useState<string>('automatic');
   const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
 
   // États pour la génération IA
@@ -424,7 +424,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             {/* Tone de voix */}
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">Tone de voix</label>
-              <Select value={selectedTone} onValueChange={setSelectedTone}>
+              <Select value={tone} onValueChange={setTone}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionner un tone" />
                 </SelectTrigger>
