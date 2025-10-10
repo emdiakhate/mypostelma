@@ -127,15 +127,6 @@ const PostCard: React.FC<PostCardProps> = memo(({
         isDragging && "opacity-75 transform rotate-1 shadow-lg"
       )}
     >
-      {/* Badge de statut */}
-      {statusBadge && (
-        <div className={cn(
-          "absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full z-10",
-          statusBadge.className
-        )}>
-          {statusBadge.text}
-        </div>
-      )}
       {/* Header: Time and platforms */}
       <div className="flex items-center justify-between p-2 pb-1">
         <span className="text-xs font-medium text-foreground">
@@ -176,6 +167,18 @@ const PostCard: React.FC<PostCardProps> = memo(({
           </div>
           <span className="text-[10px] text-muted-foreground truncate">{post.author}</span>
         </div>
+
+        {/* Badge de statut */}
+        {statusBadge && (
+          <div className="mb-2">
+            <div className={cn(
+              "inline-block px-2 py-1 text-xs font-medium rounded-full",
+              statusBadge.className
+            )}>
+              {statusBadge.text}
+            </div>
+          </div>
+        )}
 
         {/* Content - exactly 2 lines */}
         <p className="text-xs text-foreground mb-3 line-clamp-2 leading-tight flex-shrink-0">
