@@ -30,17 +30,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const activePage = useMemo(() => {
     const path = location.pathname;
     
-    if (path === '/dashboard') return 'dashboard';
-    if (path === '/calendar') return 'calendar';
-    if (path === '/analytics') return 'analytics';
-    if (path === '/queue') return 'queue';
-    if (path === '/archives') return 'archives';
-    if (path === '/competitors') return 'competitors';
-    if (path === '/team') return 'team';
-    if (path === '/settings') return 'settings';
-    if (path === '/settings/accounts') return 'accounts';
-    if (path === '/leads') return 'leads';
-    if (path === '/publications') return 'publications';
+    if (path === '/app/dashboard') return 'dashboard';
+    if (path === '/app/calendar') return 'calendar';
+    if (path === '/app/analytics') return 'analytics';
+    if (path === '/app/queue') return 'queue';
+    if (path === '/app/archives') return 'archives';
+    if (path === '/app/competitors') return 'competitors';
+    if (path === '/app/team') return 'team';
+    if (path === '/app/settings') return 'settings';
+    if (path === '/app/settings/accounts') return 'accounts';
+    if (path === '/app/leads') return 'leads';
+    if (path === '/app/publications') return 'publications';
     
     return 'dashboard'; // Par défaut sur dashboard
   }, [location.pathname]);
@@ -49,37 +49,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handlePageChange = useCallback((page: string) => {
     switch (page) {
       case 'dashboard':
-        navigate('/dashboard');
+        navigate('/app/dashboard');
         break;
       case 'calendar':
-        navigate('/calendar');
+        navigate('/app/calendar');
         break;
       case 'analytics':
-        navigate('/analytics');
+        navigate('/app/analytics');
         break;
       case 'queue':
-        navigate('/queue');
+        navigate('/app/queue');
         break;
       case 'archives':
-        navigate('/archives');
+        navigate('/app/archives');
         break;
       case 'competitors':
-        navigate('/competitors');
+        navigate('/app/competitors');
         break;
       case 'leads':
-        navigate('/leads');
+        navigate('/app/leads');
         break;
       case 'publications':
-        navigate('/publications');
+        navigate('/app/publications');
         break;
       case 'settings':
-        navigate('/settings');
+        navigate('/app/settings');
         break;
       case 'logout':
         navigate('/logout');
         break;
       default:
-        navigate('/dashboard');
+        navigate('/app/dashboard');
     }
   }, [navigate]);
 
@@ -142,22 +142,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 // Déterminer l'URL basée sur l'ID de l'item
                 const getItemUrl = (id: string) => {
                   switch (id) {
-                    case 'dashboard': return '/dashboard';
-                    case 'calendar': return '/calendar';
-                    case 'analytics': return '/analytics';
-                    case 'publications': return '/publications';
+                    case 'dashboard': return '/app/dashboard';
+                    case 'calendar': return '/app/calendar';
+                    case 'analytics': return '/app/analytics';
+                    case 'publications': return '/app/publications';
                     case 'logout': return '/logout';
-                    case 'settings': return '/settings';
-                    case 'queue': return '/queue';
-                    case 'archives': return '/archives';
-                    case 'competitors': return '/competitors';
-                    case 'users': return '/users';
-                    case 'team': return '/team';
-                    case 'accounts': return '/settings/accounts';
-                    case 'leads': return '/leads';
-                    case 'leads-analytics': return '/leads/analytics';
-                    case 'leads-search': return '/leads/search';
-                    default: return '/dashboard';
+                    case 'settings': return '/app/settings';
+                    case 'queue': return '/app/queue';
+                    case 'archives': return '/app/archives';
+                    case 'competitors': return '/app/competitors';
+                    case 'users': return '/app/users';
+                    case 'team': return '/app/team';
+                    case 'accounts': return '/app/settings/accounts';
+                    case 'leads': return '/app/leads';
+                    case 'leads-analytics': return '/app/leads/analytics';
+                    case 'leads-search': return '/app/leads/search';
+                    default: return '/app/dashboard';
                   }
                 };
 
