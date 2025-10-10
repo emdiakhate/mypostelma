@@ -55,18 +55,21 @@ const PostCard: React.FC<PostCardProps> = memo(({
   onDelete 
 }) => {
   // Utilisation du hook personnalisé pour gérer l'image
-  const { imageUrl, isLoading, error } = useImageLoader(post.image);
+  const { imageUrl, isLoading, error } = useImageLoader(post.images?.[0] || post.image);
   
   // Debug: afficher les informations de l'image
+  const firstImage = post.images?.[0] || post.image;
   console.log('PostCard Debug:', {
     postId: post.id,
     postImage: post.image,
+    postImages: post.images,
+    firstImage,
     imageUrl,
     isLoading,
     error,
-    hasImage: !!post.image,
-    imageType: post.image ? typeof post.image : 'undefined',
-    imageLength: post.image ? post.image.length : 0
+    hasImage: !!firstImage,
+    imageType: firstImage ? typeof firstImage : 'undefined',
+    imageLength: firstImage ? firstImage.length : 0
   });
   
   // Vérification des permissions
@@ -130,7 +133,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
 
         {/* Image - Optimisée avec useImageLoader */}
         <div className="mb-2 max-h-[70px] overflow-hidden">
-          {post.image && (
+          {firstImage && (
             <div className="relative w-full h-[70px] rounded-md overflow-hidden bg-muted">
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100">

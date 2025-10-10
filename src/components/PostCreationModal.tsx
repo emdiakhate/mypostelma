@@ -336,8 +336,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           id: `post-${Date.now()}`,
           content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
-          image: selectedImages[0] || null,
-          images: selectedImages,
+          images: selectedImages, // Passer images au lieu de image
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
@@ -349,7 +348,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         };
 
         console.log('Saving scheduled post:', scheduledPost);
-        console.log('Post image:', scheduledPost.image);
+        console.log('Post images:', scheduledPost.images);
+        
+        // Laisser le système CalendarView gérer la sauvegarde via onCreatePost
         onSave(scheduledPost);
         alert('Post programmé avec succès !');
         onClose();
