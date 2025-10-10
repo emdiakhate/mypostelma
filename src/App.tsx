@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -29,7 +30,6 @@ function MainLayout() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Navigate to="/calendar" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calendar" element={<Index />} />
         <Route path="/analytics" element={<Analytics />} />
@@ -53,7 +53,8 @@ function MainLayout() {
 const ProtectedRoutes = () => {
   return (
     <Routes>
-      {/* Route publique */}
+      {/* Route publique - Landing Page */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       
       {/* Route de déconnexion - SANS Layout */}
@@ -61,7 +62,7 @@ const ProtectedRoutes = () => {
 
       {/* Routes protégées */}
       <Route
-        path="/*"
+        path="/app/*"
         element={
           <ProtectedRoute>
             <MainLayout />
