@@ -18,6 +18,8 @@ import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
 import PublishOptionsSection from './post-creation/PublishOptionsSection';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload } from '@/config/webhooks';
+import { toast } from 'sonner';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -210,9 +212,36 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, []);
 
   const generateCaptions = useCallback(async () => {
-    // Désactivé - utiliser n8n pour la génération de captions
-    alert('La génération de captions est gérée via n8n. Veuillez configurer votre workflow n8n.');
-  }, []);
+    if (!content.trim()) {
+      toast.error('Veuillez saisir du contenu avant de générer les captions');
+      return;
+    }
+
+    setIsGeneratingCaptions(true);
+    
+    try {
+      const payload: CaptionsWebhookPayload = {
+        content: content,
+        platform: selectedPlatforms.join(','),
+        tone: tone,
+        language: 'fr'
+      };
+
+      const response = await callWebhook(WEBHOOK_URLS.CAPTIONS, payload);
+      
+      if (response && response.captions) {
+        setGeneratedCaptions(response.captions);
+        toast.success('Captions générées avec succès !');
+      } else {
+        toast.error('Erreur lors de la génération des captions');
+      }
+    } catch (error) {
+      console.error('Erreur génération captions:', error);
+      toast.error('Erreur lors de la génération des captions');
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
+  }, [content, selectedPlatforms, tone]);
 
   const clearCaptions = useCallback(() => {
     setGeneratedCaptions(null);
@@ -220,9 +249,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
   const publishPosts = useCallback(async () => {
     if (selectedAccounts.length === 0) {
-      alert('Veuillez sélectionner au moins un compte');
+      toast.error('Veuillez sélectionner au moins un compte');
       return;
     }
+    
+    setIsPublishing(true);
     
     // Créer les captions finales (générées ou contenu par défaut)
     const finalCaptions = generatedCaptions || 
@@ -232,6 +263,25 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }, {} as Record<string, string>);
     
     try {
+      // Appeler le webhook de publication
+      const payload: PublishWebhookPayload = {
+        content: finalCaptions[selectedPlatforms[0]] || content,
+        media: selectedImages,
+        platforms: selectedPlatforms,
+        accounts: selectedAccounts,
+        publishType: publishType,
+        scheduledDate: publishType === 'scheduled' && scheduledDateTime ? scheduledDateTime.toISOString() : undefined
+      };
+
+      const webhookUrl = publishType === 'now' ? WEBHOOK_URLS.PUBLISH : WEBHOOK_URLS.SCHEDULE;
+      const response = await callWebhook(webhookUrl, payload);
+      
+      if (response && response.success) {
+        toast.success(publishType === 'now' ? 'Publication réussie !' : 'Publication programmée !');
+      } else {
+        toast.error('Erreur lors de la publication');
+        return;
+      }
       // Si on est en mode édition et qu'on a une date programmée, on met à jour le post
       if (isEditing && scheduledDateTime) {
         const scheduledPost = {
@@ -318,8 +368,10 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         onClose();
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la publication');
+      console.error('Erreur publication:', error);
+      toast.error('Erreur lors de la publication');
+    } finally {
+      setIsPublishing(false);
     }
   }, [
     generatedCaptions, 

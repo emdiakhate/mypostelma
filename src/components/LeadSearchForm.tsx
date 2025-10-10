@@ -27,6 +27,8 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { LeadSearchParams } from '@/types/leads';
 import { cn } from '@/lib/utils';
+import { WEBHOOK_URLS, callWebhook, ScrappingWebhookPayload } from '@/config/webhooks';
+import { toast } from 'sonner';
 
 interface LeadSearchFormProps {
   onSearch: (params: LeadSearchParams) => void;
@@ -55,14 +57,37 @@ const LeadSearchForm: React.FC<LeadSearchFormProps> = ({
     includeSocial: true
   });
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     if (!searchParams.query.trim() || !searchParams.city.trim()) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
     
-    onSearch(searchParams);
+    try {
+      const payload: ScrappingWebhookPayload = {
+        query: searchParams.query,
+        city: searchParams.city,
+        maxResults: searchParams.maxResults,
+        includeEmail: searchParams.includeEmail,
+        includePhone: searchParams.includePhone,
+        includeSocial: searchParams.includeSocial
+      };
+
+      const response = await callWebhook(WEBHOOK_URLS.SCRAPPING, payload);
+      
+      if (response && response.leads) {
+        toast.success(`${response.leads.length} leads trouvés !`);
+        // Appeler la fonction onSearch avec les résultats
+        onSearch(searchParams);
+      } else {
+        toast.error('Aucun lead trouvé');
+      }
+    } catch (error) {
+      console.error('Erreur recherche leads:', error);
+      toast.error('Erreur lors de la recherche de leads');
+    }
   };
 
   const handleInputChange = (field: keyof LeadSearchParams, value: any) => {
