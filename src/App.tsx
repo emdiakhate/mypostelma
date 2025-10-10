@@ -55,6 +55,7 @@ const ProtectedRoutes = () => {
     <Routes>
       {/* Route publique - Landing Page */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       
       {/* Route de déconnexion - SANS Layout */}
