@@ -14,12 +14,12 @@ import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing'
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
 import { TONE_OPTIONS } from '@/data/toneOptions';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload } from '@/config/webhooks';
+import { toast } from 'sonner';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
 import PublishOptionsSection from './post-creation/PublishOptionsSection';
-import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload } from '@/config/webhooks';
-import { toast } from 'sonner';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -205,9 +205,51 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [hashtagSets]);
 
   const handleAiImageGeneration = useCallback(async () => {
-    // Désactivé - utiliser n8n pour la génération d'images
-    alert('La génération d\'images est gérée via n8n. Veuillez configurer votre workflow n8n.');
-  }, []);
+    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
+      // Utiliser le webhook N8N pour l'édition et la combinaison
+      if (!aiPrompt.trim()) {
+        toast.error('Veuillez saisir un prompt pour la génération');
+        return;
+      }
+      
+      if (aiSourceImages.length === 0) {
+        toast.error('Veuillez ajouter des images sources');
+        return;
+      }
+      
+      setIsGeneratingImage(true);
+      try {
+        const payload: AiEditCombineWebhookPayload = {
+          type: aiGenerationType,
+          prompt: aiPrompt,
+          sourceImages: aiSourceImages,
+          options: {
+            style: 'realistic',
+            intensity: 0.8,
+            quality: 'high'
+          }
+        };
+        
+        console.log('AI Generation payload:', payload);
+        const response = await callWebhook(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        if (response && response.images && response.images.length > 0) {
+          setGeneratedImages(response.images);
+          toast.success(`${response.images.length} image(s) générée(s) avec succès !`);
+        } else {
+          toast.error('Aucune image générée');
+        }
+      } catch (error) {
+        console.error('Erreur génération IA:', error);
+        toast.error('Erreur lors de la génération d\'images');
+      } finally {
+        setIsGeneratingImage(false);
+      }
+    } else {
+      // Pour les autres types (simple, ugc), garder l'ancien comportement
+      toast.info('Génération simple et UGC non encore implémentées via webhook');
+    }
+  }, [aiGenerationType, aiPrompt, aiSourceImages]);
 
   const handleAddGeneratedImage = useCallback((imageUrl: string) => {
     setSelectedImages([imageUrl]);

@@ -14,7 +14,10 @@ export const WEBHOOK_URLS = {
   PUBLISH: 'https://n8n.srv837294.hstgr.cloud/webhook/publish',
   
   // Programmation de posts (même URL que PUBLISH)
-  SCHEDULE: 'https://n8n.srv837294.hstgr.cloud/webhook/publish'
+  SCHEDULE: 'https://n8n.srv837294.hstgr.cloud/webhook/publish',
+  
+  // Génération d'images IA (édition et combinaison)
+  AI_EDIT_COMBINE: 'https://n8n.srv837294.hstgr.cloud/webhook/ai-edit-combine'
 } as const;
 
 /**
@@ -43,6 +46,17 @@ export interface PublishWebhookPayload {
   accounts: string[];
   publishType: 'now' | 'scheduled';
   scheduledDate?: string;
+}
+
+export interface AiEditCombineWebhookPayload {
+  type: 'edit' | 'combine';
+  prompt: string;
+  sourceImages: string[];
+  options?: {
+    style?: string;
+    intensity?: number;
+    quality?: string;
+  };
 }
 
 /**
