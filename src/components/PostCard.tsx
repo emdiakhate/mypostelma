@@ -99,7 +99,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
           </span>
         
         <div className="flex items-center gap-1">
-          {post.platforms.map((platform) => {
+          {post.platforms.slice(0, 2).map((platform) => {
             const config = getPlatformConfig(platform);
             return (
               <div
@@ -114,6 +114,13 @@ const PostCard: React.FC<PostCardProps> = memo(({
               </div>
             );
           })}
+          {post.platforms.length > 2 && (
+            <div className="w-5 h-5 rounded bg-gray-600 flex items-center justify-center">
+              <span className="text-white text-xs font-medium">
+                +{post.platforms.length - 2}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -155,11 +162,6 @@ const PostCard: React.FC<PostCardProps> = memo(({
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
                   Image non disponible
-                </div>
-              )}
-              {post.platforms.length > 1 && (
-                <div className="absolute top-1 right-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
-                  +{post.platforms.length - 1}
                 </div>
               )}
             </div>
