@@ -39,6 +39,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [previewingPost, setPreviewingPost] = useState<Post | null>(null);
 
+  // Debug: Vérifier les posts
+  console.log('CalendarView - Posts loaded:', posts.length, 'posts');
+  console.log('CalendarView - First post:', posts[0]);
+
   // Calculs optimisés avec useMemo pour éviter les recalculs inutiles
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
@@ -263,6 +267,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     >
                       {postsByDay[day.key]?.map((post, index) => {
                         console.log('Rendering post:', post.id, 'for day:', day.key);
+                        if (!post.id) {
+                          console.error('Post without ID:', post);
+                          return null;
+                        }
                         return (
                         <Draggable key={post.id} draggableId={String(post.id)} index={index}>
                           {(provided, snapshot) => (
