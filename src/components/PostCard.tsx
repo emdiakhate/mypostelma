@@ -57,6 +57,15 @@ const PostCard: React.FC<PostCardProps> = memo(({
   // Utilisation du hook personnalisé pour gérer l'image
   const { imageUrl, isLoading, error } = useImageLoader(post.image);
   
+  // Debug: afficher les informations de l'image
+  console.log('PostCard Debug:', {
+    postId: post.id,
+    postImage: post.image,
+    imageUrl,
+    isLoading,
+    error
+  });
+  
   // Vérification des permissions
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('canPublish');
@@ -118,7 +127,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
 
         {/* Image - Optimisée avec useImageLoader */}
         <div className="mb-2 max-h-[70px] overflow-hidden">
-          {imageUrl && (
+          {post.image && (
             <div className="relative w-full h-[70px] rounded-md overflow-hidden bg-muted">
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -127,22 +136,26 @@ const PostCard: React.FC<PostCardProps> = memo(({
               ) : error ? (
                 <div className="w-full h-full flex items-center justify-center bg-red-50 text-red-500 text-xs">
                   Erreur image
-      </div>
-              ) : (
-          <img 
+                </div>
+              ) : imageUrl ? (
+                <img 
                   src={imageUrl} 
-            alt="Post content" 
+                  alt="Post content" 
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     console.warn('Erreur de chargement de l\'image:', error);
                   }}
-          />
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
+                  Image non disponible
+                </div>
               )}
-          {post.platforms.length > 1 && (
+              {post.platforms.length > 1 && (
                 <div className="absolute top-1 right-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
-              +{post.platforms.length - 1}
-            </div>
-          )}
+                  +{post.platforms.length - 1}
+                </div>
+              )}
             </div>
           )}
         </div>
