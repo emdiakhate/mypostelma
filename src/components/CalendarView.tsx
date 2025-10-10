@@ -69,17 +69,26 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Callbacks optimisés avec useCallback
   const handleDragStart = useCallback((result: any) => {
+    console.log('Drag started:', result);
     setDraggedPost(result.draggableId);
   }, []);
 
-  const handleDragEnd = useCallback((result: DropResult) => {
+  const handleDragEnd = useCallback(async (result: DropResult) => {
+    console.log('Drag ended:', result);
     setDraggedPost(null);
 
-    if (!result.destination) return;
+    if (!result.destination) {
+      console.log('No destination, drag cancelled');
+      return;
+    }
 
     const { source, destination, draggableId } = result;
+    console.log('Source:', source, 'Destination:', destination, 'DraggableId:', draggableId);
 
-    if (source.droppableId === destination.droppableId) return;
+    if (source.droppableId === destination.droppableId) {
+      console.log('Same droppable, no change needed');
+      return;
+    }
     
     const post = posts.find(p => p.id === draggableId);
     if (!post) return;
@@ -93,10 +102,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     newScheduledTime.setMonth(targetDate.getMonth());
     newScheduledTime.setFullYear(targetDate.getFullYear());
     
-    const updatedPost = { ...post, scheduledTime: newScheduledTime };
-    const newPosts = posts.map(p => p.id === updatedPost.id ? updatedPost : p);
-    onPostsChange(newPosts);
-  }, [posts, onPostsChange, weekDays]);
+    try {
+      // Mettre à jour dans la base de données
+      const updatedPost = await onUpdatePost(post.id, { 
+        scheduledTime: newScheduledTime,
+        scheduled_for: newScheduledTime.toISOString()
+      });
+      
+      if (updatedPost) {
+        // Mettre à jour l'état local
+        const newPosts = posts.map(p => p.id === updatedPost.id ? updatedPost : p);
+        onPostsChange(newPosts);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du post:', error);
+      // Optionnel : afficher une notification d'erreur à l'utilisateur
+    }
+  }, [posts, onPostsChange, weekDays, onUpdatePost]);
 
   const handleCreatePost = useCallback((dayColumn?: string) => {
     if (dayColumn) {
@@ -235,12 +257,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "p-2 space-y-2",
+                        "p-2 space-y-2 min-h-[100px] transition-colors duration-200",
                         snapshot.isDraggingOver && "bg-blue-50 ring-2 ring-blue-300 ring-inset"
                       )}
                     >
-                      {postsByDay[day.key]?.map((post, index) => (
-                        <Draggable key={post.id} draggableId={post.id} index={index}>
+                      {postsByDay[day.key]?.map((post, index) => {
+                        console.log('Rendering post:', post.id, 'for day:', day.key);
+                        return (
+                        <Draggable key={post.id} draggableId={String(post.id)} index={index}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
@@ -262,7 +286,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                             </div>
                           )}
                         </Draggable>
-                      ))}
+                        );
+                      })}
                       {provided.placeholder}
                     </div>
                   )}
