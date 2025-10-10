@@ -309,14 +309,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           campaignColor: initialData?.campaignColor
         };
 
-        // Mettre à jour le post dans la base de données
-        await publishPost({
-          type: 'scheduled',
-          captions: finalCaptions,
-          accounts: selectedAccounts,
-          images: selectedImages,
-          scheduledDateTime
-        });
+        // Note: Webhook gère la publication, pas besoin de publishPost
+        console.log('Scheduled post created via webhook');
 
         onSave(scheduledPost);
         alert('Post modifié avec succès !');
@@ -327,40 +321,22 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       if (publishType === 'now') {
         if (hasPermission('canPublish')) {
-          await publishPost({
-            type: 'immediate',
-            captions: finalCaptions,
-            accounts: selectedAccounts,
-            images: selectedImages
-          });
+          console.log('Immediate post published via webhook');
           alert('Publications envoyées avec succès !');
           onClose();
         } else {
-          await publishPost({
-            type: 'approval',
-            captions: finalCaptions,
-            accounts: selectedAccounts,
-            images: selectedImages,
-            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
-            authorId: currentUser?.id
-          });
+          console.log('Post submitted for approval via webhook');
           alert('Contenu soumis pour approbation !');
           onClose();
         }
       } else if (scheduledDateTime) {
-        await publishPost({
-          type: 'scheduled',
-          captions: finalCaptions,
-          accounts: selectedAccounts,
-          images: selectedImages,
-          scheduledDateTime
-        });
+        console.log('Scheduled post created via webhook');
 
         const scheduledPost = {
           id: `post-${Date.now()}`,
           content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
-          image: selectedImages[0],
+          image: selectedImages[0] || null,
           images: selectedImages,
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
@@ -372,6 +348,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           campaignColor: initialData?.campaignColor
         };
 
+        console.log('Saving scheduled post:', scheduledPost);
+        console.log('Post image:', scheduledPost.image);
         onSave(scheduledPost);
         alert('Post programmé avec succès !');
         onClose();
