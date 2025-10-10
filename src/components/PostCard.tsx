@@ -85,13 +85,57 @@ const PostCard: React.FC<PostCardProps> = memo(({
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
 
+  // Fonction pour déterminer le statut du badge
+  const getStatusBadge = () => {
+    const now = new Date();
+    const scheduledTime = new Date(post.scheduledTime);
+    
+    // Si le post est programmé et la date n'est pas encore passée
+    if (post.status === 'scheduled' && scheduledTime > now) {
+      return {
+        text: 'En cours',
+        className: 'bg-yellow-500 text-white'
+      };
+    }
+    
+    // Si le post a été publié avec succès
+    if (post.status === 'published') {
+      return {
+        text: 'Publié',
+        className: 'bg-green-500 text-white'
+      };
+    }
+    
+    // Si la publication a échoué
+    if (post.status === 'failed') {
+      return {
+        text: 'Échec',
+        className: 'bg-red-500 text-white'
+      };
+    }
+    
+    // Statut par défaut (draft, etc.)
+    return null;
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
     <div 
       className={cn(
-        "bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-move flex flex-col h-[220px] w-full",
+        "bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-move flex flex-col h-[220px] w-full relative",
         isDragging && "opacity-75 transform rotate-1 shadow-lg"
       )}
     >
+      {/* Badge de statut */}
+      {statusBadge && (
+        <div className={cn(
+          "absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full z-10",
+          statusBadge.className
+        )}>
+          {statusBadge.text}
+        </div>
+      )}
       {/* Header: Time and platforms */}
       <div className="flex items-center justify-between p-2 pb-1">
         <span className="text-xs font-medium text-foreground">
