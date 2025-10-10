@@ -172,7 +172,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
         {statusBadge && (
           <div className="mb-2">
             <div className={cn(
-              "inline-block px-2 py-1 text-xs font-medium rounded-full",
+              "inline-block px-1.5 py-0.5 text-[10px] font-medium rounded-full",
               statusBadge.className
             )}>
               {statusBadge.text}
