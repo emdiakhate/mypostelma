@@ -164,6 +164,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   // États pour les captions (désactivé - utiliser n8n)
   const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
   const [generatedCaptions, setGeneratedCaptions] = useState<any>(null);
+  
+  // État local pour la publication
+  const [isPublishingLocal, setIsPublishingLocal] = useState(false);
 
   // Synchroniser selectedAccounts avec selectedPlatforms
   useEffect(() => {
@@ -253,7 +256,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       return;
     }
     
-    setIsPublishing(true);
+    setIsPublishingLocal(true);
     
     // Créer les captions finales (générées ou contenu par défaut)
     const finalCaptions = generatedCaptions || 
@@ -371,7 +374,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       console.error('Erreur publication:', error);
       toast.error('Erreur lors de la publication');
     } finally {
-      setIsPublishing(false);
+      setIsPublishingLocal(false);
     }
   }, [
     generatedCaptions, 
@@ -517,7 +520,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             generatedCaptions={generatedCaptions}
             onRegenerateCaptions={clearCaptions}
             onPublish={publishPosts}
-            isPublishing={isPublishing}
+            isPublishing={isPublishingLocal}
             hasPublishPermission={hasPermission('canPublish')}
             selectedAccountsCount={selectedAccounts.length}
             isEditing={isEditing}
