@@ -3,7 +3,6 @@ import { Post } from '@/types/Post';
 import { PostsService, PostSearchParams } from '@/services/posts';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 export function usePosts(params?: PostSearchParams) {
   const [posts, setPosts] = useState<Post[]>([]);
