@@ -204,11 +204,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 h-full overflow-y-auto gap-px bg-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px bg-gray-200">
             {weekDays.map((day) => (
-              <div key={day.key} className="bg-white flex flex-col min-h-[300px]">
+              <div key={day.key} className="bg-white flex flex-col">
                 {/* Day Header */}
                 <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                   <div className="flex items-center justify-between group">
@@ -235,7 +235,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "flex-1 p-2 space-y-2 overflow-y-auto",
+                        "p-2 space-y-2",
                         snapshot.isDraggingOver && "bg-blue-50 ring-2 ring-blue-300 ring-inset"
                       )}
                     >
