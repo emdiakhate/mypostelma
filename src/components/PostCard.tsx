@@ -63,7 +63,10 @@ const PostCard: React.FC<PostCardProps> = memo(({
     postImage: post.image,
     imageUrl,
     isLoading,
-    error
+    error,
+    hasImage: !!post.image,
+    imageType: post.image ? typeof post.image : 'undefined',
+    imageLength: post.image ? post.image.length : 0
   });
   
   // Vérification des permissions

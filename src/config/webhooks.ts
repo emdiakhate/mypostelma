@@ -72,14 +72,18 @@ export async function callWebhook<T = any>(
 
     // Gérer les réponses vides ou non-JSON
     const text = await response.text();
-    if (!text) {
+    if (!text || text.trim() === '') {
+      console.log('Webhook response is empty, returning success');
       return { success: true } as T;
     }
 
     try {
-      return JSON.parse(text);
-    } catch {
-      return { success: true, data: text } as T;
+      const parsed = JSON.parse(text);
+      console.log('Webhook response parsed successfully:', parsed);
+      return parsed;
+    } catch (parseError) {
+      console.log('Webhook response is not JSON, returning as text:', text);
+      return { success: true, data: text, raw: true } as T;
     }
   } catch (error) {
     console.error('Webhook call error:', error);

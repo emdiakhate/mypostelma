@@ -276,7 +276,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         scheduledDate: publishType === 'scheduled' && scheduledDateTime ? scheduledDateTime.toISOString() : undefined
       };
 
+      console.log('Webhook payload:', payload);
+      console.log('Selected images:', selectedImages);
+      console.log('Publish type:', publishType);
+
       const webhookUrl = publishType === 'now' ? WEBHOOK_URLS.PUBLISH : WEBHOOK_URLS.SCHEDULE;
+      console.log('Webhook URL:', webhookUrl);
+      
       const response = await callWebhook(webhookUrl, payload);
       
       if (response && response.success) {
