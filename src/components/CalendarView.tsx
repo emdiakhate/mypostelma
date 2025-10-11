@@ -109,8 +109,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     try {
       // Mettre à jour dans la base de données
       const updatedPost = await onUpdatePost(post.id, { 
-        scheduledTime: newScheduledTime,
-        scheduled_for: newScheduledTime.toISOString()
+        scheduledTime: newScheduledTime
       });
       
       if (updatedPost) {
