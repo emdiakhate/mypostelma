@@ -14,7 +14,7 @@ import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing'
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
 import { TONE_OPTIONS } from '@/data/toneOptions';
-import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload } from '@/config/webhooks';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
 import { toast } from 'sonner';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
@@ -231,13 +231,36 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         };
         
         console.log('AI Generation payload:', payload);
-        const response = await callWebhook(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
         
-        if (response && response.images && response.images.length > 0) {
-          setGeneratedImages(response.images);
-          toast.success(`${response.images.length} image(s) générée(s) avec succès !`);
+        if (response && response.success && response.imageUrl) {
+          console.log('N8N Response received:', response);
+          
+          // Vérifier que l'image se charge correctement avec retry
+          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
+          
+          if (imageLoads) {
+            // Utiliser l'URL directe de l'image pour l'affichage
+            setGeneratedImages([response.imageUrl]);
+            toast.success('Image générée avec succès !');
+            
+            // Log des informations supplémentaires pour debug
+            if (response.driveFileId) {
+              console.log('Drive File ID:', response.driveFileId);
+            }
+            if (response.driveLink) {
+              console.log('Drive Link:', response.driveLink);
+            }
+            if (response.thumbnailUrl) {
+              console.log('Thumbnail URL:', response.thumbnailUrl);
+            }
+          } else {
+            toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
+            console.error('Image failed to load:', response.imageUrl);
+          }
         } else {
-          toast.error('Aucune image générée');
+          console.error('Invalid response from N8N:', response);
+          toast.error(response?.error || 'Aucune image générée');
         }
       } catch (error) {
         console.error('Erreur génération IA:', error);

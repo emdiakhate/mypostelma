@@ -18,7 +18,7 @@ const LogoutPage: React.FC = () => {
         setCountdown(prev => {
           if (prev <= 1) {
             clearInterval(timer);
-            navigate('/login');
+            navigate('/');
             return 0;
           }
           return prev - 1;
@@ -42,8 +42,8 @@ const LogoutPage: React.FC = () => {
       setLogoutComplete(true);
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
-      // Même en cas d'erreur, rediriger vers le login
-      navigate('/login');
+      // Même en cas d'erreur, rediriger vers la landing page
+      navigate('/');
     }
   };
 
@@ -66,11 +66,11 @@ const LogoutPage: React.FC = () => {
               Redirection automatique dans {countdown} seconde{countdown > 1 ? 's' : ''}
             </p>
             <Button 
-              onClick={() => navigate('/login')} 
+              onClick={() => navigate('/')} 
               className="mt-4"
               variant="outline"
             >
-              Aller à la page de connexion maintenant
+              Aller à la page d'accueil maintenant
             </Button>
           </CardContent>
         </Card>

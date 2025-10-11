@@ -43,6 +43,8 @@ import { Lead, LeadStatus } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import LeadSearchForm from '@/components/LeadSearchForm';
+import LeadsGrid from '@/components/LeadsGrid';
+import { N8NLeadData } from '@/components/LeadCard';
 
 const LEADS_PER_PAGE = 10;
 
@@ -54,6 +56,10 @@ const LeadsPage: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState({ found: 0, percentage: 0, elapsed: 0 });
   const [showSearchForm, setShowSearchForm] = useState(false);
+  
+  // États pour les résultats de recherche N8N
+  const [searchResults, setSearchResults] = useState<N8NLeadData[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   
   // États de sélection
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -75,6 +81,46 @@ const LeadsPage: React.FC = () => {
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
+
+
+  // Fonction pour annuler la recherche
+  const handleCancelSearch = () => {
+    setIsSearching(false);
+    setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
+  };
+
+  // Fonction pour ajouter un lead aux leads sauvegardés
+  const handleAddToLeads = (n8nLead: N8NLeadData) => {
+    try {
+      // Convertir le lead N8N en format Lead
+      const newLead: Lead = {
+        id: Date.now().toString(),
+        name: n8nLead.Titre,
+        category: n8nLead.Categorie,
+        address: n8nLead.Addresse,
+        city: n8nLead.Addresse.split(',').pop()?.trim() || '',
+        phone: n8nLead.Telephone !== 'undefined' ? n8nLead.Telephone : undefined,
+        website: n8nLead.Lien,
+        socialMedia: {
+          instagram: n8nLead.instagrams !== '[]' ? JSON.parse(n8nLead.instagrams)[0] : undefined,
+          facebook: n8nLead.facebooks !== '[]' ? JSON.parse(n8nLead.facebooks)[0] : undefined,
+          linkedin: n8nLead.LinkedIns !== '[]' ? JSON.parse(n8nLead.LinkedIns)[0] : undefined,
+          twitter: n8nLead.twitters !== '[]' ? JSON.parse(n8nLead.twitters)[0] : undefined,
+        },
+        status: 'new',
+        notes: `Ajouté depuis la recherche - Horaires: ${n8nLead.Horaires}`,
+        tags: ['recherche'],
+        addedAt: new Date(),
+        source: 'search'
+      };
+
+      addLead(newLead);
+      toast.success('Lead ajouté avec succès !');
+    } catch (error) {
+      console.error('Erreur ajout lead:', error);
+      toast.error('Erreur lors de l\'ajout du lead');
+    }
+  };
 
   // Calcul des statistiques
   const stats = {
@@ -132,6 +178,7 @@ const LeadsPage: React.FC = () => {
   // Gestion de la recherche avec webhook N8N
   const handleSearch = async (searchParams: any) => {
     setIsSearching(true);
+    setSearchError(null);
     setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
 
     try {
@@ -158,43 +205,103 @@ const LeadsPage: React.FC = () => {
       }
 
       const result = await response.json();
-      
-      // Process results
-      if (result.leads && Array.isArray(result.leads)) {
-        const newLeads: Lead[] = result.leads.map((lead: any) => ({
-          id: lead.id || `lead_${Date.now()}_${Math.random()}`,
-          name: lead.name || lead.business_name || 'Sans nom',
-          category: searchParams.query || 'Non catégorisé',
-          address: lead.address || '',
-          city: searchParams.city || lead.city || '',
-          postalCode: lead.postal_code || lead.postalCode,
-          phone: lead.phone,
-          email: lead.email,
-          website: lead.website,
-          socialMedia: lead.social_media || lead.socialMedia,
-          status: 'new' as LeadStatus,
-          notes: '',
-          tags: ['recherche_automatique', 'n8n'],
-          addedAt: new Date(),
-          source: 'google_maps'
+      console.log('Webhook response received:', result);
+
+      // IMPORTANT : result est un ARRAY, prendre le premier élément
+      const data = Array.isArray(result) ? result[0] : result;
+      console.log('Data extracted:', data);
+
+      // Parser la string JSON des leads
+      if (data.leads && typeof data.leads === 'string') {
+        try {
+          // 1er parsing : convertir la string en array
+          const parsedLeads = JSON.parse(data.leads);
+          console.log('Parsed leads array:', parsedLeads);
+          
+          // 2ème parsing : extraire les données depuis les objets {json: {...}}
+          const extractedLeads = parsedLeads.map((item: any) => item.json);
+          console.log('Extracted leads:', extractedLeads);
+          
+          // Maintenant on a le bon format
+          const n8nLeads: N8NLeadData[] = extractedLeads.map((lead: any) => ({
+            Titre: lead.Titre || 'Sans nom',
+            Categorie: lead.Categorie || searchParams.query || 'Non catégorisé',
+            Addresse: lead.Addresse || '',
+            Telephone: lead.Telephone || 'undefined',
+            Horaires: Array.isArray(lead.Horaires) ? 
+              lead.Horaires.map((h: any) => `${h.day}: ${h.hours}`).join(', ') : 
+              (lead.Horaires || ''),
+            Lien: lead.Lien || '',
+            ImageUrl: lead.ImageUrl || '',
+            LinkedIns: lead.LinkedIns || '[]',
+            twitters: lead.twitters || '[]',
+            instagrams: lead.instagrams || '[]',
+            facebooks: lead.facebooks || '[]'
+          }));
+          
+          console.log('Final N8N Leads:', n8nLeads);
+          setSearchResults(n8nLeads);
+          console.log('Search results set, length:', n8nLeads.length);
+          setIsSearching(false);
+          setSearchProgress({ 
+            found: n8nLeads.length, 
+            percentage: 100, 
+            elapsed: 0
+          });
+          
+          toast.success(
+            `✓ ${n8nLeads.length} leads trouvés !`,
+            { description: `Recherche: ${searchParams.query} à ${searchParams.city}` }
+          );
+          
+        } catch (parseError) {
+          console.error('Error parsing leads JSON:', parseError);
+          setIsSearching(false);
+          setSearchError('Erreur lors du parsing des leads');
+          toast.error('Erreur lors du parsing des leads');
+        }
+      } else if (data.leads && Array.isArray(data.leads)) {
+        // Fallback : si leads est déjà un array
+        console.log('Leads is already an array');
+        const n8nLeads: N8NLeadData[] = data.leads.map((lead: any) => ({
+          Titre: lead.Titre || 'Sans nom',
+          Categorie: lead.Categorie || searchParams.query || 'Non catégorisé',
+          Addresse: lead.Addresse || '',
+          Telephone: lead.Telephone || 'undefined',
+          Horaires: Array.isArray(lead.Horaires) ? 
+            lead.Horaires.map((h: any) => `${h.day}: ${h.hours}`).join(', ') : 
+            (lead.Horaires || ''),
+          Lien: lead.Lien || '',
+          ImageUrl: lead.ImageUrl || '',
+          LinkedIns: lead.LinkedIns || '[]',
+          twitters: lead.twitters || '[]',
+          instagrams: lead.instagrams || '[]',
+          facebooks: lead.facebooks || '[]'
         }));
 
-        // Merge with existing leads (avoid duplicates)
-        const mergedLeads = mergeLeads(leads, newLeads);
-        
-        // Save to localStorage
-        localStorage.setItem('postelma_leads', JSON.stringify(mergedLeads));
-        loadLeads();
+        console.log('N8N Leads processed (array):', n8nLeads);
+        setSearchResults(n8nLeads);
+        setIsSearching(false);
+        setSearchProgress({ 
+          found: n8nLeads.length, 
+          percentage: 100, 
+          elapsed: 0
+        });
         
         toast.success(
-          `✓ ${newLeads.length} nouveaux leads trouvés !`,
+          `✓ ${n8nLeads.length} leads trouvés !`,
           { description: `Recherche: ${searchParams.query} à ${searchParams.city}` }
         );
+      } else {
+        console.log('No leads found in response:', data);
+        setSearchResults([]);
+        setIsSearching(false);
+        toast.info('Aucun lead trouvé pour cette recherche');
       }
       
-      setIsSearching(false);
     } catch (error) {
       setIsSearching(false);
+      setSearchError('Erreur lors de la recherche');
       console.error('Error with N8N search:', error);
       toast.error('Erreur lors de la recherche', {
         description: error instanceof Error ? error.message : 'Erreur inconnue'
@@ -202,10 +309,6 @@ const LeadsPage: React.FC = () => {
     }
   };
 
-  const cancelSearch = () => {
-    setIsSearching(false);
-    setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
-  };
 
   // Fonction pour éviter les doublons
   const mergeLeads = (existing: Lead[], newLeads: Lead[]): Lead[] => {
@@ -378,7 +481,7 @@ const LeadsPage: React.FC = () => {
                 onSearch={handleSearch}
                 isSearching={isSearching}
                 searchProgress={searchProgress}
-                onCancel={cancelSearch}
+                onCancel={handleCancelSearch}
               />
             </CardContent>
           </CollapsibleContent>
@@ -440,8 +543,18 @@ const LeadsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Table des résultats */}
-      <Card>
+      {/* Affichage des résultats de recherche ou des leads existants */}
+      {searchResults.length > 0 ? (
+        <LeadsGrid
+          leads={searchResults}
+          loading={isSearching}
+          error={searchError}
+          onAddToLeads={handleAddToLeads}
+          onRetry={() => setShowSearchForm(true)}
+        />
+      ) : (
+        /* Table des leads existants */
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -565,6 +678,7 @@ const LeadsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };

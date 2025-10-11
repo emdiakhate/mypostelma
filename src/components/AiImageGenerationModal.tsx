@@ -8,6 +8,8 @@ import { X, Sparkles, Wand2, Edit, Layers, Users, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { WEBHOOK_URLS, callWebhook, AiEditCombineWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
+import { toast } from 'sonner';
 
 interface AiImageGenerationModalProps {
   isOpen: boolean;
@@ -81,17 +83,80 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
   }, []);
 
   const handleGenerateImage = useCallback(async () => {
-    // N8N gère la génération d'images
-    alert('La génération d\'images est gérée via N8N. Veuillez configurer votre workflow N8N pour la génération d\'images.');
-    
-    // Simulation pour le développement
-    setIsGeneratingImage(true);
-    setTimeout(() => {
-      const mockImage = `https://images.unsplash.com/photo-${Date.now()}?w=800&h=800&fit=crop`;
-      setGeneratedImages(prev => [...prev, mockImage]);
-      setIsGeneratingImage(false);
-    }, 2000);
-  }, []);
+    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
+      // Utiliser le webhook N8N pour l'édition et la combinaison
+      if (!aiPrompt.trim()) {
+        toast.error('Veuillez saisir un prompt pour la génération');
+        return;
+      }
+      
+      if (aiSourceImages.length === 0) {
+        toast.error('Veuillez ajouter des images sources');
+        return;
+      }
+      
+      setIsGeneratingImage(true);
+      try {
+        const payload: AiEditCombineWebhookPayload = {
+          type: aiGenerationType,
+          prompt: aiPrompt,
+          sourceImages: aiSourceImages,
+          options: {
+            style: 'realistic',
+            intensity: 0.8,
+            quality: 'high'
+          }
+        };
+        
+        console.log('AI Generation payload:', payload);
+        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        if (response && response.success && response.imageUrl) {
+          console.log('N8N Response received:', response);
+          
+          // Vérifier que l'image se charge correctement avec retry
+          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
+          
+          if (imageLoads) {
+            // Utiliser l'URL directe de l'image pour l'affichage
+            setGeneratedImages([response.imageUrl]);
+            toast.success('Image générée avec succès !');
+            
+            // Log des informations supplémentaires pour debug
+            if (response.driveFileId) {
+              console.log('Drive File ID:', response.driveFileId);
+            }
+            if (response.driveLink) {
+              console.log('Drive Link:', response.driveLink);
+            }
+            if (response.thumbnailUrl) {
+              console.log('Thumbnail URL:', response.thumbnailUrl);
+            }
+          } else {
+            toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
+            console.error('Image failed to load:', response.imageUrl);
+          }
+        } else {
+          console.error('Invalid response from N8N:', response);
+          toast.error(response?.error || 'Aucune image générée');
+        }
+      } catch (error) {
+        console.error('Erreur génération IA:', error);
+        toast.error('Erreur lors de la génération d\'images');
+      } finally {
+        setIsGeneratingImage(false);
+      }
+    } else {
+      // Pour les autres types (simple, ugc), simulation pour le développement
+      setIsGeneratingImage(true);
+      setTimeout(() => {
+        const mockImage = `https://images.unsplash.com/photo-${Date.now()}?w=800&h=800&fit=crop`;
+        setGeneratedImages(prev => [...prev, mockImage]);
+        setIsGeneratingImage(false);
+        toast.success('Image générée (simulation) !');
+      }, 2000);
+    }
+  }, [aiGenerationType, aiPrompt, aiSourceImages]);
 
   const handleUseGeneratedImage = useCallback((imageUrl: string) => {
     onUseImage(imageUrl);

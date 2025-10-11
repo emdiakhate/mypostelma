@@ -51,6 +51,22 @@ const customStyles = `
   .animate-pulse-slow {
     animation: pulse-slow 3s ease-in-out infinite;
   }
+  
+  .hero-image {
+    object-fit: cover;
+    object-position: center top;
+    height: 100%;
+    width: 100%;
+    border-radius: 1rem;
+  }
+  
+  .hero-image-container {
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    height: 100%;
+    min-height: 500px;
+  }
 `;
 
 // 3. COMPOSANT PRINCIPAL
@@ -267,68 +283,23 @@ const LandingPage: React.FC = () => {
               </motion.p>
             </motion.div>
 
-            {/* Right Side - Mockup Interface */}
+            {/* Right Side - Hero Dashboard Image */}
             <motion.div 
               className="relative perspective-1000"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              {/* Main Dashboard Mockup */}
-              <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float">
-                {/* Header mockup */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">P</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Postelma Dashboard</h3>
-                      <p className="text-sm text-gray-500">Aperçu des fonctionnalités</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800 flex items-center space-x-1">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>Excellent Dashboard!</span>
-                  </Badge>
-                </div>
-
-                {/* Content mockup */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">Posts</span>
-                        <span className="text-xs text-green-600">+12%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">1,234</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">Engagement</span>
-                        <span className="text-xs text-green-600">+8%</span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">89.2%</div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-gray-600">Calendrier</span>
-                      <span className="text-xs text-gray-500">Cette semaine</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-gray-700">Post Instagram programmé</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-gray-700">Story Facebook en attente</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* Main Dashboard Image */}
+              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float hero-image-container">
+                <img
+                  src="https://www.hootsuite.com/_next/image?url=https%3A%2F%2Fimages.ctfassets.net%2Fta4ffdi8h2om%2F1Iq5LsQuj9bF3IRZQeZsV3%2F36accc842a2711ac03c074c15b0d66f4%2FHomepage-BigHero-1200x500_2x.png&w=3840&q=75"
+                  alt="Postelma Dashboard - Interface moderne de gestion des réseaux sociaux avec calendrier, analytics et planification"
+                  className="hero-image"
+                />
+                
+                {/* Overlay avec effet de profondeur */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20"></div>
               </div>
 
               {/* Floating elements */}
@@ -617,7 +588,7 @@ const LandingPage: React.FC = () => {
                 {/* iframe YouTube/Vimeo (à activer au clic) */}
                 <iframe
                   className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/VIDEO_ID?autoplay=0&controls=1&rel=0"
+                  src="https://www.youtube.com/embed/f01nRk2olo0?autoplay=0&controls=1&rel=0"
                   title="Démo Postelma"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen

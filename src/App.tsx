@@ -43,7 +43,7 @@ function MainLayout() {
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
         {/* 404 */}
-        <Route path="*" element={<Navigate to="/calendar" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>
   );
@@ -57,6 +57,9 @@ const ProtectedRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      
+      {/* Redirection pour /calendar vers /app/calendar */}
+      <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
       
       {/* Route de déconnexion - SANS Layout */}
       <Route path="/logout" element={<LogoutPage />} />
