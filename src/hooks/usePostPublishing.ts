@@ -29,18 +29,23 @@ export const usePostPublishing = (): UsePostPublishingResult => {
     
     try {
       const payload = {
+        content: params.captions[Object.keys(params.captions)[0]] || '', // Contenu principal
         captions: params.captions,
         accounts: params.accounts,
-        images: params.images,
-        type: params.type,
+        media: params.images,
+        platforms: Object.keys(params.captions),
+        publishType: params.type === 'immediate' ? 'now' : 'scheduled',
         ...(params.type === 'scheduled' && params.scheduledDateTime && {
-          scheduledDateTime: params.scheduledDateTime.toISOString()
+          scheduledDate: params.scheduledDateTime.toISOString()
         }),
         ...(params.type === 'approval' && {
           author: params.author,
           authorId: params.authorId
         })
       };
+
+      console.log('Publishing payload with captions:', payload);
+      console.log('Captions being sent:', params.captions);
 
       const response = await fetch(PUBLISH_WEBHOOK, {
         method: 'POST',

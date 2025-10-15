@@ -119,7 +119,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
       <div className={cn(
-        "bg-[#2c3548] text-white transition-all duration-300 flex flex-col",
+        "bg-[#2c3548] text-white transition-all duration-300 flex flex-col h-screen",
         sidebarCollapsed ? "w-16" : "w-72"
       )}>
         {/* Logo */}
@@ -192,7 +192,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Toggle Button */}
-        <div className="p-4 border-t border-gray-600">
+        <div className="p-4 border-t border-gray-600 bg-[#2c3548]">
           <button
             onClick={onToggleCollapse}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"

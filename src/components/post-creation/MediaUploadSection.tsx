@@ -1,8 +1,12 @@
 import React, { memo, useCallback } from 'react';
-import { Upload, ImageIcon } from 'lucide-react';
+import { Upload, ImageIcon, Video, ImagePlus, Wand2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface MediaUploadSectionProps {
   mediaSource: 'upload' | 'ai';
@@ -19,6 +23,24 @@ interface MediaUploadSectionProps {
   isGeneratingImage: boolean;
   onGenerateImage: () => void;
   onUseGeneratedImage: (imageUrl: string) => void;
+  // Nouveaux props pour la génération vidéo
+  videoMode?: 'image-to-video' | 'text-to-video' | null;
+  onVideoModeChange?: (mode: 'image-to-video' | 'text-to-video' | null) => void;
+  videoPrompt?: string;
+  onVideoPromptChange?: (prompt: string) => void;
+  textVideoPrompt?: string;
+  onTextVideoPromptChange?: (prompt: string) => void;
+  videoDuration?: string;
+  onVideoDurationChange?: (duration: string) => void;
+  textVideoDuration?: string;
+  onTextVideoDurationChange?: (duration: string) => void;
+  videoStyle?: string;
+  onVideoStyleChange?: (style: string) => void;
+  videoImage?: File | null;
+  onVideoImageChange?: (file: File | null) => void;
+  isGeneratingVideo?: boolean;
+  onGenerateVideo?: (videoUrl?: string) => void;
+  generatedVideoUrl?: string | null;
 }
 
 const aiGenerationTypes = [
@@ -26,6 +48,23 @@ const aiGenerationTypes = [
   { id: 'edit', name: 'Édition d\'image', description: 'Modifier une image existante', requiresImages: 1 },
   { id: 'combine', name: 'Combinaison', description: 'Combiner deux images', requiresImages: 2 },
   { id: 'ugc', name: 'UGC', description: 'Contenu généré par utilisateur', requiresImages: 1 }
+];
+
+const videoGenerationTypes = [
+  { 
+    id: 'image-to-video', 
+    name: 'Image + Prompt → Vidéo', 
+    description: 'Animer une image avec un prompt de mouvement',
+    icon: ImagePlus,
+    requiresImage: true
+  },
+  { 
+    id: 'text-to-video', 
+    name: 'Prompt → Vidéo', 
+    description: 'Créer une vidéo uniquement à partir d\'un prompt',
+    icon: Wand2,
+    requiresImage: false
+  }
 ];
 
 const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
@@ -42,7 +81,25 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   generatedImages,
   isGeneratingImage,
   onGenerateImage,
-  onUseGeneratedImage
+  onUseGeneratedImage,
+  // Nouveaux props pour la génération vidéo
+  videoMode,
+  onVideoModeChange,
+  videoPrompt,
+  onVideoPromptChange,
+  textVideoPrompt,
+  onTextVideoPromptChange,
+  videoDuration,
+  onVideoDurationChange,
+  textVideoDuration,
+  onTextVideoDurationChange,
+  videoStyle,
+  onVideoStyleChange,
+  videoImage,
+  onVideoImageChange,
+  isGeneratingVideo,
+  onGenerateVideo,
+  generatedVideoUrl
 }) => {
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -64,6 +121,79 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   const removeImage = useCallback((index: number) => {
     onImagesChange(selectedImages.filter((_, i) => i !== index));
   }, [selectedImages, onImagesChange]);
+
+  const handleVideoImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onVideoImageChange) {
+      onVideoImageChange(file);
+    }
+  }, [onVideoImageChange]);
+
+  const handleGenerateVideo = useCallback(async () => {
+    if (isGeneratingVideo) return; // Éviter les appels multiples
+    
+    // Déclencher l'état de chargement
+    if (onGenerateVideo) {
+      onGenerateVideo();
+    }
+    
+    try {
+      let imageData = null;
+      
+      // Si mode image-to-video, convertir l'image en base64
+      if (videoMode === 'image-to-video' && videoImage) {
+        imageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(videoImage);
+        });
+      }
+      
+      // Appel au webhook N8N
+      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: videoMode, // 'image-to-video' ou 'text-to-video'
+          prompt: videoMode === 'image-to-video' ? videoPrompt : textVideoPrompt,
+          duration: videoMode === 'image-to-video' ? videoDuration : textVideoDuration,
+          style: videoStyle,
+          image: imageData // base64 de l'image ou null
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération de la vidéo');
+      }
+      
+      const result = await response.json();
+      console.log('Vidéo générée:', result);
+      
+      // Construire l'URL de la vidéo
+      const videoUrl = `https://drive.google.com/uc?export=view&id=${result.driveFileId}`;
+      
+      // Passer l'URL de la vidéo au composant parent
+      if (onGenerateVideo) {
+        onGenerateVideo(videoUrl);
+        console.log('URL de la vidéo générée:', videoUrl);
+      }
+      
+      toast.success('Vidéo générée avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur génération vidéo:', error);
+      toast.error('Erreur lors de la génération de la vidéo');
+    } finally {
+      // Arrêter l'état de chargement
+      if (onGenerateVideo) {
+        console.log('Génération vidéo terminée');
+        // On peut ajouter une fonction pour arrêter le chargement si nécessaire
+      }
+    }
+  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, videoStyle, onGenerateVideo]);
 
   const handleAiSourceImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -167,138 +297,340 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
         </div>
       )}
 
-      {/* Contenu Génération IA */}
+      {/* Contenu Génération IA avec sous-onglets */}
       {mediaSource === 'ai' && (
-        <div className="space-y-4">
-          {/* Types de génération IA */}
-          <div className="grid grid-cols-2 gap-3">
-            {aiGenerationTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => onAiGenerationTypeChange(type.id as any)}
-                className={cn(
-                  "p-3 text-left border rounded-lg transition-colors",
-                  aiGenerationType === type.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className="font-medium text-sm">{type.name}</div>
-                <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Prompt pour l'IA */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Prompt {aiGenerationType === 'ugc' ? '(optionnel)' : ''}
-            </label>
-            <Textarea
-              value={aiPrompt}
-              onChange={(e) => onAiPromptChange(e.target.value)}
-              placeholder={aiGenerationType === 'ugc' 
-                ? "Décrivez le contenu souhaité (optionnel)..." 
-                : "Décrivez l'image que vous voulez générer..."
-              }
-              className="min-h-20"
-            />
-          </div>
-
-          {/* Upload d'images sources pour édition/combinaison */}
-          {(aiGenerationType === 'edit' || aiGenerationType === 'combine' || aiGenerationType === 'ugc') && (
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Images sources {aiGenerationType === 'combine' ? '(2 images requises)' : '(1 image requise)'}
-              </label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAiSourceImageUpload}
-                  multiple={aiGenerationType === 'combine'}
-                  className="hidden"
-                  id="ai-source-upload"
-                />
-                <label htmlFor="ai-source-upload" className="cursor-pointer block">
-                  {aiSourceImages.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {aiSourceImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={image} 
-                            alt={`Source ${index + 1}`} 
-                            className="w-full h-24 object-cover rounded border"
-                          />
-                          <button
-                            onClick={() => removeAiSourceImage(index)}
-                            className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-destructive/90"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      {(aiGenerationType === 'combine' ? aiSourceImages.length < 2 : aiSourceImages.length < 1) && (
-                        <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-24">
-                          <span className="text-muted-foreground text-xs">
-                            + Ajouter {aiGenerationType === 'combine' ? 'image' : 'image'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-foreground mb-2">Cliquez pour sélectionner {aiGenerationType === 'combine' ? '2 images' : '1 image'}</p>
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Bouton de génération */}
-          <Button
-            onClick={onGenerateImage}
-            disabled={isGeneratingImage || (aiGenerationType !== 'simple' && aiSourceImages.length === 0)}
-            className="w-full"
-          >
-            {isGeneratingImage ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2"></div>
-                Génération en cours...
-              </>
-            ) : (
-              `Générer ${aiGenerationType === 'simple' ? 'une image' : aiGenerationType === 'combine' ? 'une combinaison' : 'une édition'}`
-            )}
-          </Button>
-
-          {/* Images générées */}
-          {generatedImages.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Images générées</label>
-              <div className="grid grid-cols-2 gap-2">
-                {generatedImages.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Générée ${index + 1}`} 
-                      className="w-full h-24 object-cover rounded border"
-                    />
-                    <button
-                      onClick={() => onUseGeneratedImage(image)}
-                      className="absolute inset-0 bg-primary/0 hover:bg-primary/20 text-primary-foreground flex items-center justify-center text-xs transition-all"
-                    >
-                      <span className="bg-primary px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100">
-                        Utiliser
-                      </span>
-                    </button>
-                  </div>
+        <Tabs defaultValue="image-ai" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="image-ai" className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Image IA
+            </TabsTrigger>
+            <TabsTrigger value="video-ai" className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Vidéo IA
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Contenu Image IA */}
+          <TabsContent value="image-ai">
+            <div className="space-y-4">
+              {/* Types de génération IA */}
+              <div className="grid grid-cols-2 gap-3">
+                {aiGenerationTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => onAiGenerationTypeChange(type.id as any)}
+                    className={cn(
+                      "p-3 text-left border rounded-lg transition-colors",
+                      aiGenerationType === type.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <div className="font-medium text-sm">{type.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
+                  </button>
                 ))}
               </div>
+
+              {/* Prompt pour l'IA */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Prompt {aiGenerationType === 'ugc' ? '(optionnel)' : ''}
+                </label>
+                <Textarea
+                  value={aiPrompt}
+                  onChange={(e) => onAiPromptChange(e.target.value)}
+                  placeholder={aiGenerationType === 'ugc' 
+                    ? "Décrivez le contenu souhaité (optionnel)..." 
+                    : "Décrivez l'image que vous voulez générer..."
+                  }
+                  className="min-h-20"
+                />
+              </div>
+
+              {/* Upload d'images sources pour édition/combinaison */}
+              {(aiGenerationType === 'edit' || aiGenerationType === 'combine' || aiGenerationType === 'ugc') && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Images sources {aiGenerationType === 'combine' ? '(2 images requises)' : '(1 image requise)'}
+                  </label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAiSourceImageUpload}
+                      multiple={aiGenerationType === 'combine'}
+                      className="hidden"
+                      id="ai-source-upload"
+                    />
+                    <label htmlFor="ai-source-upload" className="cursor-pointer block">
+                      {aiSourceImages.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {aiSourceImages.map((image, index) => (
+                            <div key={index} className="relative group">
+                              <img 
+                                src={image} 
+                                alt={`Source ${index + 1}`} 
+                                className="w-full h-24 object-cover rounded border"
+                              />
+                              <button
+                                onClick={() => removeAiSourceImage(index)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-destructive/90"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          {(aiGenerationType === 'combine' ? aiSourceImages.length < 2 : aiSourceImages.length < 1) && (
+                            <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-24">
+                              <span className="text-muted-foreground text-xs">
+                                + Ajouter {aiGenerationType === 'combine' ? 'image' : 'image'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-foreground mb-2">Cliquez pour sélectionner {aiGenerationType === 'combine' ? '2 images' : '1 image'}</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Bouton de génération */}
+              <Button
+                onClick={onGenerateImage}
+                disabled={isGeneratingImage || (aiGenerationType !== 'simple' && aiSourceImages.length === 0)}
+                className="w-full"
+              >
+                {isGeneratingImage ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2"></div>
+                    Génération en cours...
+                  </>
+                ) : (
+                  `Générer ${aiGenerationType === 'simple' ? 'une image' : aiGenerationType === 'combine' ? 'une combinaison' : 'une édition'}`
+                )}
+              </Button>
+
+              {/* Images générées */}
+              {generatedImages.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Images générées</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {generatedImages.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={image} 
+                          alt={`Générée ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <button
+                          onClick={() => onUseGeneratedImage(image)}
+                          className="absolute inset-0 bg-primary/0 hover:bg-primary/20 text-primary-foreground flex items-center justify-center text-xs transition-all"
+                        >
+                          <span className="bg-primary px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100">
+                            Utiliser
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+          
+          {/* Contenu Vidéo IA */}
+          <TabsContent value="video-ai">
+            <div className="space-y-6">
+              {/* Types de génération vidéo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {videoGenerationTypes.map((type) => {
+                  const IconComponent = type.icon;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => onVideoModeChange?.(type.id as 'image-to-video' | 'text-to-video')}
+                      className={cn(
+                        "p-4 text-left border rounded-lg transition-all",
+                        videoMode === type.id
+                          ? "border-primary bg-primary/10 ring-2 ring-primary"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconComponent className="w-5 h-5 text-primary" />
+                        <div className="font-medium text-sm">{type.name}</div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{type.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Interface selon le mode sélectionné */}
+              {videoMode === 'image-to-video' && (
+                <div className="space-y-4">
+                  {/* Upload de l'image */}
+                  <div>
+                    <Label>Image de départ</Label>
+                    <div className="mt-2 border-2 border-dashed border-border rounded-lg p-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="video-image-upload"
+                        onChange={handleVideoImageUpload}
+                      />
+                      <label htmlFor="video-image-upload" className="cursor-pointer block">
+                        {videoImage ? (
+                          <div className="relative group">
+                            <img 
+                              src={URL.createObjectURL(videoImage)} 
+                              alt="Image sélectionnée" 
+                              className="w-full h-32 object-cover rounded border"
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onVideoImageChange?.(null);
+                              }}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-destructive/90"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-foreground mb-2">Cliquez pour sélectionner une image</p>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {/* Prompt de mouvement */}
+                  <div>
+                    <Label htmlFor="video-prompt">Prompt de mouvement</Label>
+                    <Textarea
+                      id="video-prompt"
+                      placeholder="Décrivez le mouvement souhaité (ex: La caméra zoome lentement vers l'avant...)"
+                      value={videoPrompt || ''}
+                      onChange={(e) => onVideoPromptChange?.(e.target.value)}
+                      rows={4}
+                      className="mt-2"
+                    />
+                  </div>
+                  
+                  {/* Durée de la vidéo */}
+                  <div>
+                    <Label htmlFor="video-duration">Durée de la vidéo</Label>
+                    <Select value={videoDuration || '5'} onValueChange={onVideoDurationChange}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Sélectionner la durée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 secondes</SelectItem>
+                        <SelectItem value="5">5 secondes</SelectItem>
+                        <SelectItem value="10">10 secondes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {videoMode === 'text-to-video' && (
+                <div className="space-y-4">
+                  {/* Prompt vidéo */}
+                  <div>
+                    <Label htmlFor="text-video-prompt">Prompt de la vidéo</Label>
+                    <Textarea
+                      id="text-video-prompt"
+                      placeholder="Décrivez la vidéo que vous voulez créer (ex: Un coucher de soleil sur une plage tropicale avec des vagues...)"
+                      value={textVideoPrompt || ''}
+                      onChange={(e) => onTextVideoPromptChange?.(e.target.value)}
+                      rows={5}
+                      className="mt-2"
+                    />
+                  </div>
+                  
+                  {/* Durée de la vidéo */}
+                  <div>
+                    <Label htmlFor="text-video-duration">Durée de la vidéo</Label>
+                    <Select value={textVideoDuration || '5'} onValueChange={onTextVideoDurationChange}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Sélectionner la durée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 secondes</SelectItem>
+                        <SelectItem value="5">5 secondes</SelectItem>
+                        <SelectItem value="10">10 secondes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Style de vidéo (optionnel) */}
+                  <div>
+                    <Label htmlFor="video-style">Style de vidéo (optionnel)</Label>
+                    <Select value={videoStyle || 'realistic'} onValueChange={onVideoStyleChange}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Sélectionner un style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="realistic">Réaliste</SelectItem>
+                        <SelectItem value="cinematic">Cinématique</SelectItem>
+                        <SelectItem value="anime">Anime</SelectItem>
+                        <SelectItem value="3d">3D</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Bouton générer vidéo */}
+              {videoMode && (
+                <Button 
+                  onClick={handleGenerateVideo}
+                  disabled={isGeneratingVideo || (videoMode === 'image-to-video' && !videoImage) || (videoMode === 'text-to-video' && !textVideoPrompt)}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isGeneratingVideo ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Génération en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Video className="w-4 h-4 mr-2" />
+                      Générer la vidéo
+                    </>
+                  )}
+                </Button>
+              )}
+              
+              {/* Preview de la vidéo générée */}
+              {generatedVideoUrl && (
+                <div className="mt-6">
+                  <Label>Vidéo générée</Label>
+                  <div className="mt-2 rounded-lg overflow-hidden bg-muted">
+                    <video
+                      src={generatedVideoUrl}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

@@ -28,7 +28,11 @@ import {
   Twitter,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Edit,
+  Trash,
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,10 +42,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useLeads, useLeadStatus } from '@/hooks/useLeads';
 import { Lead, LeadStatus } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import LeadSearchForm from '@/components/LeadSearchForm';
 import LeadsGrid from '@/components/LeadsGrid';
 import { N8NLeadData } from '@/components/LeadCard';
@@ -55,11 +82,16 @@ const LeadsPage: React.FC = () => {
   // États de recherche
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState({ found: 0, percentage: 0, elapsed: 0 });
-  const [showSearchForm, setShowSearchForm] = useState(false);
+  const [showSearchForm, setShowSearchForm] = useState(true); // true par défaut
   
   // États pour les résultats de recherche N8N
   const [searchResults, setSearchResults] = useState<N8NLeadData[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
+  
+  // États pour le modal Mes Leads
+  const [showMyLeadsModal, setShowMyLeadsModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
   
   // États de sélection
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -132,20 +164,18 @@ const LeadsPage: React.FC = () => {
     toContact: leads.filter(l => l.status === 'new' && (l.email || l.phone)).length
   };
 
-  // Filtrage des leads
+  // Filtrage des leads pour le modal
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
-      const matchesStatus = filters.status === 'all' || lead.status === filters.status;
-      const matchesSearch = lead.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                           lead.category.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                           lead.city.toLowerCase().includes(filters.searchTerm.toLowerCase());
-      const matchesEmail = !filters.hasEmail || !!lead.email;
-      const matchesPhone = !filters.hasPhone || !!lead.phone;
-      const matchesSocial = !filters.hasSocial || !!(lead.socialMedia?.instagram || lead.socialMedia?.facebook || lead.socialMedia?.linkedin || lead.socialMedia?.twitter);
+      const matchesStatus = filterStatus === 'all' || lead.status === filterStatus;
+      const matchesSearch = searchQuery === '' || 
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.city.toLowerCase().includes(searchQuery.toLowerCase());
       
-      return matchesStatus && matchesSearch && matchesEmail && matchesPhone && matchesSocial;
+      return matchesStatus && matchesSearch;
     });
-  }, [leads, filters]);
+  }, [leads, filterStatus, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLeads.length / LEADS_PER_PAGE);
@@ -168,20 +198,59 @@ const LeadsPage: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedLeads.length === paginatedLeads.length) {
+    if (selectedLeads.length === filteredLeads.length) {
       setSelectedLeads([]);
     } else {
-      setSelectedLeads(paginatedLeads.map(lead => lead.id));
+      setSelectedLeads(filteredLeads.map(lead => lead.id));
+    }
+  };
+
+  // Fonctions pour le modal Mes Leads
+  const handleViewLead = (lead: Lead) => {
+    setSelectedLead(lead);
+  };
+
+  const handleCallLead = (lead: Lead) => {
+    if (lead.phone) {
+      window.open(`tel:${lead.phone}`, '_self');
+    }
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    // TODO: Implémenter l'édition
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    try {
+      await deleteLead(leadId);
+      toast.success('Lead supprimé avec succès');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const getStatusVariant = (status: LeadStatus) => {
+    switch (status) {
+      case 'new': return 'secondary';
+      case 'contacted': return 'default';
+      case 'interested': return 'default';
+      case 'client': return 'default';
+      default: return 'secondary';
     }
   };
 
   // Gestion de la recherche avec webhook N8N
   const handleSearch = async (searchParams: any) => {
+    // IMPORTANT : Activer le loader IMMÉDIATEMENT
     setIsSearching(true);
     setSearchError(null);
     setSearchProgress({ found: 0, percentage: 0, elapsed: 0 });
 
     try {
+      // Afficher un message de recherche en cours
+      toast.loading('Recherche en cours...', { id: 'search-loading' });
+      
       // Envoyer toutes les données du formulaire à n8n
       const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/scrapping', {
         method: 'POST',
@@ -206,6 +275,9 @@ const LeadsPage: React.FC = () => {
 
       const result = await response.json();
       console.log('Webhook response received:', result);
+
+      // Fermer le toast de loading
+      toast.dismiss('search-loading');
 
       // IMPORTANT : result est un ARRAY, prendre le premier élément
       const data = Array.isArray(result) ? result[0] : result;
@@ -300,6 +372,8 @@ const LeadsPage: React.FC = () => {
       }
       
     } catch (error) {
+      // Fermer le loading en cas d'erreur
+      toast.dismiss('search-loading');
       setIsSearching(false);
       setSearchError('Erreur lors de la recherche');
       console.error('Error with N8N search:', error);
@@ -396,9 +470,9 @@ const LeadsPage: React.FC = () => {
             <Upload className="w-4 h-4 mr-2" />
             Importer
           </Button>
-          <Button onClick={() => setShowSearchForm(!showSearchForm)}>
-            <Search className="w-4 h-4 mr-2" />
-            Rechercher
+                  <Button onClick={() => setShowMyLeadsModal(true)}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Mes Leads ({filteredLeads.length})
           </Button>
         </div>
       </div>
@@ -458,35 +532,27 @@ const LeadsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Formulaire de recherche (collapsible) */}
-      <Collapsible open={showSearchForm} onOpenChange={setShowSearchForm}>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Recherche de Leads</CardTitle>
-                  <CardDescription>
-                    Trouvez automatiquement de nouveaux prospects
-                  </CardDescription>
-                </div>
-                {showSearchForm ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <CardContent>
-              <LeadSearchForm 
-                onSearch={handleSearch}
-                isSearching={isSearching}
-                searchProgress={searchProgress}
-                onCancel={handleCancelSearch}
-              />
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      {/* Section Recherche de Leads (toujours visible par défaut) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Recherche de Leads</CardTitle>
+              <CardDescription>
+                Trouvez automatiquement de nouveaux prospects
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <LeadSearchForm 
+            onSearch={handleSearch}
+            isSearching={isSearching}
+            searchProgress={searchProgress}
+            onCancel={handleCancelSearch}
+          />
+        </CardContent>
+      </Card>
 
 
       {/* Filtres */}
@@ -543,142 +609,282 @@ const LeadsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Affichage des résultats de recherche ou des leads existants */}
-      {searchResults.length > 0 ? (
-        <LeadsGrid
-          leads={searchResults}
-          loading={isSearching}
-          error={searchError}
-          onAddToLeads={handleAddToLeads}
-          onRetry={() => setShowSearchForm(true)}
-        />
-      ) : (
-        /* Table des leads existants */
+      {/* États conditionnels pour l'affichage */}
+      
+      {/* 1. Loader pendant la recherche */}
+      {isSearching && searchResults.length === 0 && (
         <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Recherche en cours...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Nous recherchons les meilleurs prospects pour vous
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Cela peut prendre quelques secondes
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 2. Résultats de recherche */}
+      {!isSearching && searchResults.length > 0 && (
+        <Card>
+          <CardHeader>
             <div>
-              <CardTitle>Leads ({filteredLeads.length})</CardTitle>
+              <CardTitle>Leads trouvés ({searchResults.length})</CardTitle>
               <CardDescription>
-                Gérez vos prospects et suivez leur progression
+                Résultats de votre recherche
               </CardDescription>
             </div>
+          </CardHeader>
+          
+          <CardContent>
+            <LeadsGrid
+              leads={searchResults}
+              loading={false}
+              error={searchError}
+              onAddToLeads={handleAddToLeads}
+              onRetry={() => setShowSearchForm(true)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 3. État vide (aucune recherche) */}
+      {!isSearching && searchResults.length === 0 && (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucune recherche lancée</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Remplissez les critères ci-dessus et lancez une recherche pour trouver des prospects
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal Mes Leads */}
+      <Dialog open={showMyLeadsModal} onOpenChange={setShowMyLeadsModal}>
+        <DialogContent className="max-w-6xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Mes Leads ({filteredLeads.length})</DialogTitle>
+            <DialogDescription>
+              Gérez vos prospects et suivez leur progression
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Barre de recherche et filtres */}
+          <div className="space-y-4">
+            {/* Recherche */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Rechercher par nom, catégorie, ville..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button variant="outline" onClick={() => setShowMyLeadsModal(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
             
-            {filteredLeads.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                >
-                  {selectedLeads.length === paginatedLeads.length ? 'Tout désélectionner' : 'Tout sélectionner'}
-                </Button>
-                
-                {selectedLeads.length > 0 && (
-                  <Button size="sm">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contacter ({selectedLeads.length})
-                  </Button>
-                )}
+            {/* Filtres de statut */}
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={filterStatus === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterStatus('all')}
+              >
+                Tous ({leads.length})
+              </Button>
+              <Button
+                variant={filterStatus === 'new' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterStatus('new')}
+              >
+                Nouveaux ({leads.filter(l => l.status === 'new').length})
+              </Button>
+              <Button
+                variant={filterStatus === 'contacted' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterStatus('contacted')}
+              >
+                Contactés ({leads.filter(l => l.status === 'contacted').length})
+              </Button>
+              <Button
+                variant={filterStatus === 'interested' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterStatus('interested')}
+              >
+                Intéressés ({leads.filter(l => l.status === 'interested').length})
+              </Button>
+              <Button
+                variant={filterStatus === 'client' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterStatus('client')}
+              >
+                Clients ({leads.filter(l => l.status === 'client').length})
+              </Button>
+            </div>
+          </div>
+          
+          {/* Tableau des leads (scrollable) */}
+          <div className="overflow-y-auto max-h-[calc(85vh-250px)]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedLeads.length === filteredLeads.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Localisation</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Ajouté le</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedLeads.includes(lead.id)}
+                        onCheckedChange={() => handleSelectLead(lead.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{lead.name}</div>
+                        {lead.tags && lead.tags.length > 0 && (
+                          <div className="flex gap-1 mt-1">
+                            {lead.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{lead.category}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        {lead.city}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 text-sm">
+                        {lead.phone && (
+                          <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-blue-600 hover:underline">
+                            <Phone className="w-3 h-3" />
+                            {lead.phone}
+                          </a>
+                        )}
+                        {lead.email && (
+                          <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-blue-600 hover:underline">
+                            <Mail className="w-3 h-3" />
+                            {lead.email}
+                          </a>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(lead.status)}>
+                        {getStatusLabel(lead.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format(new Date(lead.addedAt), 'dd/MM/yyyy', { locale: fr })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewLead(lead)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleCallLead(lead)}
+                        >
+                          <Phone className="w-4 h-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditLead(lead)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)}>
+                              <Trash className="w-4 h-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {filteredLeads.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Aucun lead</h3>
+                <p className="text-sm text-muted-foreground">
+                  Commencez par rechercher des prospects
+                </p>
               </div>
             )}
           </div>
-        </CardHeader>
-        
-        <CardContent>
-          {error ? (
-            <div className="text-center py-8">
-              <p className="text-red-600">Erreur: {error}</p>
-              <Button onClick={loadLeads} className="mt-4">
-                Réessayer
-              </Button>
-            </div>
-          ) : filteredLeads.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {leads.length === 0 ? 'Aucun lead trouvé' : 'Aucun lead ne correspond à vos critères'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {leads.length === 0 
-                  ? 'Commencez par rechercher vos premiers leads'
-                  : 'Ajustez vos filtres pour voir plus de résultats'
-                }
-              </p>
-              <Button onClick={() => setShowSearchForm(true)}>
-                <Search className="w-4 h-4 mr-2" />
-                Rechercher des leads
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {paginatedLeads.map((lead) => (
-                  <LeadRow 
-                    key={lead.id} 
-                    lead={lead}
-                    isSelected={selectedLeads.includes(lead.id)}
-                    onSelect={() => handleSelectLead(lead.id)}
-                    onView={() => setSelectedLead(lead)}
-                    getStatusColor={getStatusColor}
-                    getStatusLabel={getStatusLabel}
-                  />
-                ))}
-              </div>
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t mt-6">
-                  <div className="text-sm text-muted-foreground">
-                    Page {currentPage} sur {totalPages}
-                    <span className="ml-2">({startIndex + 1}-{Math.min(endIndex, filteredLeads.length)} sur {filteredLeads.length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="w-4 h-4 mr-1" /> Précédent
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
-                        .map((page, index, arr) => {
-                          const prevPage = arr[index - 1];
-                          const showEllipsis = prevPage && page - prevPage > 1;
-                          return (
-                            <div key={page} className="flex items-center gap-1">
-                              {showEllipsis && (<span className="px-2 text-muted-foreground">...</span>)}
-                              <Button 
-                                variant={currentPage === page ? 'default' : 'outline'} 
-                                size="sm" 
-                                onClick={() => setCurrentPage(page)}
-                                className="w-8 h-8 p-0"
-                              >
-                                {page}
-                              </Button>
-                            </div>
-                          );
-                        })}
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                      disabled={currentPage === totalPages}
-                    >
-                      Suivant <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
+          
+          {/* Footer avec actions */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              {selectedLeads.length > 0 && (
+                <span>{selectedLeads.length} lead(s) sélectionné(s)</span>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-      )}
+            </div>
+            <div className="flex gap-2">
+              {selectedLeads.length > 0 && (
+                <Button variant="destructive" size="sm">
+                  <Trash className="w-4 h-4 mr-2" />
+                  Supprimer la sélection
+                </Button>
+              )}
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

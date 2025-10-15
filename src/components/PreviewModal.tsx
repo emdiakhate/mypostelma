@@ -6,7 +6,7 @@ import { useImageLoader } from '@/hooks/useImageLoader';
 // Interface pour les props des composants de prévisualisation
 interface PreviewProps {
   content: string;
-  image: string;
+  image: string | string[];
   author: string;
   profilePicture: string;
   timestamp?: string;
@@ -62,8 +62,7 @@ const arePreviewPropsEqual = (prevProps: PreviewProps, nextProps: PreviewProps) 
   );
 };
 
-// Composant FacebookPreview mémorisé
-// Évite les re-rendus inutiles lors des changements de contenu
+// Composant FacebookPreview mémorisé avec aperçu réaliste
 export const FacebookPreview: React.FC<PreviewProps> = memo(({ 
   content, 
   image, 
@@ -71,68 +70,180 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
   profilePicture, 
   timestamp = "2h" 
 }) => {
+  // Gestion des images multiples
+  const images = Array.isArray(image) ? image : (image ? [image] : []);
+  const imageCount = images.length;
+
+  const renderMediaContent = () => {
+    if (imageCount === 0) return null;
+
+    if (imageCount === 1) {
+      // Image unique - pleine largeur avec hauteur réduite
+      return (
+        <div className="w-full">
+          <OptimizedImage 
+            src={images[0]} 
+            alt="Post content"
+            className="w-full h-auto max-h-[400px] object-cover cursor-pointer mx-auto"
+            style={{ borderRadius: 0 }}
+          />
+        </div>
+      );
+    }
+
+    if (imageCount === 2) {
+      // 2 images - grid 2 colonnes avec hauteur réduite
+      return (
+        <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
+          <OptimizedImage 
+            src={images[0]} 
+            alt="Post content 1"
+            className="w-full h-full object-cover cursor-pointer"
+            style={{ borderRadius: 0 }}
+          />
+          <OptimizedImage 
+            src={images[1]} 
+            alt="Post content 2"
+            className="w-full h-full object-cover cursor-pointer"
+            style={{ borderRadius: 0 }}
+          />
+        </div>
+      );
+    }
+
+    if (imageCount === 3) {
+      // 3 images - 1 grande + 2 petites avec hauteur réduite
+      return (
+        <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
+          <OptimizedImage 
+            src={images[0]} 
+            alt="Post content 1"
+            className="w-full h-full object-cover cursor-pointer"
+            style={{ borderRadius: 0 }}
+          />
+          <div className="grid grid-rows-2 gap-[2px]">
+            <OptimizedImage 
+              src={images[1]} 
+              alt="Post content 2"
+              className="w-full h-full object-cover cursor-pointer"
+              style={{ borderRadius: 0 }}
+            />
+            <OptimizedImage 
+              src={images[2]} 
+              alt="Post content 3"
+              className="w-full h-full object-cover cursor-pointer"
+              style={{ borderRadius: 0 }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Plus de 3 images - grille 2x2 avec indicateur "+X" et hauteur réduite
+    const remainingCount = imageCount - 4;
+    return (
+      <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
+        <OptimizedImage 
+          src={images[0]} 
+          alt="Post content 1"
+          className="w-full h-full object-cover cursor-pointer"
+          style={{ borderRadius: 0 }}
+        />
+        <OptimizedImage 
+          src={images[1]} 
+          alt="Post content 2"
+          className="w-full h-full object-cover cursor-pointer"
+          style={{ borderRadius: 0 }}
+        />
+        <OptimizedImage 
+          src={images[2]} 
+          alt="Post content 3"
+          className="w-full h-full object-cover cursor-pointer"
+          style={{ borderRadius: 0 }}
+        />
+        <div className="relative">
+          <OptimizedImage 
+            src={images[3]} 
+            alt="Post content 4"
+            className="w-full h-full object-cover cursor-pointer"
+            style={{ borderRadius: 0 }}
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <span className="text-white text-2xl font-bold">+{remainingCount}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg max-w-md mx-auto">
+    <div className="bg-white rounded-lg max-w-[600px] mx-auto" style={{ fontFamily: 'Segoe UI, system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <OptimizedImage 
             src={profilePicture} 
             alt={author}
             className="w-10 h-10 rounded-full object-cover"
           />
-          <div className="flex-1">
+          <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900">{author}</h3>
-              <span className="text-blue-600 text-sm">✓</span>
+              <span className="font-semibold text-gray-900 text-[15px]">{author}</span>
+              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
             </div>
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <span>{timestamp}</span>
-              <span>•</span>
-              <span>🌍</span>
             </div>
-          </div>
-          <button className="text-gray-400 hover:text-gray-600">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        <p className="text-gray-900 mb-4 leading-relaxed">{content}</p>
-        
-        {image && (
-          <div className="mb-4">
-            <OptimizedImage 
-              src={image} 
-              alt="Post content"
-              className="w-full rounded-lg"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-blue-600">
-              <span>👍</span>
-              <span className="text-sm">J'aime</span>
-            </button>
-            <button className="flex items-center gap-2 text-gray-600 hover:text-blue-600">
-              <span>💬</span>
-              <span className="text-sm">Commenter</span>
-            </button>
-            <button className="flex items-center gap-2 text-gray-600 hover:text-blue-600">
-              <span>📤</span>
-              <span className="text-sm">Partager</span>
-            </button>
+            <span className="text-xs text-gray-500">{timestamp} · 🌍</span>
           </div>
         </div>
+        <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-medium">
+          Suivre
+        </button>
+      </div>
+
+      {/* Texte */}
+      <div className="px-4 pb-3">
+        <p className="text-gray-900 leading-relaxed text-[15px]">{content}</p>
+      </div>
+
+      {/* Images - SANS padding horizontal */}
+      {renderMediaContent()}
+      
+      {/* Réactions */}
+      <div className="px-4 py-2 flex justify-between text-sm">
+        <div className="flex items-center gap-1">
+          <div className="flex -space-x-1">
+            <span className="text-lg">👍</span>
+            <span className="text-lg">❤️</span>
+            <span className="text-lg">😮</span>
+          </div>
+          <span className="text-sm text-gray-600 ml-2">102</span>
+        </div>
+        <div className="flex gap-3 text-gray-600">
+          <span className="hover:underline cursor-pointer">11 commentaires</span>
+          <span className="hover:underline cursor-pointer">31 partages</span>
+        </div>
+      </div>
+      
+      {/* Séparateur */}
+      <div className="border-t mx-4" />
+      
+      {/* Boutons actions */}
+      <div className="px-4 py-2 flex justify-around">
+        <button className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
+          <span className="text-lg">👍</span>
+          <span className="text-sm font-medium">J'aime</span>
+        </button>
+        <button className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
+          <span className="text-lg">💬</span>
+          <span className="text-sm font-medium">Commenter</span>
+        </button>
+        <button className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-md transition-colors">
+          <span className="text-lg">↗️</span>
+          <span className="text-sm font-medium">Partager</span>
+        </button>
       </div>
     </div>
   );

@@ -123,7 +123,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
   return (
     <div 
       className={cn(
-        "bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-move flex flex-col h-[230px] w-full relative",
+        "bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-move flex flex-col h-[230px] w-full relative group",
         isDragging && "opacity-75 transform rotate-1 shadow-lg"
       )}
     >

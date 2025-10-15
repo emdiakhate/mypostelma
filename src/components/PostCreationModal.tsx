@@ -54,7 +54,7 @@ const PreviewSection = memo<PreviewSectionProps>(({
     
     const previewProps = {
       content: displayContent,
-      image: selectedImages[0] || '',
+      image: selectedImages.length > 0 ? selectedImages : '',
       author: 'Postelma',
       profilePicture,
       timestamp: '2h'
@@ -149,6 +149,17 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [aiGenerationType, setAiGenerationType] = useState<'simple' | 'edit' | 'combine' | 'ugc'>('simple');
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiSourceImages, setAiSourceImages] = useState<string[]>([]);
+
+  // États pour la génération vidéo
+  const [videoMode, setVideoMode] = useState<'image-to-video' | 'text-to-video' | null>(null);
+  const [videoPrompt, setVideoPrompt] = useState<string>('');
+  const [textVideoPrompt, setTextVideoPrompt] = useState<string>('');
+  const [videoDuration, setVideoDuration] = useState<string>('5');
+  const [textVideoDuration, setTextVideoDuration] = useState<string>('5');
+  const [videoStyle, setVideoStyle] = useState<string>('realistic');
+  const [videoImage, setVideoImage] = useState<File | null>(null);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
 
   // Hooks pour l'analyse
   const bestTimeRecommendation = useBestTime(selectedPlatforms[0] as any, []);
@@ -279,6 +290,36 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     setMediaSource('upload');
   }, []);
 
+  // Fonctions pour la génération vidéo
+  const handleGenerateVideo = useCallback(async (videoUrl?: string) => {
+    setIsGeneratingVideo(true);
+    try {
+      // La logique de génération vidéo est gérée dans MediaUploadSection
+      // Cette fonction gère seulement l'état de chargement
+      console.log('État de chargement vidéo activé');
+      
+      // Si une URL de vidéo est fournie, la sauvegarder
+      if (videoUrl) {
+        setGeneratedVideoUrl(videoUrl);
+        console.log('URL de la vidéo sauvegardée:', videoUrl);
+      }
+    } catch (error) {
+      console.error('Erreur génération vidéo:', error);
+      toast.error('Erreur lors de la génération de la vidéo');
+      setIsGeneratingVideo(false);
+    }
+  }, []);
+
+  // Fonction pour arrêter le chargement vidéo
+  const handleStopVideoGeneration = useCallback(() => {
+    setIsGeneratingVideo(false);
+  }, []);
+
+  // Fonction pour gérer la fin de la génération vidéo
+  const handleVideoGenerationComplete = useCallback(() => {
+    setIsGeneratingVideo(false);
+  }, []);
+
   const generateCaptions = useCallback(async () => {
     if (!content.trim()) {
       toast.error('Veuillez saisir du contenu avant de générer les captions');
@@ -330,6 +371,10 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         return acc;
       }, {} as Record<string, string>);
     
+    // Vérifier que les captions sont bien formatées
+    console.log('Generated captions:', generatedCaptions);
+    console.log('Final captions for each platform:', finalCaptions);
+    
     try {
       // Appeler le webhook de publication
       const payload: PublishWebhookPayload = {
@@ -338,12 +383,15 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         platforms: selectedPlatforms,
         accounts: selectedAccounts,
         publishType: publishType,
-        scheduledDate: publishType === 'scheduled' && scheduledDateTime ? scheduledDateTime.toISOString() : undefined
+        scheduledDate: publishType === 'scheduled' && scheduledDateTime ? scheduledDateTime.toISOString() : undefined,
+        captions: finalCaptions
       };
 
       console.log('Webhook payload:', payload);
       console.log('Selected images:', selectedImages);
       console.log('Publish type:', publishType);
+      console.log('Final captions:', finalCaptions);
+      console.log('Captions being sent to N8N:', payload.captions);
 
       const webhookUrl = publishType === 'now' ? WEBHOOK_URLS.PUBLISH : WEBHOOK_URLS.SCHEDULE;
       console.log('Webhook URL:', webhookUrl);
@@ -526,6 +574,24 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             isGeneratingImage={isGeneratingImage}
             onGenerateImage={handleAiImageGeneration}
             onUseGeneratedImage={handleAddGeneratedImage}
+            // Nouveaux props pour la génération vidéo
+            videoMode={videoMode}
+            onVideoModeChange={setVideoMode}
+            videoPrompt={videoPrompt}
+            onVideoPromptChange={setVideoPrompt}
+            textVideoPrompt={textVideoPrompt}
+            onTextVideoPromptChange={setTextVideoPrompt}
+            videoDuration={videoDuration}
+            onVideoDurationChange={setVideoDuration}
+            textVideoDuration={textVideoDuration}
+            onTextVideoDurationChange={setTextVideoDuration}
+            videoStyle={videoStyle}
+            onVideoStyleChange={setVideoStyle}
+            videoImage={videoImage}
+            onVideoImageChange={setVideoImage}
+            isGeneratingVideo={isGeneratingVideo}
+            onGenerateVideo={handleGenerateVideo}
+            generatedVideoUrl={generatedVideoUrl}
           />
 
           {/* Comptes connectés */}

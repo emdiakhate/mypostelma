@@ -46,6 +46,7 @@ export interface PublishWebhookPayload {
   accounts: string[];
   publishType: 'now' | 'scheduled';
   scheduledDate?: string;
+  captions?: { [platform: string]: string };
 }
 
 export interface AiEditCombineWebhookPayload {

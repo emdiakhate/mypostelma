@@ -3,7 +3,7 @@
  * Phase 4: Lead Generation System - Grille des leads avec pagination
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,11 @@ import {
   Linkedin,
   Twitter,
   Instagram,
-  Facebook
+  Facebook,
+  Mail,
+  Share2,
+  X,
+  Filter
 } from 'lucide-react';
 import { N8NLeadData } from './LeadCard';
 import { cn } from '@/lib/utils';
@@ -49,14 +53,54 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
 }) => {
   console.log('LeadsGrid rendered with:', { leads: leads.length, loading, error });
   
+  // Filtres
+  const [activeFilters, setActiveFilters] = useState({
+    hasPhone: false,
+    hasEmail: false,
+    hasSocial: false
+  });
+  
   // Pagination
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   
-  const totalPages = Math.ceil(leads.length / itemsPerPage);
+  // Filtrage des résultats
+  const filteredResults = useMemo(() => {
+    let results = leads;
+    
+    // Filtre téléphone
+    if (activeFilters.hasPhone) {
+      results = results.filter(lead => 
+        lead.Telephone && lead.Telephone !== 'undefined' && lead.Telephone.trim() !== ''
+      );
+    }
+    
+    // Filtre email (si le champ existe)
+    if (activeFilters.hasEmail) {
+      results = results.filter(lead => 
+        lead.email && lead.email.trim() !== ''
+      );
+    }
+    
+    // Filtre réseaux sociaux
+    if (activeFilters.hasSocial) {
+      results = results.filter(lead => {
+        const hasLinkedIn = lead.LinkedIns !== '[]';
+        const hasTwitter = lead.twitters !== '[]';
+        const hasInstagram = lead.instagrams !== '[]';
+        const hasFacebook = lead.facebooks !== '[]';
+        
+        return hasLinkedIn || hasTwitter || hasInstagram || hasFacebook;
+      });
+    }
+    
+    return results;
+  }, [leads, activeFilters]);
+  
+  const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, leads.length);
-  const paginatedLeads = leads.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredResults.length);
+  const paginatedLeads = filteredResults.slice(startIndex, endIndex);
 
   // Statistiques
   const phoneCount = leads.filter(lead => lead.Telephone && lead.Telephone !== 'undefined').length;
@@ -65,6 +109,11 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
                      lead.instagrams !== '[]' || lead.facebooks !== '[]';
     return hasSocial;
   }).length;
+  
+  // Reset pagination quand les filtres changent
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [activeFilters]);
 
   // État de chargement
   if (loading) {
@@ -155,39 +204,42 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
   // Affichage des résultats
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header avec statistiques */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Résultats de recherche</h3>
-          <p className="text-sm text-muted-foreground">
-            {leads.length} leads trouvés • {phoneCount} avec téléphone • {socialCount} avec réseaux sociaux
+
+      {/* Affichage des résultats ou message vide */}
+      {filteredResults.length === 0 ? (
+        <div className="text-center py-12">
+          <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Aucun lead ne correspond aux filtres sélectionnés
           </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Exporter
+          <Button
+            variant="outline"
+            onClick={() => {
+              setActiveFilters({ hasPhone: false, hasEmail: false, hasSocial: false });
+              setCurrentPage(1);
+            }}
+          >
+            Réinitialiser les filtres
           </Button>
         </div>
-      </div>
-
-      {/* Grille des leads */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {paginatedLeads.map((lead, index) => (
-          <LeadCard
-            key={`${lead.Titre}-${index}`}
-            lead={lead}
-            onAddToLeads={onAddToLeads}
-          />
-        ))}
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {paginatedLeads.map((lead, index) => (
+            <LeadCard
+              key={`${lead.Titre}-${index}`}
+              lead={lead}
+              onAddToLeads={onAddToLeads}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            Affichage {startIndex + 1}-{endIndex} sur {leads.length} résultats
+            Affichage {startIndex + 1}-{endIndex} sur {filteredResults.length} résultats
           </p>
           
           <div className="flex items-center gap-2">
@@ -234,6 +286,16 @@ const LeadCard: React.FC<LeadCardProps> = ({
   className 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Fonction pour générer les initiales
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
 
   // Parser les réseaux sociaux
   const parseSocialMedia = (jsonString: string): string[] => {
@@ -293,15 +355,28 @@ const LeadCard: React.FC<LeadCardProps> = ({
     <Card className={cn("overflow-hidden hover:shadow-lg transition-all duration-200", className)}>
       {/* Header avec image et titre */}
       <div className="flex items-start gap-4 p-4 border-b">
-        <img 
-          src={lead.ImageUrl || '/placeholder.png'} 
-          alt={lead.Titre}
-          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = '/placeholder.png';
-          }}
-        />
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+          {lead.ImageUrl ? (
+            <img 
+              src={lead.ImageUrl}
+              alt={lead.Titre}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // En cas d'erreur de chargement, masquer l'image et afficher le fallback
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.parentElement?.querySelector('.fallback-avatar');
+                fallback?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          
+          {/* Fallback avec initiales */}
+          <div className={`fallback-avatar absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 ${lead.ImageUrl ? 'hidden' : ''}`}>
+            <span className="text-white font-semibold text-lg">
+              {getInitials(lead.Titre)}
+            </span>
+          </div>
+        </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-lg truncate">{lead.Titre}</h3>
           <p className="text-sm text-muted-foreground">{lead.Categorie}</p>
