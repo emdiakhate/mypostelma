@@ -46,6 +46,7 @@ export interface PublishWebhookPayload {
   accounts: string[];
   publishType: 'now' | 'scheduled';
   scheduledDate?: string;
+  captions?: { [platform: string]: string };
 }
 
 export interface AiEditCombineWebhookPayload {
@@ -57,6 +58,46 @@ export interface AiEditCombineWebhookPayload {
     intensity?: number;
     quality?: string;
   };
+}
+
+// Interface pour la réponse N8N de génération d'images
+export interface AiImageGenerationResponse {
+  success: boolean;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  driveFileId: string;
+  driveLink: string;
+  error?: string;
+}
+
+/**
+ * Fonction utilitaire pour vérifier si une image se charge correctement
+ * avec retry en cas d'échec
+ */
+export async function checkImageLoad(
+  imageUrl: string, 
+  maxRetries: number = 3, 
+  retryDelay: number = 2000
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(imageUrl, { method: 'HEAD' });
+      if (response.ok) {
+        console.log(`Image loaded successfully on attempt ${attempt}:`, imageUrl);
+        return true;
+      }
+    } catch (error) {
+      console.warn(`Image load attempt ${attempt} failed:`, error);
+    }
+    
+    if (attempt < maxRetries) {
+      console.log(`Retrying image load in ${retryDelay}ms... (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
+  }
+  
+  console.error(`Image failed to load after ${maxRetries} attempts:`, imageUrl);
+  return false;
 }
 
 /**

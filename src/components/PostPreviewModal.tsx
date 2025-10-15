@@ -12,6 +12,7 @@ interface PostPreviewModalProps {
     id: string;
     content: string;
     image?: string;
+    images?: string[];
     author: string;
     createdAt: string;
     scheduledDate?: string;
@@ -110,10 +111,10 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
           </div>
 
           {/* Image */}
-          {post.image && (
+          {(post.image || (post.images && post.images.length > 0)) && (
               <div className="mb-4">
                 <img 
-                  src={post.image} 
+                  src={post.image || post.images?.[0]} 
                   alt="Post content" 
                   className="w-full max-w-md rounded-lg"
                 />
@@ -137,10 +138,10 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
                 
                 <p className="text-gray-900 mb-4 leading-relaxed">{post.content}</p>
                 
-                {post.image && (
+                {(post.image || (post.images && post.images.length > 0)) && (
                   <div className="mb-4">
                     <img 
-                      src={post.image} 
+                      src={post.image || post.images?.[0]} 
                       alt="Post content"
                       className="w-full rounded-lg"
                     />

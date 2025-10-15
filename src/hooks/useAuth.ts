@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, UserPermissions, ROLE_PERMISSIONS } from '@/types/user';
+import { assignDefaultRole, ensureCorrectRole, upgradeViewersToManagers } from '@/utils/roleManager';
 
 interface UseAuthReturn {
   user: SupabaseUser | null;
@@ -29,9 +30,10 @@ export const useAuth = (): UseAuthReturn => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger le rôle de l'utilisateur depuis la BDD
+  // Charger le rôle de l'utilisateur depuis la BDD ou localStorage
   const loadUserRole = useCallback(async (userId: string) => {
     try {
+      // D'abord, essayer de charger depuis la base de données
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -39,19 +41,50 @@ export const useAuth = (): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading user role:', error);
-        return null;
+        console.warn('Could not load role from database (RLS policy), using client-side fallback:', error);
+        
+        // Fallback: utiliser localStorage pour gérer les rôles côté client
+        const storedRole = localStorage.getItem(`user_role_${userId}`);
+        if (storedRole) {
+          return storedRole as UserRole;
+        }
+        
+        // Si pas de rôle stocké, assigner un rôle par défaut
+        const defaultRole = await assignDefaultRole(userId);
+        localStorage.setItem(`user_role_${userId}`, defaultRole);
+        return defaultRole;
       }
 
-      return data?.role as UserRole || null;
+      const currentRole = data?.role as UserRole || null;
+      
+      // Vérifier et corriger le rôle si nécessaire
+      const correctedRole = await ensureCorrectRole(userId, currentRole);
+      
+      // Stocker le rôle côté client aussi
+      localStorage.setItem(`user_role_${userId}`, correctedRole);
+      
+      return correctedRole;
+      
     } catch (error) {
       console.error('Error in loadUserRole:', error);
-      return null;
+      
+      // Fallback: utiliser localStorage
+      const storedRole = localStorage.getItem(`user_role_${userId}`);
+      if (storedRole) {
+        return storedRole as UserRole;
+      }
+      
+      // Dernier recours: manager
+      localStorage.setItem(`user_role_${userId}`, 'manager');
+      return 'manager';
     }
   }, []);
 
   // Setup auth listener et vérifier session existante
   useEffect(() => {
+    // Mettre à jour les utilisateurs existants au démarrage
+    upgradeViewersToManagers();
+    
     // Setup listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {

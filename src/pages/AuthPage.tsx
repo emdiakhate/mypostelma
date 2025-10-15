@@ -21,7 +21,7 @@ export default function AuthPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/calendar');
+        navigate('/app/dashboard');
       }
     });
   }, [navigate]);
@@ -55,7 +55,7 @@ export default function AuthPage() {
         password,
         options: {
           data: { name },
-          emailRedirectTo: `${window.location.origin}/calendar`
+          emailRedirectTo: `${window.location.origin}/app/dashboard`
         }
       });
 
@@ -75,7 +75,7 @@ export default function AuthPage() {
           description: 'Vous pouvez maintenant vous connecter.'
         });
         // Auto-confirm activé, on peut se connecter directement
-        navigate('/calendar');
+        navigate('/app/dashboard');
       }
     } catch (error: any) {
       toast({
@@ -119,7 +119,7 @@ export default function AuthPage() {
           throw error;
         }
       } else {
-        navigate('/calendar');
+        navigate('/app/dashboard');
       }
     } catch (error: any) {
       toast({

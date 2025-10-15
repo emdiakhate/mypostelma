@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('postelma_current_user');
-    navigate('/login');
+    navigate('/');
     toast.info('Déconnexion réussie');
   };
 

@@ -149,9 +149,6 @@ export class PostsService {
         platforms: post.platforms || [],
         accounts: [], // À remplir avec les comptes sélectionnés
         status: post.status || 'draft',
-        publication_status: post.status === 'scheduled' ? 'scheduled' : 
-                           post.status === 'published' ? 'published' : 
-                           post.status === 'failed' ? 'failed' : 'scheduled',
         images: post.images || [],
         campaign: post.campaign,
         campaign_color: post.campaignColor,
@@ -195,10 +192,6 @@ export class PostsService {
     if (updates.platforms !== undefined) updateData.platforms = updates.platforms;
     if (updates.status !== undefined) {
       updateData.status = updates.status;
-      // Mettre à jour publication_status en fonction du status
-      updateData.publication_status = updates.status === 'scheduled' ? 'scheduled' : 
-                                     updates.status === 'published' ? 'published' : 
-                                     updates.status === 'failed' ? 'failed' : 'scheduled';
     }
     if (updates.images !== undefined) updateData.images = updates.images;
     if (updates.campaign !== undefined) updateData.campaign = updates.campaign;

@@ -6,7 +6,7 @@ import PostCard from './PostCard';
 import PostCreationModal from './PostCreationModal';
 import PostPreviewModal from './PostPreviewModal';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { format, addDays, startOfWeek, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,64 @@ interface CalendarViewProps {
   onDeletePost: (id: string) => Promise<void>;
   onDateChange: (date: Date) => void;
 }
+
+// Styles CSS pour les effets de drag and drop
+const dragDropStyles = `
+  /* Post en cours de drag */
+  .dragging-post {
+    opacity: 0.5;
+    cursor: grabbing;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+  }
+
+  /* Zone de drop active */
+  .drop-zone-active {
+    border: 2px dashed #3b82f6;
+    background-color: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    min-height: 150px;
+    transition: all 0.2s ease;
+  }
+
+  /* Indicateur de drop */
+  .drop-indicator {
+    border: 2px dashed #3b82f6;
+    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    color: #3b82f6;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* Post au survol d'une zone de drop */
+  .drag-over {
+    border-color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+
+  /* Animation de pulsation pour la zone de drop */
+  .drop-zone-pulse {
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+`;
 
 const CalendarView: React.FC<CalendarViewProps> = ({
   posts,
@@ -35,6 +93,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   
   const [draggedPost, setDraggedPost] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // États pour le drag and drop HTML5
+  const [draggedPostId, setDraggedPostId] = useState<string | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [selectedDayForPost, setSelectedDayForPost] = useState<string>('');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [previewingPost, setPreviewingPost] = useState<Post | null>(null);
@@ -76,6 +139,65 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     console.log('Drag started:', result);
     setDraggedPost(result.draggableId);
   }, []);
+
+  // Fonctions pour le drag and drop HTML5
+  const handleHtml5DragStart = useCallback((e: React.DragEvent, postId: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('postId', postId);
+    setDraggedPostId(postId);
+    setIsDragging(true);
+    e.currentTarget.classList.add('dragging-post');
+  }, []);
+
+  const handleHtml5DragEnd = useCallback((e: React.DragEvent) => {
+    e.currentTarget.classList.remove('dragging-post');
+    setDraggedPostId(null);
+    setIsDragging(false);
+    setDragOverDay(null);
+  }, []);
+
+  const handleHtml5DragOver = useCallback((e: React.DragEvent, dayKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDay(dayKey);
+  }, []);
+
+  const handleHtml5DragLeave = useCallback((e: React.DragEvent) => {
+    // Vérifier si on quitte vraiment la zone de drop
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverDay(null);
+    }
+  }, []);
+
+  const handleHtml5Drop = useCallback(async (e: React.DragEvent, targetDayKey: string) => {
+    e.preventDefault();
+    const postId = e.dataTransfer.getData('postId');
+    
+    if (!postId || !draggedPostId) return;
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const dayIndex = weekDays.findIndex(day => day.key === targetDayKey);
+    if (dayIndex === -1) return;
+
+    const targetDate = weekDays[dayIndex].date;
+    const newScheduledTime = new Date(post.scheduledTime);
+    newScheduledTime.setDate(targetDate.getDate());
+    newScheduledTime.setMonth(targetDate.getMonth());
+    newScheduledTime.setFullYear(targetDate.getFullYear());
+
+    try {
+      await onUpdatePost(post.id, { 
+        scheduledTime: newScheduledTime
+      });
+      console.log('Post déplacé avec succès');
+    } catch (error) {
+      console.error('Erreur lors du déplacement du post:', error);
+    }
+
+    setDragOverDay(null);
+  }, [posts, weekDays, onUpdatePost, draggedPostId]);
 
   const handleDragEnd = useCallback(async (result: DropResult) => {
     console.log('Drag ended:', result);
@@ -194,6 +316,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Injection des styles CSS pour le drag and drop */}
+      <style dangerouslySetInnerHTML={{ __html: dragDropStyles }} />
+      
       {/* Header du calendrier */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -233,7 +358,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px bg-gray-200">
             {weekDays.map((day) => (
-              <div key={day.key} className="bg-white flex flex-col">
+              <div 
+                key={day.key} 
+                className={cn(
+                  "bg-white flex flex-col transition-all duration-200",
+                  dragOverDay === day.key && "drop-zone-active drop-zone-pulse"
+                )}
+                onDragOver={(e) => handleHtml5DragOver(e, day.key)}
+                onDragLeave={handleHtml5DragLeave}
+                onDrop={(e) => handleHtml5Drop(e, day.key)}
+              >
                 {/* Day Header */}
                 <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                   <div className="flex items-center justify-between group">
@@ -264,6 +398,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         snapshot.isDraggingOver && "bg-blue-50 ring-2 ring-blue-300 ring-inset"
                       )}
                     >
+                      {/* Indicateur de drop HTML5 */}
+                      {isDragging && dragOverDay === day.key && (
+                        <div className="drop-indicator">
+                          <Clock className="w-4 h-4" />
+                          <span>Garder l'heure programmée</span>
+                        </div>
+                      )}
+                      
                       {postsByDay[day.key]?.map((post, index) => {
                         console.log('Rendering post:', post.id, 'for day:', day.key);
                         if (!post.id) {
@@ -281,6 +423,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                 "transition-all duration-200",
                                 snapshot.isDragging && "rotate-3 scale-105 opacity-80 shadow-lg"
                               )}
+                              // Support HTML5 drag and drop
+                              draggable
+                              onDragStart={(e) => handleHtml5DragStart(e, String(post.id))}
+                              onDragEnd={handleHtml5DragEnd}
                             >
                               <PostCard
                                 post={post}
