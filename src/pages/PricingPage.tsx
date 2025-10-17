@@ -18,39 +18,9 @@ const PricingPage: React.FC = () => {
 
   const handleSubscribe = async (plan: 'pro' | 'business') => {
     setLoading(plan);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error('Vous devez être connecté pour souscrire');
-        navigate('/auth');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: PRICE_IDS[plan] }
-      });
-
-      if (error) {
-        console.error('Error creating checkout:', error);
-        if (error.message?.includes('Session invalide') || error.message?.includes('Auth session missing')) {
-          toast.error('Votre session a expiré. Veuillez vous reconnecter.');
-          await supabase.auth.signOut();
-          navigate('/auth');
-          return;
-        }
-        throw error;
-      }
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error: any) {
-      console.error('Error creating checkout:', error);
-      toast.error(error.message || 'Erreur lors de la création du paiement');
-    } finally {
-      setLoading(null);
-    }
+    // Simulation pour la démo - redirection vers page de checkout simulée
+    navigate(`/checkout?plan=${plan}`);
+    setLoading(null);
   };
 
   return (

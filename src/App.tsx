@@ -24,6 +24,7 @@ import PublicationsPage from "./pages/PublicationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreationPage from "./pages/CreationPage";
 import PricingPage from "./pages/PricingPage";
+import CheckoutSimulation from "./pages/CheckoutSimulation";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const ProtectedRoutes = () => {
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/checkout" element={<CheckoutSimulation />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
