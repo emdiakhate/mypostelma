@@ -26,7 +26,7 @@ export class PostsService {
   static async getPosts(params?: PostSearchParams): Promise<{ posts: Post[]; total: number }> {
     let query = supabase
       .from('posts')
-      .select('*, post_analytics(*)', { count: 'exact' });
+      .select('*, post_analytics(*), profiles!posts_author_id_fkey(name, avatar)', { count: 'exact' });
 
     // Filtres
     if (params?.status && params.status.length > 0) {
@@ -80,7 +80,8 @@ export class PostsService {
       images: post.images || [],
       campaign: post.campaign,
       campaignColor: post.campaign_color,
-      author: post.author_id,
+      author: post.profiles?.name || 'Utilisateur inconnu',
+      authorAvatar: post.profiles?.avatar,
       captions: (post.captions || {}) as any,
       dayColumn: post.day_column,
       timeSlot: post.time_slot,
@@ -104,7 +105,7 @@ export class PostsService {
   static async getPostById(id: string): Promise<Post | null> {
     const { data, error } = await supabase
       .from('posts')
-      .select('*, post_analytics(*)')
+      .select('*, post_analytics(*), profiles!posts_author_id_fkey(name, avatar)')
       .eq('id', id)
       .single();
 
@@ -124,7 +125,8 @@ export class PostsService {
       images: data.images || [],
       campaign: data.campaign,
       campaignColor: data.campaign_color,
-      author: data.author_id,
+      author: data.profiles?.name || 'Utilisateur inconnu',
+      authorAvatar: data.profiles?.avatar,
       captions: (data.captions || {}) as any,
       dayColumn: data.day_column,
       timeSlot: data.time_slot,

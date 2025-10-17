@@ -356,7 +356,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 overflow-y-auto" style={{ backgroundColor: '#f5f5f5' }}>
+      <div className="flex-1" style={{ backgroundColor: '#f5f5f5' }}>
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px" style={{ backgroundColor: '#e5e5e5' }}>
             {weekDays.map((day) => (
