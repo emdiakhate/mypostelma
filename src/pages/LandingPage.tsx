@@ -910,8 +910,12 @@ const LandingPage: React.FC = () => {
                   <span className="text-gray-600">/mois</span>
                 </div>
                 <p className="text-gray-600 mb-6">Pour découvrir la plateforme</p>
-                <Button variant="outline" className="w-full mb-6">
-                  Commencer gratuitement
+                <Button 
+                  variant="outline" 
+                  className="w-full mb-6"
+                  asChild
+                >
+                  <Link to="/app/calendar">Commencer gratuitement</Link>
                 </Button>
                 <ul className="space-y-3 text-left">
                   <li className="flex items-center text-sm">
@@ -961,8 +965,11 @@ const LandingPage: React.FC = () => {
                   <span className="text-gray-600">/mois</span>
                 </div>
                 <p className="text-gray-600 mb-6">Pour les entrepreneurs et PME</p>
-                <Button className="w-full bg-[#1a4d2e] hover:bg-[#2d5f4a] text-white shadow-lg mb-6">
-                  Essayer Pro
+                <Button 
+                  className="w-full bg-[#1a4d2e] hover:bg-[#2d5f4a] text-white shadow-lg mb-6"
+                  asChild
+                >
+                  <Link to="/pricing">Essayer Pro</Link>
                 </Button>
                 <ul className="space-y-3 text-left">
                   <li className="flex items-center text-sm">
@@ -1017,8 +1024,12 @@ const LandingPage: React.FC = () => {
                   <span className="text-gray-600">/mois</span>
                 </div>
                 <p className="text-gray-600 mb-6">Pour les agences et grandes équipes</p>
-                <Button variant="outline" className="w-full mb-6">
-                  Essayer Business
+                <Button 
+                  variant="outline" 
+                  className="w-full mb-6"
+                  asChild
+                >
+                  <Link to="/pricing">Essayer Business</Link>
                 </Button>
                 <ul className="space-y-3 text-left">
                   <li className="flex items-center text-sm">

@@ -23,6 +23,7 @@ import LeadsPage from "./pages/LeadsPage";
 import PublicationsPage from "./pages/PublicationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreationPage from "./pages/CreationPage";
+import PricingPage from "./pages/PricingPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const ProtectedRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
