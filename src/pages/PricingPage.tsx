@@ -31,7 +31,17 @@ const PricingPage: React.FC = () => {
         body: { priceId: PRICE_IDS[plan] }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating checkout:', error);
+        if (error.message?.includes('Session invalide') || error.message?.includes('Auth session missing')) {
+          toast.error('Votre session a expiré. Veuillez vous reconnecter.');
+          await supabase.auth.signOut();
+          navigate('/auth');
+          return;
+        }
+        throw error;
+      }
+      
       if (data?.url) {
         window.open(data.url, '_blank');
       }
