@@ -424,12 +424,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                               {...provided.dragHandleProps}
                               className={cn(
                                 "transition-all duration-200",
-                                snapshot.isDragging && "rotate-3 scale-105 opacity-80 shadow-lg"
+                                snapshot.isDragging && "dragging-post"
                               )}
-                              // Support HTML5 drag and drop
-                              draggable
-                              onDragStart={(e) => handleHtml5DragStart(e, String(post.id))}
-                              onDragEnd={handleHtml5DragEnd}
                             >
                               <PostCard
                                 post={post}
