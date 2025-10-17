@@ -162,10 +162,20 @@ const PostCard: React.FC<PostCardProps> = memo(({
       <div className="px-2 flex-1 flex flex-col">
         {/* Author */}
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-4 h-4 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-xs text-gray-600">👤</span>
-          </div>
-          <span className="text-[10px] text-muted-foreground truncate">{post.author}</span>
+          {post.authorAvatar ? (
+            <img 
+              src={post.authorAvatar} 
+              alt={post.author}
+              className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-[8px] text-white font-semibold">
+                {post.author.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </span>
+            </div>
+          )}
+          <span className="text-[10px] text-foreground font-medium truncate">{post.author}</span>
         </div>
 
         {/* Badge de statut */}

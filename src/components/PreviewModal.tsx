@@ -85,7 +85,6 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
             src={images[0]} 
             alt="Post content"
             className="w-full h-auto max-h-[400px] object-cover cursor-pointer mx-auto"
-            style={{ borderRadius: 0 }}
           />
         </div>
       );
@@ -99,13 +98,11 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
             src={images[0]} 
             alt="Post content 1"
             className="w-full h-full object-cover cursor-pointer"
-            style={{ borderRadius: 0 }}
           />
           <OptimizedImage 
             src={images[1]} 
             alt="Post content 2"
             className="w-full h-full object-cover cursor-pointer"
-            style={{ borderRadius: 0 }}
           />
         </div>
       );
@@ -119,20 +116,17 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
             src={images[0]} 
             alt="Post content 1"
             className="w-full h-full object-cover cursor-pointer"
-            style={{ borderRadius: 0 }}
           />
           <div className="grid grid-rows-2 gap-[2px]">
             <OptimizedImage 
               src={images[1]} 
               alt="Post content 2"
               className="w-full h-full object-cover cursor-pointer"
-              style={{ borderRadius: 0 }}
             />
             <OptimizedImage 
               src={images[2]} 
               alt="Post content 3"
               className="w-full h-full object-cover cursor-pointer"
-              style={{ borderRadius: 0 }}
             />
           </div>
         </div>
@@ -147,26 +141,22 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
           src={images[0]} 
           alt="Post content 1"
           className="w-full h-full object-cover cursor-pointer"
-          style={{ borderRadius: 0 }}
         />
         <OptimizedImage 
           src={images[1]} 
           alt="Post content 2"
           className="w-full h-full object-cover cursor-pointer"
-          style={{ borderRadius: 0 }}
         />
         <OptimizedImage 
           src={images[2]} 
           alt="Post content 3"
           className="w-full h-full object-cover cursor-pointer"
-          style={{ borderRadius: 0 }}
         />
         <div className="relative">
           <OptimizedImage 
             src={images[3]} 
             alt="Post content 4"
             className="w-full h-full object-cover cursor-pointer"
-            style={{ borderRadius: 0 }}
           />
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="text-white text-2xl font-bold">+{remainingCount}</span>

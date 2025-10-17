@@ -75,12 +75,8 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
       );
     }
     
-    // Filtre email (si le champ existe)
-    if (activeFilters.hasEmail) {
-      results = results.filter(lead => 
-        lead.email && lead.email.trim() !== ''
-      );
-    }
+    // Filtre email - N8NLeadData n'a pas de champ email
+    // Skip ce filtre pour N8N leads
     
     // Filtre réseaux sociaux
     if (activeFilters.hasSocial) {

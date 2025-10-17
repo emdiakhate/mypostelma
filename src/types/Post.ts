@@ -13,6 +13,7 @@ export interface Post {
   campaign?: string;
   campaignColor?: string;
   author: string;
+  authorAvatar?: string;
   captions?: { [key: string]: string }; // Captions générées par IA pour chaque plateforme
   dayColumn: string; // e.g., 'sunday', 'monday', etc.
   timeSlot: number; // position in the day column

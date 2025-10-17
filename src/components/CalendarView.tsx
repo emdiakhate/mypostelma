@@ -25,11 +25,12 @@ interface CalendarViewProps {
 const dragDropStyles = `
   /* Post en cours de drag */
   .dragging-post {
-    opacity: 0.5;
+    opacity: 0.8;
     cursor: grabbing;
-    transform: rotate(2deg);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
+    transform: rotate(3deg) scale(1.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
   }
 
   /* Zone de drop active */
@@ -354,7 +355,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-gray-100">
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px bg-gray-200">
             {weekDays.map((day) => (
