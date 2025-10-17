@@ -84,17 +84,13 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Rediriger vers l'app si l'utilisateur est déjà connecté
+  // Afficher un loader pendant la vérification de l'authentification
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a4d2e]"></div>
       </div>
     );
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/app/calendar" replace />;
   }
 
   // 5. ANIMATIONS FRAMER MOTION
