@@ -7,59 +7,88 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
-    console.log("Create checkout: Function started");
+    logStep("Function started");
     
+    // Récupérer le JWT depuis l'en-tête Authorization
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
-      throw new Error("No authorization header provided");
+      logStep("ERROR: No authorization header");
+      throw new Error("Vous devez être connecté pour effectuer cette action");
     }
     
-    const token = authHeader.replace("Bearer ", "");
-    console.log("Authenticating user with token");
+    const jwt = authHeader.replace("Bearer ", "");
+    logStep("JWT token found");
+
+    // Créer un client Supabase avec le JWT de l'utilisateur
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
+    );
+
+    // Récupérer les informations de l'utilisateur
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
-    const { data, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError) {
-      console.error("Authentication error:", authError);
-      throw new Error(`Authentication error: ${authError.message}`);
+    if (userError || !user) {
+      logStep("ERROR: Failed to get user", { error: userError });
+      throw new Error("Session invalide. Veuillez vous reconnecter.");
     }
-    
-    const user = data.user;
-    if (!user?.email) {
-      console.error("User not authenticated or email not available");
-      throw new Error("User not authenticated or email not available");
+
+    if (!user.email) {
+      logStep("ERROR: User has no email");
+      throw new Error("Votre compte n'a pas d'email associé");
     }
-    
-    console.log("User authenticated:", user.id, user.email);
+
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { priceId } = await req.json();
     if (!priceId) {
-      console.error("Price ID is required");
-      throw new Error("Price ID is required");
+      logStep("ERROR: No price ID provided");
+      throw new Error("ID de prix manquant");
     }
-    console.log("Price ID:", priceId);
+    logStep("Price ID received", { priceId });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("ERROR: Stripe key not configured");
+      throw new Error("Configuration Stripe manquante");
+    }
+
+    const stripe = new Stripe(stripeKey, { 
       apiVersion: "2025-08-27.basil" 
     });
     
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    logStep("Checking for existing Stripe customer", { email: user.email });
+    const customers = await stripe.customers.list({ 
+      email: user.email, 
+      limit: 1 
+    });
+    
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      logStep("Found existing customer", { customerId });
+    } else {
+      logStep("No existing customer found, will create new");
     }
+
+    const origin = req.headers.get("origin") || req.headers.get("referer") || "http://localhost:8080";
+    logStep("Creating checkout session", { origin });
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -71,9 +100,11 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/app/calendar?subscription=success`,
-      cancel_url: `${req.headers.get("origin")}/?subscription=canceled`,
+      success_url: `${origin}/app/calendar?subscription=success`,
+      cancel_url: `${origin}/pricing?subscription=canceled`,
     });
+
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -81,7 +112,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("ERROR in create-checkout:", errorMessage);
+    logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
