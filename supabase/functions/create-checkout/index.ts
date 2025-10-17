@@ -41,8 +41,8 @@ serve(async (req) => {
       }
     );
 
-    // Récupérer les informations de l'utilisateur
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Récupérer les informations de l'utilisateur en passant le JWT
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(jwt);
     
     if (userError || !user) {
       logStep("ERROR: Failed to get user", { error: userError });
