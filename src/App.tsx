@@ -22,6 +22,7 @@ import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
 import PublicationsPage from "./pages/PublicationsPage";
 import SettingsPage from "./pages/SettingsPage";
+import CreationPage from "./pages/CreationPage";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ function MainLayout() {
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />
         <Route path="/publications" element={<PublicationsPage />} />
+        <Route path="/creation" element={<CreationPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

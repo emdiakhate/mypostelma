@@ -1,0 +1,725 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Palette, Rotate3D, Home, Megaphone, Users, User,
+  Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2
+} from "lucide-react";
+import sacnoir from '@/assets/sacnoir.png';
+import sacblanc from '@/assets/sacblanc.png';
+import sacrouge from '@/assets/sacrouge.png';
+import sacbleu from '@/assets/sacbleu.png';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+
+// Types
+interface TemplateInput {
+  type: 'image' | 'color-picker' | 'text' | 'select' | 'multi-select';
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+  default?: string | string[];
+  multiple?: boolean;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge: string;
+  inputs: TemplateInput[];
+  exampleBefore: string;
+  exampleAfter: string | null; // Peut être null pour les modèles multi-images
+  exampleAfterMultiple?: string[]; // Nouvelles images multiples
+  hasMultipleResults?: boolean; // Flag pour identifier les modèles multi-images
+  resultCount?: number; // Nombre d'images à afficher
+  useCases: string[];
+}
+
+// Données des 6 modèles
+const templates: Template[] = [
+  {
+    id: 'palette-couleurs',
+    name: 'Palette de couleurs',
+    category: 'variation',
+    description: 'Générez votre produit dans différentes couleurs pour montrer toutes les variantes disponibles',
+    icon: Palette,
+    badge: 'Populaire',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'color-picker', label: 'Couleurs souhaitées (3-5)', required: true, multiple: true }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400',
+    exampleAfter: null, // Plus d'image unique
+    exampleAfterMultiple: [
+      sacnoir,   // Sac noir
+      sacblanc,  // Sac blanc
+      sacrouge,  // Sac rouge
+      sacbleu    // Sac bleu
+    ],
+    hasMultipleResults: true,
+    resultCount: 4,
+    useCases: ['Sacs', 'Chaussures', 'Vêtements', 'Meubles', 'Accessoires']
+  },
+  {
+    id: 'vue-360',
+    name: 'Vue 360°',
+    category: 'variation',
+    description: 'Présentez votre produit sous tous les angles comme un showroom professionnel',
+    icon: Rotate3D,
+    badge: 'Populaire',
+    inputs: [
+      { type: 'image', label: 'Photo du produit (vue de face)', required: true },
+      { type: 'select', label: 'Nombre d\'angles', options: ['4 angles', '6 angles', '8 angles'], default: '6 angles' }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
+    exampleAfter: null, // Plus d'image unique
+    exampleAfterMultiple: [
+      'https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=400',
+      'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400',
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
+      'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400'
+    ],
+    hasMultipleResults: true,
+    resultCount: 4,
+    useCases: ['Meubles', 'Électronique', 'Chaussures', 'Voitures', 'Décoration']
+  },
+  {
+    id: 'mise-en-situation',
+    name: 'Dans son environnement',
+    category: 'contexte',
+    description: 'Placez automatiquement votre produit dans des environnements réalistes',
+    icon: Home,
+    badge: 'Coup de cœur',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'multi-select', label: 'Environnements', options: ['Salon moderne', 'Chambre cosy', 'Bureau professionnel', 'Extérieur'], default: ['Salon moderne'] }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400',
+    exampleAfter: 'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800',
+    useCases: ['Meubles', 'Décoration', 'Luminaires', 'Plantes', 'Art']
+  },
+  {
+    id: 'pub-reseaux-sociaux',
+    name: 'Pub prête à poster',
+    category: 'marketing',
+    description: 'Créez des visuels publicitaires professionnels avec texte et design',
+    icon: Megaphone,
+    badge: 'Populaire',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'text', label: 'Slogan', placeholder: 'Ex: Élégance intemporelle', required: true },
+      { type: 'select', label: 'Style', options: ['Moderne', 'Minimaliste', 'Luxe', 'Fun', 'Écologique'], default: 'Moderne' },
+      { type: 'select', label: 'Format', options: ['Carré (1:1)', 'Story (9:16)', 'Bannière (16:9)', 'Tous'], default: 'Tous' }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+    exampleAfter: 'https://images.unsplash.com/photo-1611923134239-a5011a30d3a1?w=800',
+    useCases: ['Tous produits', 'E-commerce', 'Marques', 'Services']
+  },
+  {
+    id: 'lifestyle-branding',
+    name: 'Style de vie',
+    category: 'marketing',
+    description: 'Intégrez votre produit dans des scènes de vie inspirantes',
+    icon: Users,
+    badge: 'Tendance',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'multi-select', label: 'Ambiances', options: ['Sport & Fitness', 'Travel & Aventure', 'Cocooning & Détente', 'Bureau & Productivité'], required: true }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400',
+    exampleAfter: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
+    useCases: ['Mode', 'Sport', 'Accessoires', 'Tech', 'Bien-être']
+  },
+  {
+    id: 'essayage-virtuel',
+    name: 'Essayage virtuel',
+    category: 'ecommerce',
+    description: 'Montrez vos vêtements/accessoires portés par des mannequins variés',
+    icon: User,
+    badge: 'Innovation',
+    inputs: [
+      { type: 'image', label: 'Photo du vêtement (à plat ou sur cintre)', required: true },
+      { type: 'multi-select', label: 'Types de mannequins', options: ['Homme casual', 'Femme élégante', 'Style sport', 'Style streetwear', 'Morphologies variées'], required: true }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+    exampleAfter: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800',
+    useCases: ['Vêtements', 'Accessoires', 'Bijoux', 'Chaussures', 'Montres']
+  }
+];
+
+// Composant TemplateCard
+function TemplateCard({ template }: { template: Template }) {
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showUseModal, setShowUseModal] = useState(false);
+
+  return (
+    <>
+      <Card className="overflow-hidden hover:shadow-lg transition-all group">
+        {/* Badge en haut */}
+        {template.badge && (
+          <div className="absolute top-4 right-4 z-10">
+            <Badge variant="default" className="bg-gradient-to-r from-blue-600 to-purple-600">
+              {template.badge}
+            </Badge>
+          </div>
+        )}
+
+        {/* Image de preview */}
+        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+          <img
+            src={template.exampleBefore}
+            alt={template.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Icône */}
+          <div className="absolute bottom-4 left-4">
+            <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center">
+              <template.icon className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </div>
+
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{template.name}</span>
+            <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          </CardTitle>
+          <CardDescription>{template.description}</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          {/* Cas d'usage */}
+          <div className="mb-4">
+            <p className="text-xs text-muted-foreground mb-2">Idéal pour :</p>
+            <div className="flex flex-wrap gap-1">
+              {template.useCases.slice(0, 3).map((useCase) => (
+                <Badge key={useCase} variant="secondary" className="text-xs">
+                  {useCase}
+                </Badge>
+              ))}
+              {template.useCases.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{template.useCases.length - 3}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowPreviewModal(true)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Aperçu
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => setShowUseModal(true)}
+          >
+            <Wand2 className="w-4 h-4 mr-2" />
+            Utiliser
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Modal Aperçu */}
+      <PreviewModal
+        open={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        template={template}
+      />
+
+      {/* Modal Utilisation */}
+      <UseTemplateModal
+        open={showUseModal}
+        onClose={() => setShowUseModal(false)}
+        template={template}
+      />
+    </>
+  );
+}
+
+// Fonction helper pour les labels des résultats multiples
+function getResultLabel(templateId: string, index: number): string {
+  const labels = {
+    'vue-360': ['Face', 'Profil G', 'Profil D', 'Dos', '3/4', 'Dessus'],
+    'palette-couleurs': ['Noir', 'Blanc', 'Rouge', 'Bleu'],
+    'mise-en-situation': ['Salon', 'Chambre', 'Bureau', 'Extérieur'],
+    'lifestyle-branding': ['Sport', 'Travel', 'Cocooning', 'Bureau'],
+    'pub-reseaux-sociaux': ['Carré', 'Story', 'Bannière', 'Feed']
+  };
+
+  const templateLabels = labels[templateId] || [];
+  return templateLabels[index] || `Variation ${index + 1}`;
+}
+
+// Fonction helper pour les descriptions
+function getExpectedOutput(templateId: string, hasMultipleResults?: boolean): string {
+  if (!hasMultipleResults) {
+    const singleOutputs = {
+      'mise-en-situation': '4 visuels de votre produit intégré dans différents environnements réalistes',
+      'pub-reseaux-sociaux': '3 formats publicitaires (carré, story, bannière) avec votre produit, slogan et design professionnel',
+      'lifestyle-branding': '4 scènes lifestyle avec votre produit dans des situations inspirantes',
+      'essayage-virtuel': '3-4 mannequins différents portant votre vêtement/accessoire'
+    };
+    return singleOutputs[templateId] || 'Un visuel professionnel de votre produit';
+  }
+
+  const multipleOutputs = {
+    'vue-360': '4 à 8 vues de votre produit sous différents angles (face, profils, dos, 3/4, dessus) pour une présentation showroom',
+    'palette-couleurs': 'Votre produit décliné en 4-6 couleurs différentes, parfait pour montrer toutes vos variantes disponibles'
+  };
+
+  return multipleOutputs[templateId] || 'Plusieurs variations de votre produit';
+}
+
+// Modal Aperçu (Avant/Après)
+function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <template.icon className="w-6 h-6 text-primary" />
+            {template.name}
+          </DialogTitle>
+          <DialogDescription>{template.description}</DialogDescription>
+        </DialogHeader>
+
+        {/* Comparaison Avant/Après */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* AVANT - Reste identique */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-500" />
+              <span className="font-semibold text-sm">Avant</span>
+            </div>
+            <div className="relative rounded-lg overflow-hidden border-2 border-orange-500/20">
+              <img
+                src={template.exampleBefore}
+                alt="Avant"
+                className="w-full h-64 object-cover"
+              />
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary">Image originale</Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* APRÈS - Conditionnel selon hasMultipleResults */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="font-semibold text-sm">Après</span>
+              {template.hasMultipleResults && (
+                <Badge variant="outline" className="ml-auto">
+                  {template.resultCount} résultats
+                </Badge>
+              )}
+            </div>
+
+            {/* SI IMAGE UNIQUE */}
+            {!template.hasMultipleResults && template.exampleAfter && (
+              <div className="relative rounded-lg overflow-hidden border-2 border-green-500/20">
+                <img
+                  src={template.exampleAfter}
+                  alt="Après"
+                  className="w-full h-64 object-cover"
+                />
+                <div className="absolute top-2 left-2">
+                  <Badge className="bg-green-500">Résultat généré</Badge>
+                </div>
+              </div>
+            )}
+
+            {/* SI PLUSIEURS IMAGES */}
+            {template.hasMultipleResults && template.exampleAfterMultiple && (
+              <div className="grid grid-cols-2 gap-2">
+                {template.exampleAfterMultiple.map((imageUrl, index) => (
+                  <div 
+                    key={index}
+                    className="relative rounded-lg overflow-hidden border border-green-500/20 hover:border-green-500/50 transition-colors group"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`Résultat ${index + 1}`}
+                      className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute top-1 left-1">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs bg-green-500/90 text-white"
+                      >
+                        {getResultLabel(template.id, index)}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Informations supplémentaires */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <Sparkles className="w-5 h-5 text-primary mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">Ce que vous obtiendrez :</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {getExpectedOutput(template.id, template.hasMultipleResults)}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <Clock className="w-5 h-5 text-primary mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">Temps de génération :</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Environ {template.hasMultipleResults ? '60-90' : '30-60'} secondes
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Fermer
+          </Button>
+          <Button onClick={() => {
+            onClose();
+            // Ouvrir le modal d'utilisation
+          }}>
+            <Wand2 className="w-4 h-4 mr-2" />
+            Utiliser ce modèle
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Composant ImageUploader simple
+function ImageUploader({ onUpload }: { onUpload: (file: File) => void }) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpload(file);
+    }
+  };
+
+  return (
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+        id="image-upload"
+      />
+      <label htmlFor="image-upload" className="cursor-pointer">
+        <div className="text-gray-500">
+          <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p>Cliquez pour sélectionner une image</p>
+        </div>
+      </label>
+    </div>
+  );
+}
+
+// Composant ColorPicker simple
+function ColorPicker({ multiple, onChange }: { multiple?: boolean; onChange: (colors: string[]) => void }) {
+  const [colors, setColors] = useState<string[]>([]);
+
+  const addColor = (color: string) => {
+    if (multiple) {
+      const newColors = [...colors, color];
+      setColors(newColors);
+      onChange(newColors);
+    } else {
+      setColors([color]);
+      onChange([color]);
+    }
+  };
+
+  const removeColor = (index: number) => {
+    const newColors = colors.filter((_, i) => i !== index);
+    setColors(newColors);
+    onChange(newColors);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'].map((color) => (
+          <button
+            key={color}
+            onClick={() => addColor(color)}
+            className="w-8 h-8 rounded-full border-2 border-gray-300"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </div>
+      {colors.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {colors.map((color, index) => (
+            <div key={index} className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-sm">{color}</span>
+              <button onClick={() => removeColor(index)} className="text-red-500">×</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Composant MultiSelect simple
+function MultiSelect({ options, onChange }: { options: string[]; onChange: (values: string[]) => void }) {
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggleOption = (option: string) => {
+    const newSelected = selected.includes(option)
+      ? selected.filter(item => item !== option)
+      : [...selected, option];
+    setSelected(newSelected);
+    onChange(newSelected);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((option) => (
+          <label key={option} className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selected.includes(option)}
+              onChange={() => toggleOption(option)}
+              className="rounded"
+            />
+            <span className="text-sm">{option}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Modal Utilisation (Formulaire)
+function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    
+    try {
+      // Préparer les données selon le template
+      const payload = {
+        templateId: template.id,
+        ...formData
+      };
+
+      // Appel au webhook N8N
+      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/creation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      setGeneratedImages(result.images || []);
+      
+      toast.success('Images générées avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la génération:', error);
+      toast.error('Erreur lors de la génération');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{template.name}</DialogTitle>
+          <DialogDescription>
+            Remplissez les informations pour générer vos visuels
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {template.inputs.map((input) => (
+            <div key={input.label}>
+              <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
+              
+              {input.type === 'image' && (
+                <div className="mt-2">
+                  <ImageUploader
+                    onUpload={(file) => setFormData({ ...formData, image: file })}
+                  />
+                </div>
+              )}
+
+              {input.type === 'color-picker' && (
+                <ColorPicker
+                  multiple={input.multiple}
+                  onChange={(colors) => setFormData({ ...formData, colors })}
+                />
+              )}
+
+              {input.type === 'text' && (
+                <Input
+                  placeholder={input.placeholder}
+                  onChange={(e) => setFormData({ ...formData, [input.label]: e.target.value })}
+                  className="mt-2"
+                />
+              )}
+
+              {input.type === 'select' && (
+                <Select
+                  onValueChange={(value) => setFormData({ ...formData, [input.label]: value })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder={`Choisir ${input.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {input.options?.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {input.type === 'multi-select' && (
+                <MultiSelect
+                  options={input.options || []}
+                  onChange={(values) => setFormData({ ...formData, [input.label]: values })}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Images générées */}
+        {generatedImages.length > 0 && (
+          <div className="space-y-2">
+            <Label>Images générées</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {generatedImages.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Résultat ${index + 1}`}
+                  className="rounded-lg border"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isGenerating}>
+            Annuler
+          </Button>
+          <Button onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Génération...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Générer
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Page principale
+export default function CreationPage() {
+  const [category, setCategory] = useState('all');
+
+  const filteredTemplates = useMemo(() => {
+    if (category === 'all') return templates;
+    return templates.filter(template => template.category === category);
+  }, [category]);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Studio de Création</h1>
+          <p className="text-muted-foreground">
+            Créez des visuels professionnels pour vos produits en quelques clics
+          </p>
+        </div>
+        
+        {/* Filtres par catégorie */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <Button 
+            variant={category === 'all' ? 'default' : 'outline'} 
+            onClick={() => setCategory('all')}
+          >
+            Tous
+          </Button>
+          <Button 
+            variant={category === 'variation' ? 'default' : 'outline'}
+            onClick={() => setCategory('variation')}
+          >
+            Variations
+          </Button>
+          <Button 
+            variant={category === 'contexte' ? 'default' : 'outline'}
+            onClick={() => setCategory('contexte')}
+          >
+            Mise en contexte
+          </Button>
+          <Button 
+            variant={category === 'marketing' ? 'default' : 'outline'}
+            onClick={() => setCategory('marketing')}
+          >
+            Marketing
+          </Button>
+          <Button 
+            variant={category === 'ecommerce' ? 'default' : 'outline'}
+            onClick={() => setCategory('ecommerce')}
+          >
+            E-commerce
+          </Button>
+        </div>
+      </div>
+
+      {/* Grid des modèles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        {filteredTemplates.map((template) => (
+          <TemplateCard key={template.id} template={template} />
+        ))}
+      </div>
+    </div>
+  );
+}

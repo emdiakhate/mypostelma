@@ -294,18 +294,79 @@ export const TwitterPreview: React.FC<PreviewProps> = memo(({
           })}
         </p>
         
-        {image && (
-          <div className="mt-3">
-            <OptimizedImage 
-              src={image} 
-              alt="Post content"
-              className="w-full rounded-2xl"
-            />
-            <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-              0:06
-            </div>
-          </div>
-        )}
+        {(() => {
+          // Gestion des images multiples
+          const images = Array.isArray(image) ? image : (image ? [image] : []);
+          const imageCount = images.length;
+
+          if (imageCount === 0) return null;
+
+          if (imageCount === 1) {
+            // Image unique
+            return (
+              <div className="mt-3 relative">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Post content"
+                  className="w-full rounded-2xl"
+                />
+                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                  0:06
+                </div>
+              </div>
+            );
+          }
+
+          if (imageCount === 2) {
+            // 2 images - grid 2 colonnes
+            return (
+              <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl overflow-hidden">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Post content 1"
+                  className="w-full h-48 object-cover"
+                />
+                <OptimizedImage 
+                  src={images[1]} 
+                  alt="Post content 2"
+                  className="w-full h-48 object-cover"
+                />
+              </div>
+            );
+          }
+
+          if (imageCount >= 3) {
+            // 3+ images - 1 grande + 2 petites
+            return (
+              <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl overflow-hidden h-64">
+                <div className="row-span-2">
+                  <OptimizedImage 
+                    src={images[0]} 
+                    alt="Post content 1"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <OptimizedImage 
+                  src={images[1]} 
+                  alt="Post content 2"
+                  className="w-full h-32 object-cover"
+                />
+                <div className="relative">
+                  <OptimizedImage 
+                    src={images[2]} 
+                    alt="Post content 3"
+                    className="w-full h-32 object-cover"
+                  />
+                  {imageCount > 3 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">+{imageCount - 3}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+        })()}
       </div>
 
       {/* Source */}
@@ -384,16 +445,77 @@ export const InstagramPreview: React.FC<PreviewProps> = memo(({
         </div>
       </div>
 
-      {/* Image */}
-      {image && (
-        <div className="aspect-square">
-          <OptimizedImage 
-            src={image} 
-            alt="Post content"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
+      {/* Images */}
+      {(() => {
+        // Gestion des images multiples
+        const images = Array.isArray(image) ? image : (image ? [image] : []);
+        const imageCount = images.length;
+
+        if (imageCount === 0) return null;
+
+        if (imageCount === 1) {
+          // Image unique - format carré Instagram
+          return (
+            <div className="aspect-square">
+              <OptimizedImage 
+                src={images[0]} 
+                alt="Post content"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          );
+        }
+
+        if (imageCount === 2) {
+          // 2 images - grid 2 colonnes
+          return (
+            <div className="grid grid-cols-2 aspect-square">
+              <OptimizedImage 
+                src={images[0]} 
+                alt="Post content 1"
+                className="w-full h-full object-cover"
+              />
+              <OptimizedImage 
+                src={images[1]} 
+                alt="Post content 2"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          );
+        }
+
+        if (imageCount >= 3) {
+          // 3+ images - 1 grande + 2 petites
+          return (
+            <div className="grid grid-cols-2 aspect-square">
+              <div className="row-span-2">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Post content 1"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <OptimizedImage 
+                src={images[1]} 
+                alt="Post content 2"
+                className="w-full h-full object-cover"
+              />
+              <div className="relative">
+                <OptimizedImage 
+                  src={images[2]} 
+                  alt="Post content 3"
+                  className="w-full h-full object-cover"
+                />
+                {imageCount > 3 && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">+{imageCount - 3}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+      })()}
 
       {/* Actions */}
       <div className="p-4">
@@ -466,15 +588,76 @@ export const LinkedInPreview: React.FC<PreviewProps> = memo(({
       <div className="p-4">
         <p className="text-gray-900 mb-4 leading-relaxed">{content}</p>
         
-        {image && (
-          <div className="mb-4">
-            <OptimizedImage 
-              src={image} 
-              alt="Post content"
-              className="w-full rounded-lg"
-            />
-          </div>
-        )}
+        {(() => {
+          // Gestion des images multiples
+          const images = Array.isArray(image) ? image : (image ? [image] : []);
+          const imageCount = images.length;
+
+          if (imageCount === 0) return null;
+
+          if (imageCount === 1) {
+            // Image unique
+            return (
+              <div className="mb-4">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Post content"
+                  className="w-full rounded-lg"
+                />
+              </div>
+            );
+          }
+
+          if (imageCount === 2) {
+            // 2 images - grid 2 colonnes
+            return (
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Post content 1"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <OptimizedImage 
+                  src={images[1]} 
+                  alt="Post content 2"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+              </div>
+            );
+          }
+
+          if (imageCount >= 3) {
+            // 3+ images - 1 grande + 2 petites
+            return (
+              <div className="mb-4 grid grid-cols-2 gap-2 h-64">
+                <div className="row-span-2">
+                  <OptimizedImage 
+                    src={images[0]} 
+                    alt="Post content 1"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+                <OptimizedImage 
+                  src={images[1]} 
+                  alt="Post content 2"
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+                <div className="relative">
+                  <OptimizedImage 
+                    src={images[2]} 
+                    alt="Post content 3"
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  {imageCount > 3 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                      <span className="text-white font-bold text-lg">+{imageCount - 3}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+        })()}
       </div>
 
       {/* Footer */}
@@ -512,16 +695,44 @@ export const TikTokPreview: React.FC<PreviewProps> = memo(({
 }) => {
   return (
     <div className="bg-black text-white rounded-lg max-w-sm mx-auto aspect-[9/16] relative overflow-hidden">
-      {/* Video/Image */}
-      {image && (
-        <div className="absolute inset-0">
-          <OptimizedImage 
-            src={image} 
-            alt="Post content"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
+      {/* Video/Images */}
+      {(() => {
+        // Gestion des images multiples pour TikTok
+        const images = Array.isArray(image) ? image : (image ? [image] : []);
+        const imageCount = images.length;
+
+        if (imageCount === 0) return null;
+
+        if (imageCount === 1) {
+          // Image unique - plein écran TikTok
+          return (
+            <div className="absolute inset-0">
+              <OptimizedImage 
+                src={images[0]} 
+                alt="Post content"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          );
+        }
+
+        if (imageCount >= 2) {
+          // Plusieurs images - carrousel TikTok
+          return (
+            <div className="absolute inset-0">
+              <OptimizedImage 
+                src={images[0]} 
+                alt="Post content"
+                className="w-full h-full object-cover"
+              />
+              {/* Indicateur de carrousel */}
+              <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                1/{imageCount}
+              </div>
+            </div>
+          );
+        }
+      })()}
 
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -579,13 +790,41 @@ export const YouTubePreview: React.FC<PreviewProps> = memo(({
     <div className="bg-white border border-gray-200 rounded-lg max-w-md mx-auto">
       {/* Video Player */}
       <div className="relative aspect-video bg-black rounded-t-lg">
-        {image && (
-          <OptimizedImage 
-            src={image} 
-            alt="Video thumbnail"
-            className="w-full h-full object-cover"
-          />
-        )}
+        {(() => {
+          // Gestion des images multiples pour YouTube
+          const images = Array.isArray(image) ? image : (image ? [image] : []);
+          const imageCount = images.length;
+
+          if (imageCount === 0) return null;
+
+          if (imageCount === 1) {
+            // Image unique - thumbnail YouTube
+            return (
+              <OptimizedImage 
+                src={images[0]} 
+                alt="Video thumbnail"
+                className="w-full h-full object-cover"
+              />
+            );
+          }
+
+          if (imageCount >= 2) {
+            // Plusieurs images - première image comme thumbnail
+            return (
+              <div className="relative w-full h-full">
+                <OptimizedImage 
+                  src={images[0]} 
+                  alt="Video thumbnail"
+                  className="w-full h-full object-cover"
+                />
+                {/* Indicateur de plusieurs images */}
+                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                  +{imageCount - 1} images
+                </div>
+              </div>
+            );
+          }
+        })()}
         <div className="absolute inset-0 flex items-center justify-center">
           <button className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700">
             <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">

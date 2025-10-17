@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Clock, FolderOpen, Target, Hash, LayoutDashboard, Users, 
-  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut
+  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from './UserMenu';
@@ -41,6 +41,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/settings/accounts') return 'accounts';
     if (path === '/app/leads') return 'leads';
     if (path === '/app/publications') return 'publications';
+    if (path === '/app/creation') return 'creation';
     
     return 'dashboard'; // Par défaut sur dashboard
   }, [location.pathname]);
@@ -71,6 +72,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         break;
       case 'publications':
         navigate('/app/publications');
+        break;
+      case 'creation':
+        navigate('/app/creation');
         break;
       case 'settings':
         navigate('/app/settings');
@@ -106,6 +110,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts', permission: 'canManageAccounts' },
       { id: 'leads', label: 'Lead Generation', icon: UserPlus, active: activePage === 'leads', permission: 'canPublish' },
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications', permission: 'canPublish' },
+      { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation', permission: 'canPublish' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings', permission: null },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false, permission: null },
     ];
