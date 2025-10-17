@@ -26,7 +26,7 @@ export class PostsService {
   static async getPosts(params?: PostSearchParams): Promise<{ posts: Post[]; total: number }> {
     let query = supabase
       .from('posts')
-      .select('*, post_analytics(*), profiles!posts_author_id_fkey(name, avatar)', { count: 'exact' });
+      .select('*, post_analytics(*)', { count: 'exact' });
 
     // Filtres
     if (params?.status && params.status.length > 0) {
@@ -70,28 +70,45 @@ export class PostsService {
       throw error;
     }
 
+    // Récupérer les author_ids uniques
+    const authorIds = [...new Set((data || []).map((post: any) => post.author_id).filter(Boolean))];
+    
+    // Récupérer les profils en une seule requête
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name, avatar')
+      .in('id', authorIds);
+
+    // Créer un map des profils pour un accès rapide
+    const profilesMap = new Map(
+      (profiles || []).map(p => [p.id, p])
+    );
+
     // Transformer les données pour le format Post
-    const posts: Post[] = (data || []).map((post: any) => ({
-      id: post.id,
-      content: post.content,
-      scheduledTime: new Date(post.scheduled_time),
-      platforms: post.platforms as any,
-      status: post.status,
-      images: post.images || [],
-      campaign: post.campaign,
-      campaignColor: post.campaign_color,
-      author: post.profiles?.name || 'Utilisateur inconnu',
-      authorAvatar: post.profiles?.avatar,
-      captions: (post.captions || {}) as any,
-      dayColumn: post.day_column,
-      timeSlot: post.time_slot,
-      engagement: post.post_analytics?.[0] ? {
-        likes: post.post_analytics[0].likes || 0,
-        comments: post.post_analytics[0].comments || 0,
-        shares: post.post_analytics[0].shares || 0,
-        views: post.post_analytics[0].views || 0,
-      } : undefined,
-    }));
+    const posts: Post[] = (data || []).map((post: any) => {
+      const profile = profilesMap.get(post.author_id);
+      return {
+        id: post.id,
+        content: post.content,
+        scheduledTime: new Date(post.scheduled_time),
+        platforms: post.platforms as any,
+        status: post.status,
+        images: post.images || [],
+        campaign: post.campaign,
+        campaignColor: post.campaign_color,
+        author: profile?.name || 'Utilisateur inconnu',
+        authorAvatar: profile?.avatar,
+        captions: (post.captions || {}) as any,
+        dayColumn: post.day_column,
+        timeSlot: post.time_slot,
+        engagement: post.post_analytics?.[0] ? {
+          likes: post.post_analytics[0].likes || 0,
+          comments: post.post_analytics[0].comments || 0,
+          shares: post.post_analytics[0].shares || 0,
+          views: post.post_analytics[0].views || 0,
+        } : undefined,
+      };
+    });
 
     return {
       posts,
@@ -105,7 +122,7 @@ export class PostsService {
   static async getPostById(id: string): Promise<Post | null> {
     const { data, error } = await supabase
       .from('posts')
-      .select('*, post_analytics(*), profiles!posts_author_id_fkey(name, avatar)')
+      .select('*, post_analytics(*)')
       .eq('id', id)
       .single();
 
@@ -116,6 +133,13 @@ export class PostsService {
 
     if (!data) return null;
 
+    // Récupérer le profil de l'auteur
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, avatar')
+      .eq('id', data.author_id)
+      .single();
+
     return {
       id: data.id,
       content: data.content,
@@ -125,8 +149,8 @@ export class PostsService {
       images: data.images || [],
       campaign: data.campaign,
       campaignColor: data.campaign_color,
-      author: data.profiles?.name || 'Utilisateur inconnu',
-      authorAvatar: data.profiles?.avatar,
+      author: profile?.name || 'Utilisateur inconnu',
+      authorAvatar: profile?.avatar,
       captions: (data.captions || {}) as any,
       dayColumn: data.day_column,
       timeSlot: data.time_slot,
