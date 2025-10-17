@@ -151,6 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'calendar': return '/app/calendar';
                     case 'analytics': return '/app/analytics';
                     case 'publications': return '/app/publications';
+                    case 'creation': return '/app/creation';
                     case 'logout': return '/logout';
                     case 'settings': return '/app/settings';
                     case 'queue': return '/app/queue';
@@ -251,6 +252,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'accounts' && 'Comptes Sociaux'}
                 {activePage === 'leads' && 'Lead Generation'}
                 {activePage === 'publications' && 'Mes Publications'}
+                {activePage === 'creation' && 'Studio Création'}
                 {activePage === 'settings' && 'Paramètres'}
               </h1>
             </div>
