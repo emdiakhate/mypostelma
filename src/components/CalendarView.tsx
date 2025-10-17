@@ -25,12 +25,13 @@ interface CalendarViewProps {
 const dragDropStyles = `
   /* Post en cours de drag */
   .dragging-post {
-    opacity: 0.8;
-    cursor: grabbing;
-    transform: rotate(3deg) scale(1.05);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1000;
+    opacity: 0.5 !important;
+    cursor: grabbing !important;
+    transform: rotate(2deg) scale(1.02) !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 1000 !important;
+    border: 2px dashed #3b82f6 !important;
   }
 
   /* Zone de drop active */
@@ -355,16 +356,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 overflow-y-auto bg-gray-100">
+      <div className="flex-1 overflow-y-auto" style={{ backgroundColor: '#f5f5f5' }}>
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px bg-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px" style={{ backgroundColor: '#e5e5e5' }}>
             {weekDays.map((day) => (
               <div 
                 key={day.key} 
                 className={cn(
-                  "bg-white flex flex-col transition-all duration-200",
+                  "flex flex-col transition-all duration-200",
                   dragOverDay === day.key && "drop-zone-active drop-zone-pulse"
                 )}
+                style={{ backgroundColor: '#fafafa' }}
                 onDragOver={(e) => handleHtml5DragOver(e, day.key)}
                 onDragLeave={handleHtml5DragLeave}
                 onDrop={(e) => handleHtml5Drop(e, day.key)}
