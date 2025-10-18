@@ -145,82 +145,34 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
           Publier sur
         </h3>
         <Badge variant="outline" className="text-sm">
-          {selectedAccounts.length} compte{selectedAccounts.length > 1 ? 's' : ''} sélectionné{selectedAccounts.length > 1 ? 's' : ''}
+          {selectedAccounts.length} plateforme{selectedAccounts.length > 1 ? 's' : ''} sélectionnée{selectedAccounts.length > 1 ? 's' : ''}
         </Badge>
       </div>
       
-      <div className="space-y-3">
-        {connectedAccounts.map((account) => {
-          const config = PLATFORM_CONFIG[account.platform];
-          const PlatformIcon = getPlatformIcon(account.platform);
-          const isSelected = selectedAccounts.includes(account.id);
+      <div className="flex flex-wrap gap-3">
+        {platforms.map((platform) => {
+          const PlatformIcon = getPlatformIcon(platform.id);
+          const isSelected = selectedAccounts.includes(platform.id);
           
           return (
-            <Card 
-              key={account.id} 
+            <button
+              key={platform.id}
+              onClick={() => handlePlatformToggle(platform.id)}
               className={cn(
-                "cursor-pointer transition-all duration-200",
+                "flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-200",
                 isSelected 
                   ? "border-blue-500 bg-blue-50" 
                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
               )}
-              onClick={() => handleAccountToggle(account.id)}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <Checkbox 
-                    checked={isSelected}
-                    onChange={() => handleAccountToggle(account.id)}
-                    className="flex-shrink-0"
-                  />
-                  
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                    config.gradient ? `bg-gradient-to-r ${config.gradient}` : '',
-                    !config.gradient && `bg-[${config.color}]`
-                  )}>
-                    <PlatformIcon className="w-5 h-5 text-white" />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-semibold text-gray-900 truncate">
-                        @{account.username}
-                      </h4>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs"
-                        style={{ 
-                          backgroundColor: `${config.color}20`,
-                          borderColor: config.color,
-                          color: config.color
-                        }}
-                      >
-                        {config.name}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 truncate">
-                      {account.displayName}
-                    </p>
-                    
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                      <div className="flex items-center space-x-1">
-                        <Users className="w-3 h-3" />
-                        <span>{formatFollowers(account.followers)} followers</span>
-                      </div>
-                      
-                      {account.status === 'reconnect_needed' && (
-                        <div className="flex items-center space-x-1 text-yellow-600">
-                          <AlertCircle className="w-3 h-3" />
-                          <span>Reconnexion nécessaire</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <div className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center",
+                platform.color
+              )}>
+                <PlatformIcon className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium">{platform.name}</span>
+            </button>
           );
         })}
       </div>
@@ -228,7 +180,7 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       {selectedAccounts.length === 0 && (
         <div className="text-center py-4">
           <p className="text-sm text-gray-500">
-            Sélectionnez au moins un compte pour publier
+            Sélectionnez au moins une plateforme pour publier
           </p>
         </div>
       )}

@@ -289,7 +289,7 @@ const LandingPage: React.FC = () => {
               {/* Main Dashboard Image */}
               <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float hero-image-container" style={{ minHeight: '650px' }}>
                 <img
-                  src="https://www.hootsuite.com/_next/image?url=https%3A%2F%2Fimages.ctfassets.net%2Fta4ffdi8h2om%2F1Iq5LsQuj9bF3IRZQeZsV3%2F36accc842a2711ac03c074c15b0d66f4%2FHomepage-BigHero-1200x500_2x.png&w=3840&q=75"
+                  src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&h=600&fit=crop&crop=center"
                   alt="Postelma Dashboard - Interface moderne de gestion des réseaux sociaux avec calendrier, analytics et planification"
                   className="hero-image"
                 />

@@ -17,7 +17,10 @@ export const WEBHOOK_URLS = {
   SCHEDULE: 'https://n8n.srv837294.hstgr.cloud/webhook/publish',
   
   // Génération d'images IA (édition et combinaison)
-  AI_EDIT_COMBINE: 'https://n8n.srv837294.hstgr.cloud/webhook/ai-edit-combine'
+  AI_EDIT_COMBINE: 'https://n8n.srv837294.hstgr.cloud/webhook/ai-edit-combine',
+  
+  // Génération d'images IA UGC (User Generated Content)
+  AI_UGC: 'https://n8n.srv837294.hstgr.cloud/webhook/ai-ugc'
 } as const;
 
 /**
@@ -57,6 +60,17 @@ export interface AiEditCombineWebhookPayload {
     style?: string;
     intensity?: number;
     quality?: string;
+  };
+}
+
+export interface AiUgcWebhookPayload {
+  type: 'ugc';
+  prompt: string;
+  sourceImages: string[];
+  options?: {
+    style?: string;
+    quality?: string;
+    aspectRatio?: string;
   };
 }
 

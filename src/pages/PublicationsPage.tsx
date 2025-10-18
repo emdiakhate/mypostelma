@@ -26,7 +26,7 @@ import {
 import { Card } from '@/components/ui/card';
 import PublicationCard from '@/components/PublicationCard';
 import { toast } from 'sonner';
-import { usePosts } from '@/hooks/usePosts';
+import { usePublications } from '@/hooks/usePublications';
 import { Post } from '@/types/Post';
 import PostPreviewModal from '@/components/PostPreviewModal';
 import PostCreationModal from '@/components/PostCreationModal';
@@ -45,8 +45,8 @@ type PostStatus = 'published' | 'draft' | 'failed';
 type SortBy = 'date-desc' | 'date-asc' | 'engagement' | 'platform';
 
 export default function PublicationsPage() {
-  // Hook Supabase
-  const { posts, loading, deletePost, updatePost, createPost } = usePosts();
+  // Hook Publications
+  const { posts, loading, deletePost, updatePost, createPost } = usePublications();
   
   // États locaux
   const [searchTerm, setSearchTerm] = useState('');

@@ -62,19 +62,10 @@ const PlatformCard: React.FC<PlatformCardProps> = ({
       );
     }
 
-    if (config.isProOnly && !connectionStatus.isAvailable) {
-      return (
-        <Badge variant="destructive" className="text-xs">
-          <Lock className="w-3 h-3 mr-1" />
-          Pro requis
-        </Badge>
-      );
-    }
-
     if (connectionStatus.isConnected) {
       return (
         <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
-          ✓ {connectionStatus.accountCount} connecté{connectionStatus.accountCount > 1 ? 's' : ''}
+          ✓ Connecté
         </Badge>
       );
     }
@@ -95,30 +86,14 @@ const PlatformCard: React.FC<PlatformCardProps> = ({
       );
     }
 
-    if (config.isProOnly && !connectionStatus.isAvailable) {
-      return (
-        <Button 
-          onClick={onUpgrade}
-          variant="outline" 
-          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Passer à Pro
-        </Button>
-      );
-    }
-
     if (connectionStatus.isConnected) {
-      const canAddMore = connectionStatus.accountCount < connectionStatus.maxAccounts;
       return (
         <Button 
           onClick={() => onConnect(platform)}
           variant="outline"
-          className="w-full"
-          disabled={!canAddMore}
+          className="w-full border-red-200 text-red-600 hover:bg-red-50"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          {canAddMore ? 'Ajouter un compte' : 'Limite atteinte'}
+          Déconnecter
         </Button>
       );
     }
@@ -163,11 +138,11 @@ const PlatformCard: React.FC<PlatformCardProps> = ({
         <div className="text-xs text-gray-500">
           {connectionStatus.isConnected ? (
             <span>
-              {connectionStatus.accountCount}/{connectionStatus.maxAccounts} comptes connectés
+              1 compte connecté
             </span>
           ) : (
             <span>
-              Max {connectionStatus.maxAccounts} compte{connectionStatus.maxAccounts > 1 ? 's' : ''}
+              1 compte maximum par réseau
             </span>
           )}
         </div>

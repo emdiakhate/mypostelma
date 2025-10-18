@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback, useMemo } from 'react';
+import React, { useState, memo, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { Post } from '@/types/Post';
@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 interface CalendarViewProps {
   posts: Post[];
   currentDate: Date;
-  onPostsChange: (posts: Post[]) => void;
   onCreatePost: (post: Partial<Post>) => Promise<Post | undefined>;
   onUpdatePost: (id: string, updates: Partial<Post>) => Promise<Post | undefined>;
   onDeletePost: (id: string) => Promise<void>;
@@ -84,7 +83,6 @@ const dragDropStyles = `
 const CalendarView: React.FC<CalendarViewProps> = ({
   posts,
   currentDate,
-  onPostsChange,
   onCreatePost,
   onUpdatePost,
   onDeletePost,
@@ -95,6 +93,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   
   const [draggedPost, setDraggedPost] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Refs pour éviter les boucles de re-rendu
+  const onUpdatePostRef = useRef(onUpdatePost);
+  
+  // Mettre à jour les refs quand les props changent
+  onUpdatePostRef.current = onUpdatePost;
   
   // États pour le drag and drop HTML5
   const [draggedPostId, setDraggedPostId] = useState<string | null>(null);
@@ -125,6 +129,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     };
   }), [weekStart]);
 
+  // Créer une clé stable pour les posts basée sur leur contenu
+  const postsKey = useMemo(() => {
+    return posts.map(p => `${p.id}-${p.scheduledTime}`).join('|');
+  }, [posts]);
+
   const postsByDay = useMemo(() => {
     const grouped: Record<string, Post[]> = {};
     weekDays.forEach(day => {
@@ -134,7 +143,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       });
     });
     return grouped;
-  }, [posts, weekDays]);
+  }, [postsKey, weekDays]);
 
   // Callbacks optimisés avec useCallback
   const handleDragStart = useCallback((result: any) => {
@@ -171,7 +180,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
   }, []);
 
-  const handleHtml5Drop = useCallback(async (e: React.DragEvent, targetDayKey: string) => {
+  const handleHtml5Drop = useCallback((e: React.DragEvent, targetDayKey: string) => {
     e.preventDefault();
     const postId = e.dataTransfer.getData('postId');
     
@@ -189,19 +198,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     newScheduledTime.setMonth(targetDate.getMonth());
     newScheduledTime.setFullYear(targetDate.getFullYear());
 
-    try {
-      await onUpdatePost(post.id, { 
-        scheduledTime: newScheduledTime
-      });
-      console.log('Post déplacé avec succès');
-    } catch (error) {
+    // ✅ CORRECTION : Appeler directement onUpdatePost
+    // Mise à jour optimiste locale d'abord
+    const updatedPost = { ...post, scheduledTime: newScheduledTime };
+    
+    // Puis sauvegarder en base de données
+    onUpdatePostRef.current(post.id, { 
+      scheduledTime: newScheduledTime
+    }).catch(error => {
       console.error('Erreur lors du déplacement du post:', error);
-    }
+      // En cas d'erreur, l'état sera restauré automatiquement par usePosts
+    });
 
     setDragOverDay(null);
-  }, [posts, weekDays, onUpdatePost, draggedPostId]);
+  }, [posts, weekDays, draggedPostId]);
 
-  const handleDragEnd = useCallback(async (result: DropResult) => {
+  const handleDragEnd = useCallback((result: DropResult) => {
     console.log('Drag ended:', result);
     setDraggedPost(null);
 
@@ -230,22 +242,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     newScheduledTime.setMonth(targetDate.getMonth());
     newScheduledTime.setFullYear(targetDate.getFullYear());
     
-    try {
-      // Mettre à jour dans la base de données
-      const updatedPost = await onUpdatePost(post.id, { 
-        scheduledTime: newScheduledTime
-      });
-      
-      if (updatedPost) {
-        // Mettre à jour l'état local
-        const newPosts = posts.map(p => p.id === updatedPost.id ? updatedPost : p);
-        onPostsChange(newPosts);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du post:', error);
-      // Optionnel : afficher une notification d'erreur à l'utilisateur
-    }
-  }, [posts, onPostsChange, weekDays, onUpdatePost]);
+    // ✅ CORRECTION : Appeler directement onUpdatePost
+    // Mise à jour optimiste locale d'abord
+    const updatedPost = { ...post, scheduledTime: newScheduledTime };
+    
+    // Puis sauvegarder en base de données
+    onUpdatePostRef.current(post.id, { 
+      scheduledTime: newScheduledTime
+    }).catch(error => {
+      console.error('Erreur lors de la sauvegarde:', error);
+      // En cas d'erreur, l'état sera restauré automatiquement par usePosts
+    });
+  }, [posts, weekDays]);
 
   const handleCreatePost = useCallback((dayColumn?: string) => {
     if (dayColumn) {
@@ -410,7 +418,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       )}
                       
                       {postsByDay[day.key]?.map((post, index) => {
-                        console.log('Rendering post:', post.id, 'for day:', day.key);
                         if (!post.id) {
                           console.error('Post without ID:', post);
                           return null;

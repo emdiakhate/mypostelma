@@ -7,6 +7,13 @@ import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
 import sacrouge from '@/assets/sacrouge.png';
 import sacbleu from '@/assets/sacbleu.png';
+import canapecote from '@/assets/canapecote.png';
+import canapeanglegauche from '@/assets/canapeanglegauche.png';
+import canapedroit from '@/assets/canapedroit.png';
+import canapeDos from '@/assets/canapeDos.png';
+import guerlain from '@/assets/guerlain.jpg';
+import fatimaZahra from '@/assets/Fatima-Zahra-Ba.jpeg';
+import imageIbadou from '@/assets/image_ibadou.jpeg';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +42,12 @@ interface Template {
   icon: React.ComponentType<{ className?: string }>;
   badge: string;
   inputs: TemplateInput[];
-  exampleBefore: string;
+  exampleBefore: string | null; // Peut être null pour les modèles avec plusieurs images d'entrée
+  exampleBeforeMultiple?: string[]; // Images multiples en entrée
   exampleAfter: string | null; // Peut être null pour les modèles multi-images
   exampleAfterMultiple?: string[]; // Nouvelles images multiples
   hasMultipleResults?: boolean; // Flag pour identifier les modèles multi-images
+  hasMultipleInputs?: boolean; // Indique si le template nécessite plusieurs images en entrée
   resultCount?: number; // Nombre d'images à afficher
   useCases: string[];
 }
@@ -82,10 +91,10 @@ const templates: Template[] = [
     exampleBefore: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
     exampleAfter: null, // Plus d'image unique
     exampleAfterMultiple: [
-      'https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=400',
-      'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400',
-      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
-      'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400'
+      canapecote,        // Côté
+      canapeanglegauche, // Profil G
+      canapedroit,       // Profil D
+      canapeDos          // Dos
     ],
     hasMultipleResults: true,
     resultCount: 4,
@@ -152,6 +161,51 @@ const templates: Template[] = [
     exampleBefore: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
     exampleAfter: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800',
     useCases: ['Vêtements', 'Accessoires', 'Bijoux', 'Chaussures', 'Montres']
+  },
+  {
+    id: 'style-influenceur',
+    name: 'Style Influenceur',
+    category: 'marketing',
+    description: 'Créez des visuels UGC où un influenceur présente naturellement votre produit',
+    icon: Users,
+    badge: 'UGC',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'image', label: 'Photo de l\'influenceur', required: true }
+    ],
+    exampleBefore: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+    exampleAfter: null,
+    exampleAfterMultiple: [
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'
+    ],
+    hasMultipleResults: true,
+    resultCount: 4,
+    useCases: ['E-commerce', 'Marketing', 'UGC', 'Publicité']
+  },
+  {
+    id: 'ugc-creator',
+    name: 'UGC Creator',
+    category: 'marketing',
+    description: 'Fusionnez votre produit avec une photo d\'influenceur pour créer un visuel UGC authentique',
+    icon: Users,
+    badge: 'Nouveau',
+    inputs: [
+      { type: 'image', label: 'Photo du produit', required: true },
+      { type: 'image', label: 'Photo de l\'influenceur', required: true }
+    ],
+    exampleBefore: null,
+    exampleBeforeMultiple: [
+      guerlain,      // Produit Guerlain
+      fatimaZahra    // Influenceur Fatima-Zahra
+    ],
+    exampleAfter: imageIbadou,  // Image Ibadou (résultat fusion)
+    hasMultipleResults: false,
+    hasMultipleInputs: true,
+    resultCount: 1,
+    useCases: ['UGC', 'E-commerce', 'Marketing', 'Publicité']
   }
 ];
 
@@ -175,7 +229,7 @@ function TemplateCard({ template }: { template: Template }) {
         {/* Image de preview */}
         <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
           <img
-            src={template.exampleBefore}
+            src={template.id === 'ugc-creator' ? fatimaZahra : template.exampleBefore}
             alt={template.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
@@ -255,11 +309,12 @@ function TemplateCard({ template }: { template: Template }) {
 // Fonction helper pour les labels des résultats multiples
 function getResultLabel(templateId: string, index: number): string {
   const labels = {
-    'vue-360': ['Face', 'Profil G', 'Profil D', 'Dos', '3/4', 'Dessus'],
+    'vue-360': ['Côté', 'Profil G', 'Profil D', 'Dos', '3/4', 'Dessus'],
     'palette-couleurs': ['Noir', 'Blanc', 'Rouge', 'Bleu'],
     'mise-en-situation': ['Salon', 'Chambre', 'Bureau', 'Extérieur'],
     'lifestyle-branding': ['Sport', 'Travel', 'Cocooning', 'Bureau'],
-    'pub-reseaux-sociaux': ['Carré', 'Story', 'Bannière', 'Feed']
+    'pub-reseaux-sociaux': ['Carré', 'Story', 'Bannière', 'Feed'],
+    'style-influenceur': ['Influenceur 1', 'Influenceur 2', 'Influenceur 3', 'Influenceur 4']
   };
 
   const templateLabels = labels[templateId] || [];
@@ -267,7 +322,16 @@ function getResultLabel(templateId: string, index: number): string {
 }
 
 // Fonction helper pour les descriptions
-function getExpectedOutput(templateId: string, hasMultipleResults?: boolean): string {
+function getExpectedOutput(templateId: string, hasMultipleResults?: boolean, hasMultipleInputs?: boolean): string {
+  // Templates spéciaux avec descriptions personnalisées
+  if (templateId === 'ugc-creator') {
+    return 'Une image UGC authentique où l\'influenceur présente naturellement votre produit, parfait pour vos campagnes marketing';
+  }
+
+  if (templateId === 'style-influenceur') {
+    return '4 visuels UGC authentiques avec différents influenceurs présentant naturellement votre produit';
+  }
+
   if (!hasMultipleResults) {
     const singleOutputs = {
       'mise-en-situation': '4 visuels de votre produit intégré dans différents environnements réalistes',
@@ -301,22 +365,54 @@ function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () 
 
         {/* Comparaison Avant/Après */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* AVANT - Reste identique */}
+          {/* AVANT - Gestion des images multiples en entrée */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-orange-500" />
               <span className="font-semibold text-sm">Avant</span>
+              {template.hasMultipleInputs && (
+                <Badge variant="outline" className="ml-auto">
+                  2 images requises
+                </Badge>
+              )}
             </div>
-            <div className="relative rounded-lg overflow-hidden border-2 border-orange-500/20">
-              <img
-                src={template.exampleBefore}
-                alt="Avant"
-                className="w-full h-64 object-cover"
-              />
-              <div className="absolute top-2 left-2">
-                <Badge variant="secondary">Image originale</Badge>
+
+            {/* SI 2 IMAGES EN ENTRÉE (hasMultipleInputs) */}
+            {template.hasMultipleInputs && template.exampleBeforeMultiple ? (
+              <div className="grid grid-cols-2 gap-2">
+                {template.exampleBeforeMultiple.map((imageUrl, index) => (
+                  <div 
+                    key={index}
+                    className="relative rounded-lg overflow-hidden border-2 border-orange-500/20"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`Image ${index + 1}`}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {index === 0 ? 'Produit' : 'Influenceur'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              /* SI 1 IMAGE EN ENTRÉE (comme avant) */
+              template.exampleBefore && (
+                <div className="relative rounded-lg overflow-hidden border-2 border-orange-500/20">
+                  <img
+                    src={template.exampleBefore}
+                    alt="Avant"
+                    className="w-full h-64 object-cover"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <Badge variant="secondary">Image originale</Badge>
+                  </div>
+                </div>
+              )
+            )}
           </div>
 
           {/* APRÈS - Conditionnel selon hasMultipleResults */}
@@ -380,7 +476,7 @@ function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () 
             <div>
               <p className="font-semibold text-sm">Ce que vous obtiendrez :</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {getExpectedOutput(template.id, template.hasMultipleResults)}
+                {getExpectedOutput(template.id, template.hasMultipleResults, template.hasMultipleInputs)}
               </p>
             </div>
           </div>

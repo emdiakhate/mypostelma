@@ -7,11 +7,6 @@ const Index = () => {
   const { posts, loading, createPost, updatePost, deletePost, refetch } = usePosts();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
-  const handlePostsChange = (newPosts: Post[]) => {
-    // Posts are now managed by Supabase, just refetch
-    refetch();
-  };
-
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
   };
@@ -29,7 +24,6 @@ const Index = () => {
       <CalendarView
         posts={posts}
         currentDate={currentDate}
-        onPostsChange={handlePostsChange}
         onCreatePost={createPost}
         onUpdatePost={updatePost}
         onDeletePost={deletePost}

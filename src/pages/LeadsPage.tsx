@@ -72,6 +72,8 @@ import { fr } from 'date-fns/locale';
 import LeadSearchForm from '@/components/LeadSearchForm';
 import LeadsGrid from '@/components/LeadsGrid';
 import { N8NLeadData } from '@/components/LeadCard';
+import { QuickActionsButtons } from '@/components/leads/QuickActionsButtons';
+import { SendMessageModal } from '@/components/leads/SendMessageModal';
 
 const LEADS_PER_PAGE = 10;
 
@@ -96,6 +98,10 @@ const LeadsPage: React.FC = () => {
   // États de sélection
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  
+  // États pour le modal de message
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageChannel, setMessageChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -228,6 +234,13 @@ const LeadsPage: React.FC = () => {
     } catch (error) {
       toast.error('Erreur lors de la suppression');
     }
+  };
+
+  // Fonction pour ouvrir le modal de message
+  const handleOpenMessageModal = (lead: Lead, channel: 'whatsapp' | 'email') => {
+    setSelectedLead(lead);
+    setMessageChannel(channel);
+    setMessageModalOpen(true);
   };
 
   const getStatusVariant = (status: LeadStatus) => {
@@ -813,39 +826,11 @@ const LeadsPage: React.FC = () => {
                       {format(new Date(lead.addedAt), 'dd/MM/yyyy', { locale: fr })}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewLead(lead)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleCallLead(lead)}
-                        >
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditLead(lead)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Modifier
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)}>
-                              <Trash className="w-4 h-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      <QuickActionsButtons
+                        lead={lead}
+                        onViewDetails={() => handleViewLead(lead)}
+                        onOpenMessageModal={(channel) => handleOpenMessageModal(lead, channel)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -885,6 +870,19 @@ const LeadsPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal d'envoi de message */}
+      {selectedLead && (
+        <SendMessageModal
+          open={messageModalOpen}
+          onClose={() => {
+            setMessageModalOpen(false);
+            setSelectedLead(null);
+          }}
+          lead={selectedLead}
+          channel={messageChannel}
+        />
+      )}
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { fr } from 'date-fns/locale';
 import { 
   Eye, Pencil, Copy, Trash2, MoreVertical,
   Instagram, Facebook, Linkedin, Twitter, Youtube, Music,
-  CalendarIcon, FileText
+  CalendarIcon, FileText, Heart, MessageCircle, Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Post } from '@/types/Post';
+import { getDefaultImage } from '@/data/mockPublicationsData';
 
 interface PublicationCardProps {
   post: Post;
@@ -27,6 +28,22 @@ interface PublicationCardProps {
 }
 
 export default function PublicationCard({ post, onView, onEdit, onDuplicate, onDelete }: PublicationCardProps) {
+  // Garantir qu'il y a toujours une image
+  const displayImage = (post.images && post.images.length > 0) 
+    ? post.images[0] 
+    : post.image 
+    ? post.image 
+    : getDefaultImage(0); // Image de fallback
+
+  // Garantir qu'il y a toujours des stats
+  const stats = post.engagement || {
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    views: 0,
+    engagement: 0
+  };
+
   const statusConfig = {
     published: { 
       label: 'Publié', 
@@ -60,17 +77,15 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group bg-white">
       {/* Image avec overlay */}
       <div className="relative aspect-square bg-gray-100">
-        {post.image ? (
-          <img
-            src={post.image}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <FileText className="w-12 h-12 text-gray-400" />
-          </div>
-        )}
+        <img
+          src={displayImage}
+          alt=""
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Image de fallback en cas d'erreur de chargement
+            e.currentTarget.src = getDefaultImage(0);
+          }}
+        />
 
         {/* Badge statut en haut à gauche */}
         <div className="absolute top-3 left-3">
@@ -102,6 +117,15 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
             </div>
           )}
         </div>
+
+        {/* Indicateur d'images multiples en haut à droite */}
+        {post.images && post.images.length > 1 && (
+          <div className="absolute top-3 right-3">
+            <div className="w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-xs font-medium text-white">
+              +{post.images.length - 1}
+            </div>
+          </div>
+        )}
 
         {/* Actions overlay (visible au hover) */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -146,43 +170,29 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
           <span className="ml-2">par {post.author}</span>
         </div>
 
-        {/* Métriques d'engagement (seulement pour les posts publiés) */}
-        {post.status === 'published' && (
-          <div className="space-y-2 pt-3 border-t border-gray-100">
-            {/* Total Engagements - Style similaire à l'image */}
+        {/* Stats - TOUJOURS AFFICHÉES */}
+        <div className="border-t pt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold">Total Engagements</span>
+            <span className="text-sm font-bold">{stats.engagement || 0}</span>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Total Engagements</span>
-              <span className="text-lg font-bold text-gray-900">
-                {typeof post.engagement === 'object' 
-                  ? Object.values(post.engagement).reduce((a, b) => a + b, 0)
-                  : 0
-                }
-              </span>
+              <span className="text-muted-foreground">Likes</span>
+              <span className="font-medium">{stats.likes || 0}</span>
             </div>
-
-            {/* Métriques détaillées - Style vertical comme dans l'image */}
-            <div className="space-y-1 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Likes</span>
-                <span className="font-medium text-gray-900">
-                  {typeof post.engagement === 'object' ? post.engagement.likes : post.likes || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Commentaires</span>
-                <span className="font-medium text-gray-900">
-                  {typeof post.engagement === 'object' ? post.engagement.comments : post.comments || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Partages</span>
-                <span className="font-medium text-gray-900">
-                  {typeof post.engagement === 'object' ? post.engagement.shares : post.shares || 0}
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Commentaires</span>
+              <span className="font-medium">{stats.comments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Partages</span>
+              <span className="font-medium">{stats.shares || 0}</span>
             </div>
           </div>
-        )}
+        </div>
+
 
         {/* Actions en bas */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-3">

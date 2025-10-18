@@ -14,7 +14,7 @@ import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing'
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
 import { TONE_OPTIONS } from '@/data/toneOptions';
-import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiUgcWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
 import { toast } from 'sonner';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
@@ -279,9 +279,72 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       } finally {
         setIsGeneratingImage(false);
       }
+    } else if (aiGenerationType === 'ugc') {
+      // Utiliser le webhook N8N pour la génération UGC
+      if (!aiPrompt.trim()) {
+        toast.error('Veuillez saisir un prompt pour la génération UGC');
+        return;
+      }
+      
+      if (aiSourceImages.length === 0) {
+        toast.error('Veuillez ajouter des images sources');
+        return;
+      }
+      
+      setIsGeneratingImage(true);
+      try {
+        const payload: AiUgcWebhookPayload = {
+          type: 'ugc',
+          prompt: aiPrompt,
+          sourceImages: aiSourceImages,
+          options: {
+            style: 'realistic',
+            quality: 'high',
+            aspectRatio: '1:1'
+          }
+        };
+        
+        console.log('AI UGC Generation payload:', payload);
+        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_UGC, payload);
+        
+        if (response && response.success && response.imageUrl) {
+          console.log('N8N UGC Response received:', response);
+          
+          // Vérifier que l'image se charge correctement avec retry
+          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
+          
+          if (imageLoads) {
+            // Utiliser l'URL directe de l'image pour l'affichage
+            setGeneratedImages([response.imageUrl]);
+            toast.success('Image UGC générée avec succès !');
+            
+            // Log des informations supplémentaires pour debug
+            if (response.driveFileId) {
+              console.log('Drive File ID:', response.driveFileId);
+            }
+            if (response.driveLink) {
+              console.log('Drive Link:', response.driveLink);
+            }
+            if (response.thumbnailUrl) {
+              console.log('Thumbnail URL:', response.thumbnailUrl);
+            }
+          } else {
+            toast.error('L\'image UGC générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
+            console.error('UGC Image failed to load:', response.imageUrl);
+          }
+        } else {
+          console.error('Invalid UGC response from N8N:', response);
+          toast.error(response?.error || 'Aucune image UGC générée');
+        }
+      } catch (error) {
+        console.error('Erreur génération UGC IA:', error);
+        toast.error('Erreur lors de la génération d\'image UGC');
+      } finally {
+        setIsGeneratingImage(false);
+      }
     } else {
-      // Pour les autres types (simple, ugc), garder l'ancien comportement
-      toast.info('Génération simple et UGC non encore implémentées via webhook');
+      // Pour le type simple, garder l'ancien comportement
+      toast.info('Génération simple non encore implémentée via webhook');
     }
   }, [aiGenerationType, aiPrompt, aiSourceImages]);
 
