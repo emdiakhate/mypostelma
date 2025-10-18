@@ -64,8 +64,8 @@ export function SendMessageModal({
         const replacedContent = replaceVariables(template.content, variables);
         setMessage(replacedContent);
 
-        if (channel === 'email' && template.subject) {
-          const replacedSubject = replaceVariables(template.subject, variables);
+        if (channel === 'email' && 'subject' in template) {
+          const replacedSubject = replaceVariables(template.subject as string, variables);
           setSubject(replacedSubject);
         }
       }

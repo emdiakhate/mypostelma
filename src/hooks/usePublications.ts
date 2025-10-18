@@ -52,14 +52,14 @@ export function usePublications() {
         platforms: post.platforms || [],
         status: post.status || 'draft',
         images: post.images || [],
-        author: user.name || 'Utilisateur',
-        authorAvatar: user.avatar,
+        author: user.email || 'Utilisateur',
+        dayColumn: post.dayColumn || 'lundi',
+        timeSlot: post.timeSlot || 9,
         engagement: {
           likes: 0,
           comments: 0,
           shares: 0,
-          views: 0,
-          engagement: 0
+          views: 0
         }
       };
       

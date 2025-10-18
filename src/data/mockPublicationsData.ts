@@ -17,24 +17,22 @@ const defaultImages = [
 ];
 
 // Fonction pour générer des stats réalistes
-function generateMockStats(): { likes: number; comments: number; shares: number; views: number; engagement: number } {
+function generateMockStats(): { likes: number; comments: number; shares: number; views: number } {
   const likes = Math.floor(Math.random() * 500) + 50;
   const comments = Math.floor(Math.random() * 50) + 5;
   const shares = Math.floor(Math.random() * 30) + 2;
   const views = likes * (Math.floor(Math.random() * 5) + 3); // 3-8x les likes
-  const engagement = likes + comments + shares;
 
   return {
     likes,
     comments,
     shares,
-    views,
-    engagement
+    views
   };
 }
 
 // Fonction pour assigner une image par défaut
-function getDefaultImage(index: number): string {
+export function getDefaultImage(index: number): string {
   return defaultImages[index % defaultImages.length];
 }
 
@@ -49,6 +47,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'sunday',
+    timeSlot: 10,
     engagement: generateMockStats()
   },
   {
@@ -60,6 +60,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'sunday',
+    timeSlot: 14,
     engagement: generateMockStats()
   },
   {
@@ -71,6 +73,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'sunday',
+    timeSlot: 16,
     engagement: generateMockStats()
   },
   {
@@ -82,6 +86,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1511920170033-f8396924c348?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'saturday',
+    timeSlot: 9,
     engagement: generateMockStats()
   },
   {
@@ -93,6 +99,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'saturday',
+    timeSlot: 11,
     engagement: generateMockStats()
   },
   {
@@ -104,6 +112,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'friday',
+    timeSlot: 14,
     engagement: generateMockStats()
   },
   {
@@ -115,6 +125,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400'],
     author: 'Adja Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=5',
+    dayColumn: 'friday',
+    timeSlot: 16,
     engagement: generateMockStats()
   },
   {
@@ -126,6 +138,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'friday',
+    timeSlot: 18,
     engagement: generateMockStats()
   },
   {
@@ -137,6 +151,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'thursday',
+    timeSlot: 8,
     engagement: generateMockStats()
   },
   {
@@ -148,6 +164,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'thursday',
+    timeSlot: 12,
     engagement: generateMockStats()
   },
   {
@@ -159,6 +177,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'thursday',
+    timeSlot: 15,
     engagement: generateMockStats()
   },
   {
@@ -170,6 +190,8 @@ export const mockPublicationsData: Post[] = [
     images: ['https://images.unsplash.com/photo-1511920170033-f8396924c348?w=400'],
     author: 'Malick Diakhate',
     authorAvatar: 'https://i.pravatar.cc/150?img=12',
+    dayColumn: 'thursday',
+    timeSlot: 18,
     engagement: generateMockStats()
   }
 ];
@@ -178,14 +200,11 @@ export const mockPublicationsData: Post[] = [
 export function enrichPostsWithDefaults(posts: Post[]): Post[] {
   return posts.map((post, index) => ({
     ...post,
-    // Garantir qu'il y a toujours une image
     images: post.images && post.images.length > 0 
       ? post.images 
       : [getDefaultImage(index)],
-    // Garantir qu'il y a toujours des stats
-    engagement: post.engagement || generateMockStats()
+    engagement: post.engagement || generateMockStats(),
+    dayColumn: post.dayColumn || 'lundi',
+    timeSlot: post.timeSlot || 9
   }));
 }
-
-// Export des images par défaut pour utilisation dans d'autres composants
-export { defaultImages, generateMockStats, getDefaultImage };

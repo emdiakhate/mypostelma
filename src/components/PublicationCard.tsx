@@ -174,7 +174,7 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
         <div className="border-t pt-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">Total Engagements</span>
-            <span className="text-sm font-bold">{stats.engagement || 0}</span>
+            <span className="text-sm font-bold">{(stats.likes || 0) + (stats.comments || 0) + (stats.shares || 0)}</span>
           </div>
           
           <div className="grid grid-cols-3 gap-2 text-xs">
