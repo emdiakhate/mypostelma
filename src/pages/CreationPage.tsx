@@ -10,7 +10,7 @@ import sacbleu from '@/assets/sacbleu.png';
 import canapecote from '@/assets/canapecote.png';
 import canapeanglegauche from '@/assets/canapeanglegauche.png';
 import canapedroit from '@/assets/canapedroit.png';
-import canapeDos from '@/assets/canapeDos.png';
+import canapeDos from '@/assets/canapedos.png';
 import guerlain from '@/assets/guerlain.jpg';
 import fatimaZahra from '@/assets/Fatima-Zahra-Ba.jpeg';
 import imageIbadou from '@/assets/image_ibadou.jpeg';
