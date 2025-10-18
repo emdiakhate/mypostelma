@@ -20,16 +20,14 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <CalendarView
-        posts={posts}
-        currentDate={currentDate}
-        onCreatePost={createPost}
-        onUpdatePost={updatePost}
-        onDeletePost={deletePost}
-        onDateChange={handleDateChange}
-      />
-    </div>
+    <CalendarView
+      posts={posts}
+      currentDate={currentDate}
+      onCreatePost={createPost}
+      onUpdatePost={updatePost}
+      onDeletePost={deletePost}
+      onDateChange={handleDateChange}
+    />
   );
 };
 
