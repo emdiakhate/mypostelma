@@ -10,6 +10,7 @@ import {
   MessageSquare, TrendingUp, Target, Globe, Sparkles,
   Instagram, Linkedin, Twitter, Maximize
 } from 'lucide-react';
+import heroImage from '@/assets/reseaux.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -287,11 +288,11 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               {/* Main Dashboard Image */}
-              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float hero-image-container" style={{ minHeight: '650px' }}>
+              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl" style={{ minHeight: '650px', width: '100%' }}>
                 <img
-                  src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200&h=600&fit=crop&crop=center"
-                  alt="Postelma Dashboard - Interface moderne de gestion des réseaux sociaux avec calendrier, analytics et planification"
-                  className="hero-image"
+                  src={heroImage}
+                  alt="Postelma - Gestion des réseaux sociaux"
+                  className="w-full h-full object-contain"
                 />
                 
                 {/* Overlay avec effet de profondeur */}
