@@ -186,7 +186,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }, [currentDate, onDateChange]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Injection des styles CSS pour le drag and drop */}
       <style dangerouslySetInnerHTML={{ __html: dragDropStyles }} />
       
