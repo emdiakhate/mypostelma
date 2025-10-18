@@ -28,55 +28,14 @@ const dragDropStyles = `
     cursor: grabbing !important;
     transform: rotate(2deg) scale(1.02) !important;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     z-index: 1000 !important;
-    border: 2px dashed #3b82f6 !important;
   }
 
   /* Zone de drop active */
   .drop-zone-active {
-    border: 2px dashed #3b82f6;
     background-color: rgba(59, 130, 246, 0.05);
     border-radius: 8px;
     min-height: 150px;
-    transition: all 0.2s ease;
-  }
-
-  /* Indicateur de drop */
-  .drop-indicator {
-    border: 2px dashed #3b82f6;
-    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-    color: #3b82f6;
-    font-size: 14px;
-    font-weight: 500;
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  /* Post au survol d'une zone de drop */
-  .drag-over {
-    border-color: #3b82f6;
-    background-color: rgba(59, 130, 246, 0.1);
-  }
-
-  /* Animation de pulsation pour la zone de drop */
-  .drop-zone-pulse {
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
   }
 `;
 
@@ -272,8 +231,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             {weekDays.map((day) => (
               <div 
                 key={day.key} 
-                className="flex flex-col"
-                style={{ backgroundColor: '#fafafa' }}
+                className="flex flex-col bg-white"
               >
                 {/* Day Header */}
                 <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
@@ -301,8 +259,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "p-2 space-y-2 min-h-[100px] transition-colors duration-200",
-                        snapshot.isDraggingOver && "bg-blue-50/50"
+                        "p-2 space-y-2 min-h-[100px]",
+                        snapshot.isDraggingOver && "bg-blue-50/30"
                       )}
                     >
                       {postsByDay[day.key]?.map((post, index) => {
@@ -317,10 +275,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={cn(
-                                "transition-all duration-200",
-                                snapshot.isDragging && "dragging-post"
-                              )}
+                              style={{
+                                ...provided.draggableProps.style,
+                                opacity: snapshot.isDragging ? 0.5 : 1
+                              }}
                             >
                               <PostCard
                                 post={post}
