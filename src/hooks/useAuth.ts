@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, UserPermissions, ROLE_PERMISSIONS } from '@/types/user';
-import { assignDefaultRole, ensureCorrectRole, upgradeViewersToManagers } from '@/utils/roleManager';
+import { assignDefaultRole, ensureCorrectRole } from '@/utils/roleManager';
 
 interface UseAuthReturn {
   user: SupabaseUser | null;
@@ -47,12 +47,13 @@ export const useAuth = (): UseAuthReturn => {
 
       const currentRole = data?.role as UserRole || null;
       
-      // Vérifier et corriger le rôle si nécessaire
-      if (!currentRole || currentRole === 'viewer') {
+      // Si pas de rôle, en assigner un par défaut
+      if (!currentRole) {
         const correctedRole = await ensureCorrectRole(userId, currentRole);
         return correctedRole;
       }
       
+      // Retourner le rôle tel quel
       return currentRole;
       
     } catch (error) {

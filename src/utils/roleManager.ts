@@ -50,34 +50,17 @@ export const assignDefaultRole = async (userId: string): Promise<UserRole> => {
   }
 };
 
-/**
- * Met à jour les utilisateurs existants de 'viewer' vers 'manager'
- * Utilise une approche côté client pour éviter les problèmes RLS
- */
-export const upgradeViewersToManagers = async (): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('user_roles')
-      .update({ role: 'manager' })
-      .eq('role', 'viewer');
-
-    if (error) {
-      console.error('Could not upgrade viewers:', error);
-    }
-  } catch (error) {
-    console.error('Error in upgradeViewersToManagers:', error);
-  }
-};
 
 /**
- * Vérifie et corrige le rôle d'un utilisateur si nécessaire
+ * Vérifie et retourne le rôle d'un utilisateur
  */
 export const ensureCorrectRole = async (userId: string, currentRole: UserRole | null): Promise<UserRole> => {
-  // Si l'utilisateur n'a pas de rôle ou a le rôle 'viewer', le corriger
-  if (!currentRole || currentRole === 'viewer') {
+  // Si l'utilisateur n'a pas de rôle, en assigner un par défaut
+  if (!currentRole) {
     const correctedRole = await assignDefaultRole(userId);
     return correctedRole;
   }
   
+  // Sinon, retourner le rôle actuel tel quel
   return currentRole;
 };
