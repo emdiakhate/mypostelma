@@ -63,9 +63,6 @@ export const useAuth = (): UseAuthReturn => {
 
   // Setup auth listener et vérifier session existante
   useEffect(() => {
-    // Mettre à jour les utilisateurs existants au démarrage
-    upgradeViewersToManagers();
-    
     // Setup listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {

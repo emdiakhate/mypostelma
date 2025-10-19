@@ -42,7 +42,6 @@ export const assignDefaultRole = async (userId: string): Promise<UserRole> => {
       return defaultRole;
     }
 
-    console.log(`Assigned default role: ${defaultRole} to user: ${userId}`);
     return defaultRole;
 
   } catch (error) {
@@ -63,9 +62,7 @@ export const upgradeViewersToManagers = async (): Promise<void> => {
       .eq('role', 'viewer');
 
     if (error) {
-      console.error('Could not upgrade viewers in database:', error);
-    } else {
-      console.log('Successfully upgraded viewers to managers in database');
+      console.error('Could not upgrade viewers:', error);
     }
   } catch (error) {
     console.error('Error in upgradeViewersToManagers:', error);
