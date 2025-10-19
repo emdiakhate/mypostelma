@@ -30,10 +30,10 @@ export const useAuth = (): UseAuthReturn => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger le rôle de l'utilisateur depuis la BDD ou localStorage
+  // Charger le rôle de l'utilisateur depuis la BDD - NEVER use localStorage for security-critical data
   const loadUserRole = useCallback(async (userId: string) => {
     try {
-      // D'abord, essayer de charger depuis la base de données
+      // Always load role from database - never trust client-side storage
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -41,42 +41,23 @@ export const useAuth = (): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        console.warn('Could not load role from database (RLS policy), using client-side fallback:', error);
-        
-        // Fallback: utiliser localStorage pour gérer les rôles côté client
-        const storedRole = localStorage.getItem(`user_role_${userId}`);
-        if (storedRole) {
-          return storedRole as UserRole;
-        }
-        
-        // Si pas de rôle stocké, assigner un rôle par défaut
-        const defaultRole = await assignDefaultRole(userId);
-        localStorage.setItem(`user_role_${userId}`, defaultRole);
-        return defaultRole;
+        console.error('Error loading user role:', error);
+        return null;
       }
 
       const currentRole = data?.role as UserRole || null;
       
       // Vérifier et corriger le rôle si nécessaire
-      const correctedRole = await ensureCorrectRole(userId, currentRole);
+      if (!currentRole || currentRole === 'viewer') {
+        const correctedRole = await ensureCorrectRole(userId, currentRole);
+        return correctedRole;
+      }
       
-      // Stocker le rôle côté client aussi
-      localStorage.setItem(`user_role_${userId}`, correctedRole);
-      
-      return correctedRole;
+      return currentRole;
       
     } catch (error) {
       console.error('Error in loadUserRole:', error);
-      
-      // Fallback: utiliser localStorage
-      const storedRole = localStorage.getItem(`user_role_${userId}`);
-      if (storedRole) {
-        return storedRole as UserRole;
-      }
-      
-      // Dernier recours: manager
-      localStorage.setItem(`user_role_${userId}`, 'manager');
-      return 'manager';
+      return null;
     }
   }, []);
 

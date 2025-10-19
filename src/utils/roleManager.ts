@@ -38,9 +38,7 @@ export const assignDefaultRole = async (userId: string): Promise<UserRole> => {
       });
 
     if (insertError) {
-      console.warn('Could not insert role in database (RLS policy), using client-side fallback:', insertError);
-      // En cas d'erreur RLS, on retourne le rôle par défaut
-      // Le rôle sera géré côté client
+      console.error('Could not insert role in database:', insertError);
       return defaultRole;
     }
 
@@ -59,37 +57,18 @@ export const assignDefaultRole = async (userId: string): Promise<UserRole> => {
  */
 export const upgradeViewersToManagers = async (): Promise<void> => {
   try {
-    // Essayer d'abord la base de données
     const { error } = await supabase
       .from('user_roles')
       .update({ role: 'manager' })
       .eq('role', 'viewer');
 
     if (error) {
-      console.warn('Could not upgrade viewers in database (RLS policy), using client-side approach:', error);
-      
-      // Fallback: mettre à jour les rôles stockés côté client
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('user_role_') && localStorage.getItem(key) === 'viewer') {
-          localStorage.setItem(key, 'manager');
-          console.log(`Upgraded user role from viewer to manager: ${key}`);
-        }
-      });
+      console.error('Could not upgrade viewers in database:', error);
     } else {
       console.log('Successfully upgraded viewers to managers in database');
     }
   } catch (error) {
     console.error('Error in upgradeViewersToManagers:', error);
-    
-    // Fallback: mettre à jour les rôles stockés côté client
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('user_role_') && localStorage.getItem(key) === 'viewer') {
-        localStorage.setItem(key, 'manager');
-        console.log(`Upgraded user role from viewer to manager: ${key}`);
-      }
-    });
   }
 };
 
@@ -100,12 +79,8 @@ export const ensureCorrectRole = async (userId: string, currentRole: UserRole | 
   // Si l'utilisateur n'a pas de rôle ou a le rôle 'viewer', le corriger
   if (!currentRole || currentRole === 'viewer') {
     const correctedRole = await assignDefaultRole(userId);
-    // Stocker le rôle corrigé côté client
-    localStorage.setItem(`user_role_${userId}`, correctedRole);
     return correctedRole;
   }
   
-  // Stocker le rôle actuel côté client aussi
-  localStorage.setItem(`user_role_${userId}`, currentRole);
   return currentRole;
 };
