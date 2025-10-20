@@ -156,11 +156,6 @@ export async function callWebhook<T = any>(
     }
   } catch (error) {
     console.error('Webhook call error:', error);
-    // En cas d'erreur CORS, simuler une réponse réussie pour le développement
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      console.warn('CORS error detected, simulating successful response for development');
-      return { success: true, simulated: true } as T;
-    }
     throw error;
   }
 }
