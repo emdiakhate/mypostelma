@@ -242,32 +242,42 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         };
         
         console.log('AI Generation payload:', payload);
-        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        const rawResponse = await callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
         
-        if (response && response.success && response.imageUrl) {
+        // Le webhook peut retourner un tableau ou un objet simple
+        const response = Array.isArray(rawResponse) ? rawResponse[0] : rawResponse;
+        
+        if (response && response.success) {
           console.log('N8N Response received:', response);
           
-          // Vérifier que l'image se charge correctement avec retry
-          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
+          // Utiliser driveLink en priorité, sinon imageUrl
+          const imageUrl = response.driveLink || response.imageUrl;
           
-          if (imageLoads) {
-            // Utiliser l'URL directe de l'image pour l'affichage
-            setGeneratedImages([response.imageUrl]);
-            toast.success('Image générée avec succès !');
+          if (imageUrl) {
+            // Vérifier que l'image se charge correctement avec retry
+            const imageLoads = await checkImageLoad(imageUrl, 3, 2000);
             
-            // Log des informations supplémentaires pour debug
-            if (response.driveFileId) {
-              console.log('Drive File ID:', response.driveFileId);
-            }
-            if (response.driveLink) {
-              console.log('Drive Link:', response.driveLink);
-            }
-            if (response.thumbnailUrl) {
-              console.log('Thumbnail URL:', response.thumbnailUrl);
+            if (imageLoads) {
+              // Utiliser l'URL directe de l'image pour l'affichage
+              setGeneratedImages([imageUrl]);
+              toast.success('Image générée avec succès !');
+              
+              // Log des informations supplémentaires pour debug
+              if (response.driveFileId) {
+                console.log('Drive File ID:', response.driveFileId);
+              }
+              if (response.driveLink) {
+                console.log('Drive Link:', response.driveLink);
+              }
+              if (response.thumbnailUrl) {
+                console.log('Thumbnail URL:', response.thumbnailUrl);
+              }
+            } else {
+              toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
+              console.error('Image failed to load:', imageUrl);
             }
           } else {
-            toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
-            console.error('Image failed to load:', response.imageUrl);
+            toast.error('Aucune URL d\'image trouvée dans la réponse');
           }
         } else {
           console.error('Invalid response from N8N:', response);
