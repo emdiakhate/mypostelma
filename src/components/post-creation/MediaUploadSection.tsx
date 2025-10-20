@@ -106,13 +106,29 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      const newImages: string[] = [];
+      const newMedia: string[] = [];
       Array.from(files).slice(0, 4 - selectedImages.length).forEach(file => {
+        // Vérifier le type de fichier
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        if (!isImage && !isVideo) {
+          toast.error(`${file.name} n'est ni une image ni une vidéo`);
+          return;
+        }
+
+        // Limites de taille
+        const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB vidéo, 10MB image
+        if (file.size > maxSize) {
+          toast.error(`${file.name} est trop volumineux (max ${isVideo ? '100' : '10'}MB)`);
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
-          newImages.push(e.target?.result as string);
-          if (newImages.length === Math.min(files.length, 4 - selectedImages.length)) {
-            onImagesChange([...selectedImages, ...newImages]);
+          newMedia.push(e.target?.result as string);
+          if (newMedia.length === Math.min(files.length, 4 - selectedImages.length)) {
+            onImagesChange([...selectedImages, ...newMedia]);
           }
         };
         reader.readAsDataURL(file);
@@ -221,7 +237,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   return (
     <div className="mb-6">
       <label className="block text-sm font-medium mb-2">
-        Images (optionnel)
+        Médias (optionnel)
       </label>
       
       {/* Onglets Upload/IA */}
@@ -235,7 +251,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
-          Upload d'images
+          Upload de médias
         </button>
         <button
           onClick={() => onMediaSourceChange('ai')}
@@ -255,7 +271,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
         <div className="border-2 border-dashed border-border rounded-lg p-4">
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={handleImageUpload}
             multiple
             className="hidden"
@@ -264,24 +280,35 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
           <label htmlFor="image-upload" className="cursor-pointer block">
             {selectedImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
-                {selectedImages.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Image ${index + 1}`} 
-                      className="w-full h-24 object-cover rounded border"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        removeImage(index);
-                      }}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                {selectedImages.map((media, index) => {
+                  const isVideo = media.startsWith('data:video/');
+                  return (
+                    <div key={index} className="relative group">
+                      {isVideo ? (
+                        <video
+                          src={media}
+                          className="w-full h-24 object-cover rounded border"
+                          controls
+                        />
+                      ) : (
+                        <img 
+                          src={media} 
+                          alt={`Media ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          removeImage(index);
+                        }}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
                 {selectedImages.length < 4 && (
                   <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-24">
                     <span className="text-muted-foreground text-xs">+ Ajouter</span>
@@ -290,9 +317,13 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
               </div>
             ) : (
               <div className="text-center py-8">
-                <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-foreground">Cliquer pour ajouter des images</p>
-                <p className="text-xs text-muted-foreground">Jusqu'à 4 images</p>
+                <div className="flex justify-center gap-2 mb-2">
+                  <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  <Video className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-foreground">Cliquer pour ajouter des médias</p>
+                <p className="text-xs text-muted-foreground">Images (max 10MB) et vidéos (max 100MB)</p>
+                <p className="text-xs text-muted-foreground">Jusqu'à 4 fichiers</p>
               </div>
             )}
           </label>

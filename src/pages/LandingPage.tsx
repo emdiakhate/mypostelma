@@ -567,29 +567,26 @@ const LandingPage: React.FC = () => {
             
             {/* Video wrapper */}
             <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border-8 border-white">
-              {/* Video aspect ratio container */}
-              <div className="relative aspect-video bg-gray-900">
-                {/* Placeholder avant chargement vidéo */}
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a4d2e] to-[#2d5f4a]">
+              {/* Video thumbnail container */}
+              <div className="relative aspect-video bg-gray-900 overflow-hidden">
+                {/* Image thumbnail */}
+                <img 
+                  src="/video-thumbnail.png" 
+                  alt="Démo Postelma" 
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-all cursor-pointer group">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-white/30 transition-all cursor-pointer group">
-                      <Play className="w-10 h-10 text-white ml-1 group-hover:scale-110 transition-transform" />
+                    <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-white transition-all shadow-lg group-hover:scale-110 group-hover:shadow-xl">
+                      <Play className="w-10 h-10 text-[#1a4d2e] ml-1 group-hover:scale-110 transition-transform" />
                     </div>
-                    <p className="text-white text-lg font-semibold">
+                    <p className="text-white text-lg font-semibold drop-shadow-lg">
                       Voir la démo (2:30)
                     </p>
                   </div>
                 </div>
-
-                {/* iframe YouTube/Vimeo (à activer au clic) */}
-                <iframe
-                  className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/f01nRk2olo0?autoplay=0&controls=1&rel=0"
-                  title="Démo Postelma"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  loading="lazy"
-                />
               </div>
 
               {/* Video controls overlay (optionnel) */}

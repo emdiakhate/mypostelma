@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Post } from '@/types/Post';
 import { enrichPostsWithDefaults, mockPublicationsData } from '@/data/mockPublicationsData';
+import { samplePosts } from '@/data/sampleData';
+import { startOfWeek, addDays } from 'date-fns';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
@@ -11,11 +13,6 @@ export function usePublications() {
   const { user } = useAuth();
 
   const fetchPosts = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
@@ -25,7 +22,48 @@ export function usePublications() {
       
       // Utiliser les données mockées enrichies
       const enrichedPosts = enrichPostsWithDefaults(mockPublicationsData);
-      setPosts(enrichedPosts);
+
+      // Ajouter les samplePosts recadrés sur la semaine en cours
+      const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Lundi
+      console.log('🗓️ Week start (Monday):', weekStart);
+      
+      const dayIndexMap: Record<string, number> = {
+        'lundi': 0,
+        'mardi': 1,
+        'mercredi': 2,
+        'jeudi': 3,
+        'vendredi': 4,
+        'samedi': 5,
+        'dimanche': 6,
+      };
+
+      const adjustedSamplePosts: Post[] = samplePosts.map((post) => {
+        const originalTime = new Date(post.scheduledTime);
+        const dayIndex = dayIndexMap[post.dayColumn || 'lundi'] ?? 0;
+        const targetDate = addDays(weekStart, dayIndex);
+        const scheduledTime = new Date(targetDate);
+        scheduledTime.setHours(originalTime.getHours(), originalTime.getMinutes(), 0, 0);
+
+        console.log(`📅 Post ${post.id} (${post.dayColumn}):`, {
+          original: post.scheduledTime,
+          adjusted: scheduledTime,
+          dayIndex
+        });
+
+        return {
+          ...post,
+          scheduledTime,
+        } as Post;
+      });
+
+      console.log('📊 Total posts:', {
+        mockPublications: enrichedPosts.length,
+        samplePosts: adjustedSamplePosts.length,
+        total: enrichedPosts.length + adjustedSamplePosts.length
+      });
+
+      // Afficher les posts même si l'utilisateur n'est pas connecté (mode démo)
+      setPosts([...enrichedPosts, ...adjustedSamplePosts]);
     } catch (err) {
       setError(err as Error);
       toast.error('Erreur lors du chargement des publications');
