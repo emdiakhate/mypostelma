@@ -57,11 +57,19 @@ const PostCard: React.FC<PostCardProps> = memo(({
   // Gestion des médias (images et vidéos)
   const firstImage = post.images?.[0] || post.image;
   const videoUrl = post.video;
-  const videoThumbnail = post.videoThumbnail || firstImage;
+  const videoThumbnail = post.videoThumbnail;
   
-  // Pour les vidéos, on utilise directement la miniature ou l'image
+  // Pour les vidéos, on utilise la miniature si disponible, sinon on affiche directement la vidéo
   // Pour les images, on utilise useImageLoader
-  const mediaUrl = videoUrl ? videoThumbnail : firstImage;
+  const hasVideo = !!videoUrl;
+  const hasVideoThumbnail = !!videoThumbnail;
+  const hasImage = !!firstImage;
+  
+  // Déterminer l'URL du média à charger
+  const mediaUrl = hasVideo && hasVideoThumbnail ? videoThumbnail : 
+                   hasVideo && !hasVideoThumbnail ? videoUrl : 
+                   firstImage;
+  
   const { imageUrl, isLoading, error } = useImageLoader(mediaUrl);
   
   // Vérification des permissions
@@ -189,7 +197,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
 
         {/* Image ou Vidéo - Optimisée avec useImageLoader */}
         <div className="mb-2 max-h-[70px] overflow-hidden">
-          {(firstImage || videoUrl) && (
+          {(hasImage || hasVideo) && (
             <div className="relative w-full h-[70px] rounded-md overflow-hidden bg-muted">
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -199,6 +207,14 @@ const PostCard: React.FC<PostCardProps> = memo(({
                 <div className="w-full h-full flex items-center justify-center bg-red-50 text-red-500 text-xs">
                   Erreur média
                 </div>
+              ) : hasVideo && !hasVideoThumbnail ? (
+                // Vidéo sans miniature - afficher directement la vidéo
+                <video 
+                  src={videoUrl} 
+                  className="w-full h-full object-cover"
+                  muted
+                  preload="metadata"
+                />
               ) : imageUrl ? (
                 <>
                   <img 
@@ -209,7 +225,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                       console.warn('Erreur de chargement du média:', error);
                     }}
                   />
-                  {videoUrl && (
+                  {hasVideo && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                       <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
                         <svg className="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
@@ -221,7 +237,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                 </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
-                  {videoUrl ? 'Vidéo' : 'Image non disponible'}
+                  {hasVideo ? 'Vidéo' : 'Image non disponible'}
                 </div>
               )}
             </div>
