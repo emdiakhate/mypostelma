@@ -10,7 +10,7 @@ import {
   MessageSquare, TrendingUp, Target, Globe, Sparkles,
   Instagram, Linkedin, Twitter, Maximize
 } from 'lucide-react';
-import heroImage from '@/assets/reseaux.png';
+import heroImage from '@/assets/hero-landing.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
