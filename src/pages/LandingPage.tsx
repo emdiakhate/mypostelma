@@ -282,21 +282,21 @@ const LandingPage: React.FC = () => {
 
             {/* Right Side - Hero Dashboard Image */}
             <motion.div 
-              className="relative perspective-1000 flex items-center"
+              className="relative perspective-1000 flex items-start"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               {/* Main Dashboard Image */}
-              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl" style={{ minHeight: '650px', width: '100%' }}>
+              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl w-full">
                 <img
                   src={heroImage}
                   alt="Postelma - Gestion des réseaux sociaux"
-                  className="w-full h-full object-contain"
+                  className="w-full h-auto object-cover rounded-2xl"
                 />
                 
                 {/* Overlay avec effet de profondeur */}
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 rounded-2xl"></div>
               </div>
 
               {/* Floating elements */}
