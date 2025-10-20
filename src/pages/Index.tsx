@@ -20,7 +20,7 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
       <CalendarView
         posts={posts}
         currentDate={currentDate}
