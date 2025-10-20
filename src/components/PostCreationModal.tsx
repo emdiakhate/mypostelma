@@ -228,6 +228,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         return;
       }
       
+      // Empêcher les appels multiples
+      if (isGeneratingImage) {
+        console.log('Génération déjà en cours, appel ignoré');
+        return;
+      }
+      
       setIsGeneratingImage(true);
       try {
         const payload: AiEditCombineWebhookPayload = {
@@ -242,7 +248,15 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         };
         
         console.log('AI Generation payload:', payload);
-        const rawResponse = await callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        // Ajouter un timeout de 60 secondes
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
+        });
+        
+        const webhookPromise = callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        const rawResponse = await Promise.race([webhookPromise, timeoutPromise]);
         
         console.log('Raw webhook response:', rawResponse);
         console.log('Is array?', Array.isArray(rawResponse));

@@ -95,6 +95,12 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
         return;
       }
       
+      // Empêcher les appels multiples
+      if (isGeneratingImage) {
+        console.log('Génération déjà en cours, appel ignoré');
+        return;
+      }
+      
       setIsGeneratingImage(true);
       try {
         const payload: AiEditCombineWebhookPayload = {
@@ -109,7 +115,15 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
         };
         
         console.log('AI Generation payload:', payload);
-        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        // Ajouter un timeout de 60 secondes
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
+        });
+        
+        const webhookPromise = callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        
+        const response = await Promise.race([webhookPromise, timeoutPromise]);
         
         if (response && response.success && response.imageUrl) {
           console.log('N8N Response received:', response);

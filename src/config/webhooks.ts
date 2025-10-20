@@ -122,7 +122,13 @@ export async function callWebhook<T = any>(
   payload: any, 
   options: RequestInit = {}
 ): Promise<T> {
+  console.log(`🚀 Appel webhook vers: ${url}`);
+  console.log('📦 Payload:', payload);
+  
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 secondes
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -132,8 +138,11 @@ export async function callWebhook<T = any>(
       },
       mode: 'cors',
       body: JSON.stringify(payload),
+      signal: controller.signal,
       ...options,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Webhook call failed: ${response.status} ${response.statusText}`);
