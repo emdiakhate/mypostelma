@@ -56,7 +56,7 @@ const customStyles = `
   .hero-image {
     object-fit: cover;
     object-position: center top;
-    height: 300px;
+    height: 450px;
     width: 100%;
     border-radius: 1rem;
   }
@@ -291,7 +291,7 @@ const LandingPage: React.FC = () => {
                 <img
                   src={heroImage}
                   alt="Postelma - Gestion des réseaux sociaux"
-                  className="w-full h-[300px] object-cover rounded-2xl"
+                  className="w-full h-[450px] object-cover rounded-2xl"
                 />
                 
                 {/* Overlay avec effet de profondeur */}
