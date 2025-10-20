@@ -33,8 +33,17 @@ const OptimizedMedia: React.FC<{
     );
   }
 
-  // Pour les images, utiliser le composant OptimizedImage existant
-  return <OptimizedImage src={src} alt={alt} className={className} fallback={fallback} />;
+  // Pour les images, affichage direct
+  return (
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className}
+      onError={(e) => {
+        console.warn('Erreur de chargement de l\'image:', src);
+      }}
+    />
+  );
 };
 
 // Comparateur personnalisé pour les composants de prévisualisation

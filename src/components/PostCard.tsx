@@ -54,11 +54,15 @@ const PostCard: React.FC<PostCardProps> = memo(({
   onDuplicate,
   onDelete 
 }) => {
-  // Utilisation du hook personnalisé pour gérer l'image ou la vidéo
+  // Gestion des médias (images et vidéos)
   const firstImage = post.images?.[0] || post.image;
   const videoUrl = post.video;
   const videoThumbnail = post.videoThumbnail || firstImage;
-  const { imageUrl, isLoading, error } = useImageLoader(videoUrl ? videoThumbnail : firstImage);
+  
+  // Pour les vidéos, on utilise directement la miniature ou l'image
+  // Pour les images, on utilise useImageLoader
+  const mediaUrl = videoUrl ? videoThumbnail : firstImage;
+  const { imageUrl, isLoading, error } = useImageLoader(mediaUrl);
   
   // Vérification des permissions
   const { hasPermission } = useAuth();
@@ -193,7 +197,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                 </div>
               ) : error ? (
                 <div className="w-full h-full flex items-center justify-center bg-red-50 text-red-500 text-xs">
-                  Erreur image
+                  Erreur média
                 </div>
               ) : imageUrl ? (
                 <>
@@ -202,7 +206,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                     alt="Post content" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.warn('Erreur de chargement de l\'image:', error);
+                      console.warn('Erreur de chargement du média:', error);
                     }}
                   />
                   {videoUrl && (
