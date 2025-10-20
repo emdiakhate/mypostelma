@@ -216,15 +216,16 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [hashtagSets]);
 
   const handleAiImageGeneration = useCallback(async () => {
-    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
-      // Utiliser le webhook N8N pour l'édition et la combinaison
+    // Seulement pour la combinaison d'images
+    if (aiGenerationType === 'combine') {
+      // Utiliser Lovable AI pour la combinaison d'images
       if (!aiPrompt.trim()) {
         toast.error('Veuillez saisir un prompt pour la génération');
         return;
       }
       
-      if (aiSourceImages.length === 0) {
-        toast.error('Veuillez ajouter des images sources');
+      if (aiSourceImages.length < 2) {
+        toast.error('Veuillez ajouter au moins 2 images pour la combinaison');
         return;
       }
       
@@ -236,27 +237,22 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       
       setIsGeneratingImage(true);
       try {
-        const payload: AiEditCombineWebhookPayload = {
-          type: aiGenerationType,
-          prompt: aiPrompt,
-          sourceImages: aiSourceImages,
-          options: {
-            style: 'realistic',
-            intensity: 0.8,
-            quality: 'high'
+        console.log('🎨 Appel à Lovable AI pour combinaison d\'images');
+        
+        const { data, error } = await supabase.functions.invoke('generate-ai-image', {
+          body: {
+            type: 'combine',
+            prompt: aiPrompt,
+            sourceImages: aiSourceImages
           }
-        };
-        
-        console.log('AI Generation payload:', payload);
-        
-        // Ajouter un timeout de 60 secondes
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
         });
         
-        const webhookPromise = callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
+        if (error) {
+          console.error('❌ Erreur fonction edge:', error);
+          throw error;
+        }
         
-        const rawResponse = await Promise.race([webhookPromise, timeoutPromise]);
+        console.log('✅ Réponse reçue:', data);
         
         console.log('Raw webhook response:', rawResponse);
         console.log('Is array?', Array.isArray(rawResponse));
