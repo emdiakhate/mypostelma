@@ -41,6 +41,7 @@ interface MediaUploadSectionProps {
   isGeneratingVideo?: boolean;
   onGenerateVideo?: (videoUrl?: string) => void;
   generatedVideoUrl?: string | null;
+  onUseGeneratedVideo?: (videoUrl: string) => void;
 }
 
 const aiGenerationTypes = [
@@ -99,7 +100,8 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   onVideoImageChange,
   isGeneratingVideo,
   onGenerateVideo,
-  generatedVideoUrl
+  generatedVideoUrl,
+  onUseGeneratedVideo
 }) => {
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -626,6 +628,12 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                       className="w-full"
                     />
                   </div>
+                  <Button
+                    onClick={() => onUseGeneratedVideo?.(generatedVideoUrl)}
+                    className="w-full mt-2"
+                  >
+                    Utiliser cette vidéo
+                  </Button>
                 </div>
               )}
             </div>

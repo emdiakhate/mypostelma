@@ -94,6 +94,8 @@ export class PostsService {
         platforms: post.platforms as any,
         status: post.status,
         images: post.images || [],
+        video: post.video,
+        videoThumbnail: post.video_thumbnail,
         campaign: post.campaign,
         campaignColor: post.campaign_color,
         author: profile?.name || 'Utilisateur inconnu',
@@ -147,6 +149,8 @@ export class PostsService {
       platforms: data.platforms as any,
       status: data.status,
       images: data.images || [],
+      video: data.video,
+      videoThumbnail: data.video_thumbnail,
       campaign: data.campaign,
       campaignColor: data.campaign_color,
       author: profile?.name || 'Utilisateur inconnu',
@@ -176,6 +180,8 @@ export class PostsService {
         accounts: [], // À remplir avec les comptes sélectionnés
         status: post.status || 'draft',
         images: post.images || [],
+        video: post.video,
+        video_thumbnail: post.videoThumbnail,
         campaign: post.campaign,
         campaign_color: post.campaignColor,
         author_id: authorId,
@@ -198,6 +204,8 @@ export class PostsService {
       platforms: data.platforms as any,
       status: data.status,
       images: data.images || [],
+      video: data.video,
+      videoThumbnail: data.video_thumbnail,
       campaign: data.campaign,
       campaignColor: data.campaign_color,
       author: data.author_id,
@@ -220,6 +228,8 @@ export class PostsService {
       updateData.status = updates.status;
     }
     if (updates.images !== undefined) updateData.images = updates.images;
+    if (updates.video !== undefined) updateData.video = updates.video;
+    if (updates.videoThumbnail !== undefined) updateData.video_thumbnail = updates.videoThumbnail;
     if (updates.campaign !== undefined) updateData.campaign = updates.campaign;
     if (updates.campaignColor !== undefined) updateData.campaign_color = updates.campaignColor;
     if (updates.captions !== undefined) updateData.captions = updates.captions;
@@ -245,6 +255,8 @@ export class PostsService {
       platforms: data.platforms as any,
       status: data.status,
       images: data.images || [],
+      video: data.video,
+      videoThumbnail: data.video_thumbnail,
       campaign: data.campaign,
       campaignColor: data.campaign_color,
       author: data.author_id,
@@ -295,6 +307,8 @@ export class PostsService {
       platforms: data.platforms as any,
       status: data.status,
       images: data.images || [],
+      video: data.video,
+      videoThumbnail: data.video_thumbnail,
       campaign: data.campaign,
       campaignColor: data.campaign_color,
       author: data.author_id,

@@ -189,6 +189,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   }, [selectedAccounts]);
 
+  // Charger la vidéo lors de l'édition
+  useEffect(() => {
+    if (isEditing && initialData?.video) {
+      setGeneratedVideoUrl(initialData.video);
+    }
+  }, [isEditing, initialData?.video]);
+
   // Callbacks
   const handlePreviewChange = useCallback((platform: string) => {
     setActivePreview(platform);
@@ -425,6 +432,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     setIsGeneratingVideo(false);
   }, []);
 
+  // Fonction pour utiliser la vidéo générée
+  const handleUseGeneratedVideo = useCallback((videoUrl: string) => {
+    setGeneratedVideoUrl(videoUrl);
+    toast.success('Vidéo ajoutée au post !');
+  }, []);
+
   const generateCaptions = useCallback(async () => {
     if (!content.trim()) {
       toast.error('Veuillez saisir du contenu avant de générer les captions');
@@ -485,6 +498,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       const payload: PublishWebhookPayload = {
         content: finalCaptions[selectedPlatforms[0]] || content,
         media: selectedImages,
+        video: generatedVideoUrl || undefined,
         platforms: selectedPlatforms,
         accounts: selectedAccounts,
         publishType: publishType,
@@ -517,6 +531,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           platforms: selectedPlatforms,
           image: selectedImages[0],
           images: selectedImages,
+          video: generatedVideoUrl || undefined,
+          videoThumbnail: generatedVideoUrl || undefined,
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
@@ -555,6 +571,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
           images: selectedImages, // Passer images au lieu de image
+          video: generatedVideoUrl || undefined,
+          videoThumbnail: generatedVideoUrl || undefined,
           scheduledTime: scheduledDateTime,
           dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
           timeSlot: calculateTimeSlot(scheduledDateTime),
@@ -697,6 +715,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             isGeneratingVideo={isGeneratingVideo}
             onGenerateVideo={handleGenerateVideo}
             generatedVideoUrl={generatedVideoUrl}
+            onUseGeneratedVideo={handleUseGeneratedVideo}
           />
 
           {/* Comptes connectés */}

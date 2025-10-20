@@ -54,9 +54,11 @@ const PostCard: React.FC<PostCardProps> = memo(({
   onDuplicate,
   onDelete 
 }) => {
-  // Utilisation du hook personnalisé pour gérer l'image
+  // Utilisation du hook personnalisé pour gérer l'image ou la vidéo
   const firstImage = post.images?.[0] || post.image;
-  const { imageUrl, isLoading, error } = useImageLoader(firstImage);
+  const videoUrl = post.video;
+  const videoThumbnail = post.videoThumbnail || firstImage;
+  const { imageUrl, isLoading, error } = useImageLoader(videoUrl ? videoThumbnail : firstImage);
   
   // Vérification des permissions
   const { hasPermission } = useAuth();
@@ -181,9 +183,9 @@ const PostCard: React.FC<PostCardProps> = memo(({
           {post.content}
         </p>
 
-        {/* Image - Optimisée avec useImageLoader */}
+        {/* Image ou Vidéo - Optimisée avec useImageLoader */}
         <div className="mb-2 max-h-[70px] overflow-hidden">
-          {firstImage && (
+          {(firstImage || videoUrl) && (
             <div className="relative w-full h-[70px] rounded-md overflow-hidden bg-muted">
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -194,17 +196,28 @@ const PostCard: React.FC<PostCardProps> = memo(({
                   Erreur image
                 </div>
               ) : imageUrl ? (
-                <img 
-                  src={imageUrl} 
-                  alt="Post content" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    console.warn('Erreur de chargement de l\'image:', error);
-                  }}
-                />
+                <>
+                  <img 
+                    src={imageUrl} 
+                    alt="Post content" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.warn('Erreur de chargement de l\'image:', error);
+                    }}
+                  />
+                  {videoUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
-                  Image non disponible
+                  {videoUrl ? 'Vidéo' : 'Image non disponible'}
                 </div>
               )}
             </div>

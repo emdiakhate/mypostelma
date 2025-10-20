@@ -45,6 +45,7 @@ export interface ScrappingWebhookPayload {
 export interface PublishWebhookPayload {
   content: string;
   media?: string[];
+  video?: string;
   platforms: string[];
   accounts: string[];
   publishType: 'now' | 'scheduled';

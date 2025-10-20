@@ -10,6 +10,8 @@ export interface Post {
   status: PostStatus;
   image?: string;
   images?: string[];
+  video?: string; // URL de la vidéo
+  videoThumbnail?: string; // URL de la miniature de la vidéo
   campaign?: string;
   campaignColor?: string;
   author: string;
