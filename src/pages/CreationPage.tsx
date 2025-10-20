@@ -18,6 +18,7 @@ import aynnoviaLogo from '@/assets/aynnovia-logo.png';
 import aynnovia1 from '@/assets/aynnovia-1.png';
 import aynnovia2 from '@/assets/aynnovia-2.png';
 import aynnovia3 from '@/assets/aynnovia-3.png';
+import aynnovia4 from '@/assets/aynnovia-4.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -120,7 +121,7 @@ const templates: Template[] = [
       aynnovia1,
       aynnovia2,
       aynnovia3,
-      aynnovia1
+      aynnovia4
     ],
     hasMultipleResults: true,
     resultCount: 4,
