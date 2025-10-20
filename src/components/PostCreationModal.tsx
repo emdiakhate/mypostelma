@@ -249,39 +249,40 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         
         if (response && response.success) {
           console.log('N8N Response received:', response);
-          console.log('Response driveLink:', response.driveLink);
-          console.log('Response imageUrl:', response.imageUrl);
-          console.log('Response driveFileId:', response.driveFileId);
           
-          // Convertir le lien Google Drive en URL d'image directe
-          let imageUrl = response.imageUrl; // Base64 ou URL directe
+          // Prioriser imageUrl (base64) car elle est directement utilisable
+          let imageUrl = response.imageUrl;
           
-          if (response.driveFileId) {
-            // Utiliser l'URL directe Google Drive avec l'ID du fichier
+          // Si pas d'imageUrl, essayer avec le Drive link
+          if (!imageUrl && response.driveFileId) {
             imageUrl = `https://drive.google.com/uc?export=view&id=${response.driveFileId}`;
-            console.log('Converted Drive URL:', imageUrl);
-          } else if (response.driveLink && !imageUrl) {
-            // Si on a un driveLink mais pas de driveFileId, extraire l'ID
+            console.log('Using Drive URL:', imageUrl);
+          } else if (!imageUrl && response.driveLink) {
             const driveIdMatch = response.driveLink.match(/\/d\/([^/]+)/);
             if (driveIdMatch) {
               imageUrl = `https://drive.google.com/uc?export=view&id=${driveIdMatch[1]}`;
-              console.log('Extracted and converted Drive URL:', imageUrl);
+              console.log('Extracted Drive URL:', imageUrl);
             }
           }
           
           if (imageUrl) {
-            console.log('Final image URL to load:', imageUrl);
+            console.log('Final image URL:', imageUrl.substring(0, 100) + '...');
             
-            // Vérifier que l'image se charge correctement avec retry
-            const imageLoads = await checkImageLoad(imageUrl, 3, 2000);
-            
-            if (imageLoads) {
-              // Utiliser l'URL directe de l'image pour l'affichage
+            // Pour les images base64, pas besoin de vérifier le chargement
+            if (imageUrl.startsWith('data:image')) {
               setGeneratedImages([imageUrl]);
               toast.success('Image générée avec succès !');
             } else {
-              toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
-              console.error('Image failed to load:', imageUrl);
+              // Pour les URLs externes, vérifier le chargement
+              const imageLoads = await checkImageLoad(imageUrl, 3, 2000);
+              
+              if (imageLoads) {
+                setGeneratedImages([imageUrl]);
+                toast.success('Image générée avec succès !');
+              } else {
+                toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
+                console.error('Image failed to load:', imageUrl);
+              }
             }
           } else {
             console.error('No valid image URL found in response:', response);
