@@ -12,44 +12,6 @@ interface PreviewProps {
   timestamp?: string;
 }
 
-// Composant d'image optimisé pour les prévisualisations
-// Utilise useImageLoader pour une gestion optimisée des images
-const OptimizedMedia: React.FC<{
-  src: string;
-  alt: string;
-  className?: string;
-  fallback?: React.ReactNode;
-}> = ({ src, alt, className = "", fallback }) => {
-  const { imageUrl, isLoading, error } = useImageLoader(src);
-
-  if (isLoading) {
-    return (
-      <div className={`${className} flex items-center justify-center bg-gray-100`}>
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (error || !imageUrl) {
-    return fallback || (
-      <div className={`${className} flex items-center justify-center bg-gray-100 text-gray-500 text-sm`}>
-        Image non disponible
-      </div>
-    );
-  }
-
-  return (
-    <img 
-      src={imageUrl} 
-      alt={alt} 
-      className={className}
-      onError={(e) => {
-        console.warn('Erreur de chargement de l\'image:', error);
-      }}
-    />
-  );
-};
-
 // Composant média optimisé pour les prévisualisations (images + vidéos)
 const OptimizedMedia: React.FC<{
   src: string;
