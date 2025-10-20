@@ -83,42 +83,47 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
   }, []);
 
   const handleGenerateImage = useCallback(async () => {
-    // Seulement pour la combinaison
-    if (aiGenerationType === 'combine') {
-      // Utiliser Lovable AI pour la combinaison
+    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
+      // Utiliser le webhook N8N pour l'édition et la combinaison
       if (!aiPrompt.trim()) {
         toast.error('Veuillez saisir un prompt pour la génération');
         return;
       }
       
-      if (aiSourceImages.length < 2) {
-        toast.error('Veuillez ajouter au moins 2 images');
+      if (aiSourceImages.length === 0) {
+        toast.error('Veuillez ajouter des images sources');
         return;
       }
       
+      // Empêcher les appels multiples
       if (isGeneratingImage) {
-        console.log('Génération déjà en cours');
+        console.log('Génération déjà en cours, appel ignoré');
         return;
       }
       
       setIsGeneratingImage(true);
       try {
-        const { data, error } = await supabase.functions.invoke('generate-ai-image', {
-          body: {
-            type: 'combine',
-            prompt: aiPrompt,
-            sourceImages: aiSourceImages
+        const payload: AiEditCombineWebhookPayload = {
+          type: aiGenerationType,
+          prompt: aiPrompt,
+          sourceImages: aiSourceImages,
+          options: {
+            style: 'realistic',
+            intensity: 0.8,
+            quality: 'high'
           }
+        };
+        
+        console.log('AI Generation payload:', payload);
+        
+        // Ajouter un timeout de 60 secondes
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
         });
         
-        if (error) throw error;
+        const webhookPromise = callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
         
-        if (data && data.success && data.imageUrl) {
-          setGeneratedImages([data.imageUrl]);
-          toast.success('Image combinée avec succès !');
-        } else {
-          throw new Error(data?.error || 'Aucune image générée');
-        }
+        const response = await Promise.race([webhookPromise, timeoutPromise]);
         
         if (response && response.success && response.imageUrl) {
           console.log('N8N Response received:', response);
