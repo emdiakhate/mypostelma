@@ -66,7 +66,7 @@ const customStyles = `
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     height: 100%;
-    min-height: 500px;
+    min-height: 700px;
   }
 `;
 
@@ -282,17 +282,17 @@ const LandingPage: React.FC = () => {
 
             {/* Right Side - Hero Dashboard Image */}
             <motion.div 
-              className="relative perspective-1000 flex items-start"
+              className="relative perspective-1000 flex items-start h-full"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               {/* Main Dashboard Image */}
-              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl w-full">
+              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl w-full min-h-[700px]">
                 <img
                   src={heroImage}
                   alt="Postelma - Gestion des réseaux sociaux"
-                  className="w-full h-auto object-cover rounded-2xl"
+                  className="w-full h-full object-cover rounded-2xl"
                 />
                 
                 {/* Overlay avec effet de profondeur */}
