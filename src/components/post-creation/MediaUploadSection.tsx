@@ -8,6 +8,34 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+// Fonction pour générer une miniature vidéo
+const generateVideoThumbnail = (file: File, callback: (thumbnail: string) => void) => {
+  const video = document.createElement('video');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  video.addEventListener('loadedmetadata', () => {
+    // Prendre une capture à 1 seconde ou au milieu de la vidéo
+    const time = Math.min(1, video.duration / 2);
+    video.currentTime = time;
+  });
+  
+  video.addEventListener('seeked', () => {
+    if (ctx) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convertir en base64
+      const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+      callback(thumbnail);
+    }
+  });
+  
+  video.src = URL.createObjectURL(file);
+  video.load();
+};
+
 interface MediaUploadSectionProps {
   mediaSource: 'upload' | 'ai';
   onMediaSourceChange: (source: 'upload' | 'ai') => void;
@@ -126,9 +154,22 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
 
         const reader = new FileReader();
         reader.onload = (e) => {
-          newMedia.push(e.target?.result as string);
-          if (newMedia.length === Math.min(files.length, 4 - selectedImages.length)) {
-            onImagesChange([...selectedImages, ...newMedia]);
+          const result = e.target?.result as string;
+          newMedia.push(result);
+          
+          // Si c'est une vidéo, générer une miniature
+          if (isVideo) {
+            generateVideoThumbnail(file, (thumbnail) => {
+              // Ajouter la miniature à la liste des médias
+              newMedia.push(thumbnail);
+              if (newMedia.length === Math.min(files.length, 4 - selectedImages.length)) {
+                onImagesChange([...selectedImages, ...newMedia]);
+              }
+            });
+          } else {
+            if (newMedia.length === Math.min(files.length, 4 - selectedImages.length)) {
+              onImagesChange([...selectedImages, ...newMedia]);
+            }
           }
         };
         reader.readAsDataURL(file);
