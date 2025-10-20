@@ -217,7 +217,7 @@ const LandingPage: React.FC = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-8 py-20 lg:py-32">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             {/* Left Side - Text Content */}
             <motion.div 
               className="text-white"
