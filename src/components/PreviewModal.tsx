@@ -14,7 +14,7 @@ interface PreviewProps {
 
 // Composant d'image optimisé pour les prévisualisations
 // Utilise useImageLoader pour une gestion optimisée des images
-const OptimizedImage: React.FC<{
+const OptimizedMedia: React.FC<{
   src: string;
   alt: string;
   className?: string;
@@ -50,6 +50,31 @@ const OptimizedImage: React.FC<{
   );
 };
 
+// Composant média optimisé pour les prévisualisations (images + vidéos)
+const OptimizedMedia: React.FC<{
+  src: string;
+  alt: string;
+  className?: string;
+  fallback?: React.ReactNode;
+}> = ({ src, alt, className = "", fallback }) => {
+  const isVideo = src.startsWith('data:video/');
+  
+  if (isVideo) {
+    return (
+      <video
+        src={src}
+        alt={alt}
+        className={className}
+        controls
+        preload="metadata"
+      />
+    );
+  }
+
+  // Pour les images, utiliser le composant OptimizedMedia existant
+  return <OptimizedMedia src={src} alt={alt} className={className} fallback={fallback} />;
+};
+
 // Comparateur personnalisé pour les composants de prévisualisation
 // Optimise les re-rendus en comparant les props essentielles
 const arePreviewPropsEqual = (prevProps: PreviewProps, nextProps: PreviewProps) => {
@@ -78,10 +103,10 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
     if (imageCount === 0) return null;
 
     if (imageCount === 1) {
-      // Image unique - pleine largeur avec hauteur réduite
+      // Média unique - pleine largeur avec hauteur réduite
       return (
         <div className="w-full">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={images[0]} 
             alt="Post content"
             className="w-full h-auto max-h-[400px] object-cover cursor-pointer mx-auto"
@@ -91,15 +116,15 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
     }
 
     if (imageCount === 2) {
-      // 2 images - grid 2 colonnes avec hauteur réduite
+      // 2 médias - grid 2 colonnes avec hauteur réduite
       return (
         <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={images[0]} 
             alt="Post content 1"
             className="w-full h-full object-cover cursor-pointer"
           />
-          <OptimizedImage 
+          <OptimizedMedia 
             src={images[1]} 
             alt="Post content 2"
             className="w-full h-full object-cover cursor-pointer"
@@ -109,21 +134,21 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
     }
 
     if (imageCount === 3) {
-      // 3 images - 1 grande + 2 petites avec hauteur réduite
+      // 3 médias - 1 grande + 2 petites avec hauteur réduite
       return (
         <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={images[0]} 
             alt="Post content 1"
             className="w-full h-full object-cover cursor-pointer"
           />
           <div className="grid grid-rows-2 gap-[2px]">
-            <OptimizedImage 
+            <OptimizedMedia 
               src={images[1]} 
               alt="Post content 2"
               className="w-full h-full object-cover cursor-pointer"
             />
-            <OptimizedImage 
+            <OptimizedMedia 
               src={images[2]} 
               alt="Post content 3"
               className="w-full h-full object-cover cursor-pointer"
@@ -133,27 +158,27 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
       );
     }
 
-    // Plus de 3 images - grille 2x2 avec indicateur "+X" et hauteur réduite
+    // Plus de 3 médias - grille 2x2 avec indicateur "+X" et hauteur réduite
     const remainingCount = imageCount - 4;
     return (
       <div className="w-full grid grid-cols-2 gap-[2px] h-[250px]">
-        <OptimizedImage 
+        <OptimizedMedia 
           src={images[0]} 
           alt="Post content 1"
           className="w-full h-full object-cover cursor-pointer"
         />
-        <OptimizedImage 
+        <OptimizedMedia 
           src={images[1]} 
           alt="Post content 2"
           className="w-full h-full object-cover cursor-pointer"
         />
-        <OptimizedImage 
+        <OptimizedMedia 
           src={images[2]} 
           alt="Post content 3"
           className="w-full h-full object-cover cursor-pointer"
         />
         <div className="relative">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={images[3]} 
             alt="Post content 4"
             className="w-full h-full object-cover cursor-pointer"
@@ -171,7 +196,7 @@ export const FacebookPreview: React.FC<PreviewProps> = memo(({
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={profilePicture} 
             alt={author}
             className="w-10 h-10 rounded-full object-cover"
@@ -295,7 +320,7 @@ export const TwitterPreview: React.FC<PreviewProps> = memo(({
             // Image unique
             return (
               <div className="mt-3 relative">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Post content"
                   className="w-full rounded-2xl"
@@ -311,12 +336,12 @@ export const TwitterPreview: React.FC<PreviewProps> = memo(({
             // 2 images - grid 2 colonnes
             return (
               <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl overflow-hidden">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Post content 1"
                   className="w-full h-48 object-cover"
                 />
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[1]} 
                   alt="Post content 2"
                   className="w-full h-48 object-cover"
@@ -330,19 +355,19 @@ export const TwitterPreview: React.FC<PreviewProps> = memo(({
             return (
               <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl overflow-hidden h-64">
                 <div className="row-span-2">
-                  <OptimizedImage 
+                  <OptimizedMedia 
                     src={images[0]} 
                     alt="Post content 1"
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[1]} 
                   alt="Post content 2"
                   className="w-full h-32 object-cover"
                 />
                 <div className="relative">
-                  <OptimizedImage 
+                  <OptimizedMedia 
                     src={images[2]} 
                     alt="Post content 3"
                     className="w-full h-32 object-cover"
@@ -419,7 +444,7 @@ export const InstagramPreview: React.FC<PreviewProps> = memo(({
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={profilePicture} 
             alt={author}
             className="w-8 h-8 rounded-full object-cover"
@@ -447,7 +472,7 @@ export const InstagramPreview: React.FC<PreviewProps> = memo(({
           // Image unique - format carré Instagram
           return (
             <div className="aspect-square">
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[0]} 
                 alt="Post content"
                 className="w-full h-full object-cover"
@@ -460,12 +485,12 @@ export const InstagramPreview: React.FC<PreviewProps> = memo(({
           // 2 images - grid 2 colonnes
           return (
             <div className="grid grid-cols-2 aspect-square">
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[0]} 
                 alt="Post content 1"
                 className="w-full h-full object-cover"
               />
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[1]} 
                 alt="Post content 2"
                 className="w-full h-full object-cover"
@@ -479,19 +504,19 @@ export const InstagramPreview: React.FC<PreviewProps> = memo(({
           return (
             <div className="grid grid-cols-2 aspect-square">
               <div className="row-span-2">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Post content 1"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[1]} 
                 alt="Post content 2"
                 className="w-full h-full object-cover"
               />
               <div className="relative">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[2]} 
                   alt="Post content 3"
                   className="w-full h-full object-cover"
@@ -554,7 +579,7 @@ export const LinkedInPreview: React.FC<PreviewProps> = memo(({
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={profilePicture} 
             alt={author}
             className="w-10 h-10 rounded-full object-cover"
@@ -589,7 +614,7 @@ export const LinkedInPreview: React.FC<PreviewProps> = memo(({
             // Image unique
             return (
               <div className="mb-4">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Post content"
                   className="w-full rounded-lg"
@@ -602,12 +627,12 @@ export const LinkedInPreview: React.FC<PreviewProps> = memo(({
             // 2 images - grid 2 colonnes
             return (
               <div className="mb-4 grid grid-cols-2 gap-2">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Post content 1"
                   className="w-full h-48 object-cover rounded-lg"
                 />
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[1]} 
                   alt="Post content 2"
                   className="w-full h-48 object-cover rounded-lg"
@@ -621,19 +646,19 @@ export const LinkedInPreview: React.FC<PreviewProps> = memo(({
             return (
               <div className="mb-4 grid grid-cols-2 gap-2 h-64">
                 <div className="row-span-2">
-                  <OptimizedImage 
+                  <OptimizedMedia 
                     src={images[0]} 
                     alt="Post content 1"
                     className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[1]} 
                   alt="Post content 2"
                   className="w-full h-32 object-cover rounded-lg"
                 />
                 <div className="relative">
-                  <OptimizedImage 
+                  <OptimizedMedia 
                     src={images[2]} 
                     alt="Post content 3"
                     className="w-full h-32 object-cover rounded-lg"
@@ -697,7 +722,7 @@ export const TikTokPreview: React.FC<PreviewProps> = memo(({
           // Image unique - plein écran TikTok
           return (
             <div className="absolute inset-0">
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[0]} 
                 alt="Post content"
                 className="w-full h-full object-cover"
@@ -710,7 +735,7 @@ export const TikTokPreview: React.FC<PreviewProps> = memo(({
           // Plusieurs images - carrousel TikTok
           return (
             <div className="absolute inset-0">
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[0]} 
                 alt="Post content"
                 className="w-full h-full object-cover"
@@ -730,7 +755,7 @@ export const TikTokPreview: React.FC<PreviewProps> = memo(({
       {/* Content */}
       <div className="absolute bottom-4 left-4 right-4">
         <div className="flex items-center gap-2 mb-2">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={profilePicture} 
             alt={author}
             className="w-8 h-8 rounded-full object-cover"
@@ -790,7 +815,7 @@ export const YouTubePreview: React.FC<PreviewProps> = memo(({
           if (imageCount === 1) {
             // Image unique - thumbnail YouTube
             return (
-              <OptimizedImage 
+              <OptimizedMedia 
                 src={images[0]} 
                 alt="Video thumbnail"
                 className="w-full h-full object-cover"
@@ -802,7 +827,7 @@ export const YouTubePreview: React.FC<PreviewProps> = memo(({
             // Plusieurs images - première image comme thumbnail
             return (
               <div className="relative w-full h-full">
-                <OptimizedImage 
+                <OptimizedMedia 
                   src={images[0]} 
                   alt="Video thumbnail"
                   className="w-full h-full object-cover"
@@ -830,7 +855,7 @@ export const YouTubePreview: React.FC<PreviewProps> = memo(({
       {/* Content */}
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <OptimizedImage 
+          <OptimizedMedia 
             src={profilePicture} 
             alt={author}
             className="w-10 h-10 rounded-full object-cover"
