@@ -249,11 +249,29 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         
         if (response && response.success) {
           console.log('N8N Response received:', response);
+          console.log('Response driveLink:', response.driveLink);
+          console.log('Response imageUrl:', response.imageUrl);
+          console.log('Response driveFileId:', response.driveFileId);
           
-          // Utiliser driveLink en priorité, sinon imageUrl
-          const imageUrl = response.driveLink || response.imageUrl;
+          // Convertir le lien Google Drive en URL d'image directe
+          let imageUrl = response.imageUrl; // Base64 ou URL directe
+          
+          if (response.driveFileId) {
+            // Utiliser l'URL directe Google Drive avec l'ID du fichier
+            imageUrl = `https://drive.google.com/uc?export=view&id=${response.driveFileId}`;
+            console.log('Converted Drive URL:', imageUrl);
+          } else if (response.driveLink && !imageUrl) {
+            // Si on a un driveLink mais pas de driveFileId, extraire l'ID
+            const driveIdMatch = response.driveLink.match(/\/d\/([^/]+)/);
+            if (driveIdMatch) {
+              imageUrl = `https://drive.google.com/uc?export=view&id=${driveIdMatch[1]}`;
+              console.log('Extracted and converted Drive URL:', imageUrl);
+            }
+          }
           
           if (imageUrl) {
+            console.log('Final image URL to load:', imageUrl);
+            
             // Vérifier que l'image se charge correctement avec retry
             const imageLoads = await checkImageLoad(imageUrl, 3, 2000);
             
@@ -261,22 +279,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
               // Utiliser l'URL directe de l'image pour l'affichage
               setGeneratedImages([imageUrl]);
               toast.success('Image générée avec succès !');
-              
-              // Log des informations supplémentaires pour debug
-              if (response.driveFileId) {
-                console.log('Drive File ID:', response.driveFileId);
-              }
-              if (response.driveLink) {
-                console.log('Drive Link:', response.driveLink);
-              }
-              if (response.thumbnailUrl) {
-                console.log('Thumbnail URL:', response.thumbnailUrl);
-              }
             } else {
               toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
               console.error('Image failed to load:', imageUrl);
             }
           } else {
+            console.error('No valid image URL found in response:', response);
             toast.error('Aucune URL d\'image trouvée dans la réponse');
           }
         } else {
