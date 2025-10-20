@@ -76,8 +76,8 @@ const PostCard: React.FC<PostCardProps> = memo(({
     const now = new Date();
     const scheduledTime = new Date(post.scheduledTime);
     
-    // Si le post est programmé et la date n'est pas encore passée
-    if (post.status === 'scheduled' && scheduledTime > now) {
+    // Si le post est programmé et dans le futur -> "En cours"
+    if (scheduledTime > now) {
       return {
         text: 'En cours',
         className: 'bg-yellow-500 text-white'

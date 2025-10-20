@@ -44,25 +44,42 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
     engagement: 0
   };
 
-  const statusConfig = {
-    published: { 
-      label: 'Publié', 
-      className: 'bg-green-100 text-green-800',
-      dot: 'bg-green-500'
-    },
-    draft: { 
-      label: 'Brouillon', 
-      className: 'bg-gray-100 text-gray-800',
-      dot: 'bg-gray-400'
-    },
-    failed: { 
-      label: 'Échec', 
-      className: 'bg-red-100 text-red-800',
-      dot: 'bg-red-500'
+  const getStatusConfig = () => {
+    const now = new Date();
+    const scheduledTime = new Date(post.scheduledTime);
+    
+    // Si le post est dans le futur -> "En cours"
+    if (scheduledTime > now) {
+      return {
+        label: 'En cours',
+        className: 'bg-yellow-100 text-yellow-800',
+        dot: 'bg-yellow-500'
+      };
     }
+    
+    // Sinon, utiliser le statut du post
+    const statusConfig = {
+      published: { 
+        label: 'Publié', 
+        className: 'bg-green-100 text-green-800',
+        dot: 'bg-green-500'
+      },
+      draft: { 
+        label: 'Brouillon', 
+        className: 'bg-gray-100 text-gray-800',
+        dot: 'bg-gray-400'
+      },
+      failed: { 
+        label: 'Échec', 
+        className: 'bg-red-100 text-red-800',
+        dot: 'bg-red-500'
+      }
+    };
+    
+    return statusConfig[post.status] || statusConfig.draft;
   };
 
-  const config = statusConfig[post.status] || statusConfig.draft;
+  const config = getStatusConfig();
 
   const platformIcons = {
     instagram: { icon: Instagram, color: 'text-pink-500' },

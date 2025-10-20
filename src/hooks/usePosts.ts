@@ -29,7 +29,7 @@ export function usePosts(params?: PostSearchParams) {
     } finally {
       setLoading(false);
     }
-  }, [user, params]);
+  }, [user, JSON.stringify(params)]);
 
   useEffect(() => {
     fetchPosts();
