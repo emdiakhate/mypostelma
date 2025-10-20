@@ -244,11 +244,20 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         console.log('AI Generation payload:', payload);
         const rawResponse = await callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
         
+        console.log('Raw webhook response:', rawResponse);
+        console.log('Is array?', Array.isArray(rawResponse));
+        
         // Le webhook peut retourner un tableau ou un objet simple
         const response = Array.isArray(rawResponse) ? rawResponse[0] : rawResponse;
         
+        console.log('Processed response:', response);
+        console.log('Response keys:', response ? Object.keys(response) : 'null');
+        
         if (response && response.success) {
           console.log('N8N Response received:', response);
+          console.log('imageUrl:', response.imageUrl);
+          console.log('driveFileId:', response.driveFileId);
+          console.log('driveLink:', response.driveLink);
           
           // Prioriser imageUrl (base64) car elle est directement utilisable
           let imageUrl = response.imageUrl;
