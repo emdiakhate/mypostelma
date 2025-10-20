@@ -14,6 +14,10 @@ import canapeDos from '@/assets/canapedos.png';
 import guerlain from '@/assets/guerlain.jpg';
 import fatimaZahra from '@/assets/Fatima-Zahra-Ba.jpeg';
 import imageIbadou from '@/assets/image_ibadou.jpeg';
+import aynnoviaLogo from '@/assets/aynnovia-logo.png';
+import aynnovia1 from '@/assets/aynnovia-1.png';
+import aynnovia2 from '@/assets/aynnovia-2.png';
+import aynnovia3 from '@/assets/aynnovia-3.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -110,13 +114,13 @@ const templates: Template[] = [
     inputs: [
       { type: 'image', label: 'Logo de votre marque', required: true }
     ],
-    exampleBefore: guerlain,
+    exampleBefore: aynnoviaLogo,
     exampleAfter: null,
     exampleAfterMultiple: [
-      canapecote,
-      canapeanglegauche,
-      canapedroit,
-      canapecote
+      aynnovia1,
+      aynnovia2,
+      aynnovia3,
+      aynnovia1
     ],
     hasMultipleResults: true,
     resultCount: 4,
