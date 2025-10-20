@@ -101,6 +101,28 @@ const templates: Template[] = [
     useCases: ['Meubles', 'Électronique', 'Chaussures', 'Voitures', 'Décoration']
   },
   {
+    id: 'branding',
+    name: 'Branding',
+    category: 'variation',
+    description: 'Présentez votre logo sur différents supports de branding',
+    icon: Rotate3D,
+    badge: 'Nouveau',
+    inputs: [
+      { type: 'image', label: 'Logo de votre marque', required: true }
+    ],
+    exampleBefore: guerlain,
+    exampleAfter: null,
+    exampleAfterMultiple: [
+      canapecote,
+      canapeanglegauche,
+      canapedroit,
+      canapecote
+    ],
+    hasMultipleResults: true,
+    resultCount: 4,
+    useCases: ['Logo', 'Branding', 'Identité visuelle', 'Marketing']
+  },
+  {
     id: 'mise-en-situation',
     name: 'Dans son environnement',
     category: 'contexte',
