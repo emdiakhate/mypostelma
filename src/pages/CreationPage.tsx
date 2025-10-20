@@ -378,6 +378,8 @@ function getExpectedOutput(templateId: string, hasMultipleResults?: boolean, has
 
 // Modal Aperçu (Avant/Après)
 function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl">
@@ -473,7 +475,8 @@ function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () 
                 {template.exampleAfterMultiple.map((imageUrl, index) => (
                   <div 
                     key={index}
-                    className="relative rounded-lg overflow-hidden border border-green-500/20 hover:border-green-500/50 transition-colors group"
+                    className="relative rounded-lg overflow-hidden border border-green-500/20 hover:border-green-500/50 transition-colors group cursor-pointer"
+                    onClick={() => setSelectedImage(imageUrl)}
                   >
                     <img
                       src={imageUrl}
@@ -487,6 +490,9 @@ function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () 
                       >
                         {getResultLabel(template.id, index)}
                       </Badge>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 ))}
@@ -531,6 +537,29 @@ function PreviewModal({ open, onClose, template }: { open: boolean; onClose: () 
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Modal de visualisation de l'image */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Aperçu de l'image</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Aperçu"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedImage(null)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
