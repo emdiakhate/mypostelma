@@ -56,7 +56,7 @@ const customStyles = `
   .hero-image {
     object-fit: cover;
     object-position: center top;
-    height: 100%;
+    height: 450px;
     width: 100%;
     border-radius: 1rem;
   }
@@ -65,8 +65,7 @@ const customStyles = `
     overflow: hidden;
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    height: 100%;
-    min-height: 700px;
+    height: 500px;
   }
 `;
 
@@ -288,11 +287,11 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               {/* Main Dashboard Image */}
-              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl w-full min-h-[700px]">
+              <div className="relative transform rotate-y-[-5deg] rotate-x-[2deg] hover:rotate-y-[-2deg] hover:rotate-x-[1deg] transition-transform duration-500 animate-float overflow-hidden rounded-2xl shadow-2xl w-full h-[500px]">
                 <img
                   src={heroImage}
                   alt="Postelma - Gestion des réseaux sociaux"
-                  className="w-full h-full object-cover rounded-2xl"
+                  className="w-full h-[450px] object-cover rounded-2xl"
                 />
                 
                 {/* Overlay avec effet de profondeur */}
