@@ -59,18 +59,38 @@ const PostCard: React.FC<PostCardProps> = memo(({
   const videoUrl = post.video;
   const videoThumbnail = post.videoThumbnail;
   
+  // Détecter si le premier média est une vidéo (base64 video)
+  const isFirstMediaVideo = firstImage?.startsWith('data:video/');
+  
   // Pour les vidéos, on utilise la miniature si disponible, sinon on affiche directement la vidéo
   // Pour les images, on utilise useImageLoader
-  const hasVideo = !!videoUrl;
+  const hasVideo = !!videoUrl || isFirstMediaVideo;
   const hasVideoThumbnail = !!videoThumbnail;
-  const hasImage = !!firstImage;
+  const hasImage = !!firstImage && !isFirstMediaVideo;
   
   // Déterminer l'URL du média à charger
-  const mediaUrl = hasVideo && hasVideoThumbnail ? videoThumbnail : 
-                   hasVideo && !hasVideoThumbnail ? videoUrl : 
-                   firstImage;
+  // Pour les vidéos avec miniature, utiliser la miniature
+  // Pour les images, utiliser l'image
+  // Pour les vidéos sans miniature, ne pas utiliser useImageLoader
+  const mediaUrl = hasVideo && hasVideoThumbnail ? videoThumbnail : firstImage;
   
   const { imageUrl, isLoading, error } = useImageLoader(mediaUrl);
+  
+  // Debug logs
+  console.log('PostCard Debug:', {
+    postId: post.id,
+    hasVideo,
+    hasVideoThumbnail,
+    hasImage,
+    isFirstMediaVideo,
+    videoUrl: videoUrl?.substring(0, 50) + '...',
+    videoThumbnail: videoThumbnail?.substring(0, 50) + '...',
+    firstImage: firstImage?.substring(0, 50) + '...',
+    mediaUrl: mediaUrl?.substring(0, 50) + '...',
+    imageUrl: imageUrl?.substring(0, 50) + '...',
+    isLoading,
+    error
+  });
   
   // Vérification des permissions
   const { hasPermission } = useAuth();
@@ -208,21 +228,30 @@ const PostCard: React.FC<PostCardProps> = memo(({
                   Erreur média
                 </div>
               ) : hasVideo && !hasVideoThumbnail ? (
-                // Vidéo sans miniature - afficher directement la vidéo
-                <video 
-                  src={videoUrl} 
-                  className="w-full h-full object-cover"
-                  muted
-                  preload="metadata"
-                />
-              ) : imageUrl ? (
+                // Vidéo sans miniature - afficher directement la vidéo avec icône play
+                <>
+                  <video 
+                    src={isFirstMediaVideo ? firstImage : videoUrl} 
+                    className="w-full h-full object-cover"
+                    muted
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              ) : (imageUrl || (hasVideo && hasVideoThumbnail)) ? (
                 <>
                   <img 
                     src={imageUrl} 
                     alt="Post content" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.warn('Erreur de chargement du média:', error);
+                      console.warn('Erreur de chargement du média:', imageUrl);
                     }}
                   />
                   {hasVideo && (

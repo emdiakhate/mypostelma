@@ -19,6 +19,9 @@ import aynnovia1 from '@/assets/aynnovia-1.png';
 import aynnovia2 from '@/assets/aynnovia-2.png';
 import aynnovia3 from '@/assets/aynnovia-3.png';
 import aynnovia4 from '@/assets/aynnovia-4.png';
+import abdouparfum from '@/assets/abdouparfum.jpg';
+import bounaburo from '@/assets/Bounaburo.png';
+import bouna from '@/assets/Bouna.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -203,10 +206,10 @@ const templates: Template[] = [
     exampleBefore: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
     exampleAfter: null,
     exampleAfterMultiple: [
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'
+      abdouparfum,
+      bounaburo,
+      bouna,
+      abdouparfum
     ],
     hasMultipleResults: true,
     resultCount: 4,
