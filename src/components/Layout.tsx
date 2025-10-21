@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Hooks React Router
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission } = useAuth();
+  
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -36,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/queue') return 'queue';
     if (path === '/app/archives') return 'archives';
     if (path === '/app/competitors') return 'competitors';
-    if (path === '/app/team') return 'team';
+    
     if (path === '/app/settings') return 'settings';
     if (path === '/app/settings/accounts') return 'accounts';
     if (path === '/app/leads') return 'leads';
@@ -98,28 +98,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     onPageChange: (page: string) => void;
     onToggleCollapse: () => void;
   }>(({ sidebarCollapsed, activePage, onPageChange, onToggleCollapse }) => {
-    // Items de sidebar avec vérification des permissions
-    const allSidebarItems = [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard', permission: null },
-      { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar', permission: 'canSchedule' },
-      { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics', permission: 'canViewAnalytics' },
-      { id: 'queue', label: 'File d\'attente', icon: Clock, count: 12, active: activePage === 'queue', permission: 'canApproveContent' },
-      { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives', permission: 'canPublish' },
-      { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors', permission: 'canViewAnalytics' },
-      { id: 'team', label: 'Équipe', icon: Users, active: activePage === 'team', permission: 'canManageUsers' },
-      { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts', permission: 'canManageAccounts' },
-      { id: 'leads', label: 'Lead Generation', icon: UserPlus, active: activePage === 'leads', permission: 'canPublish' },
-      { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications', permission: 'canPublish' },
-      { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation', permission: 'canPublish' },
-      { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings', permission: null },
-      { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false, permission: null },
+    // Items de sidebar - tous visibles pour le rôle manager
+    const sidebarItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
+      { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
+      { id: 'queue', label: 'File d\'attente', icon: Clock, count: 12, active: activePage === 'queue' },
+      { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
+      { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
+      { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
+      { id: 'leads', label: 'Lead Generation', icon: UserPlus, active: activePage === 'leads' },
+      { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
+      { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
+      { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
+      { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
     ];
-
-    // Filtrer les items selon les permissions
-    const sidebarItems = allSidebarItems.filter(item => {
-      if (!item.permission) return true; // Toujours visible
-      return hasPermission(item.permission as any);
-    });
 
 
     return (
@@ -248,7 +241,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'queue' && 'File d\'attente'}
                 {activePage === 'archives' && 'Archives'}
                 {activePage === 'competitors' && 'Concurrents'}
-                {activePage === 'team' && 'Équipe'}
                 {activePage === 'accounts' && 'Comptes Sociaux'}
                 {activePage === 'leads' && 'Lead Generation'}
                 {activePage === 'publications' && 'Mes Publications'}

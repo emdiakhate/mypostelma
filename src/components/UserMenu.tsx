@@ -24,23 +24,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Configuration des rôles
+// Configuration du rôle manager
 const roleConfig = {
-  owner: {
-    label: 'Propriétaire',
-    className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-  },
   manager: {
     label: 'Manager',
     className: 'bg-blue-100 text-blue-800 border-blue-200'
-  },
-  creator: {
-    label: 'Créateur',
-    className: 'bg-green-100 text-green-800 border-green-200'
-  },
-  viewer: {
-    label: 'Observateur',
-    className: 'bg-gray-100 text-gray-800 border-gray-200'
   }
 };
 
@@ -65,8 +53,7 @@ const UserMenu: React.FC = () => {
     return null;
   }
 
-  const userRole = currentUser.role as keyof typeof roleConfig;
-  const roleInfo = roleConfig[userRole] || roleConfig.viewer;
+  const roleInfo = roleConfig.manager;
 
   return (
     <DropdownMenu>
