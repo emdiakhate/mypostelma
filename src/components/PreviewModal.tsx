@@ -25,7 +25,6 @@ const OptimizedMedia: React.FC<{
     return (
       <video
         src={src}
-        alt={alt}
         className={className}
         controls
         preload="metadata"
