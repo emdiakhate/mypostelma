@@ -15,7 +15,6 @@ import Analytics from "./pages/Analytics";
 import QueuePage from "./pages/QueuePage";
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
-import TeamPage from "./pages/TeamPage";
 import AuthPage from "./pages/AuthPage";
 import LogoutPage from "./pages/LogoutPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
@@ -39,7 +38,6 @@ function MainLayout() {
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitiveIntelligence />} />
-        <Route path="/team" element={<TeamPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />

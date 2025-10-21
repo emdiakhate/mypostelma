@@ -3,7 +3,7 @@
  * Phase 1: Gestion des Utilisateurs & Rôles
  */
 
-export type UserRole = 'owner' | 'manager' | 'creator' | 'viewer';
+export type UserRole = 'manager';
 
 export interface User {
   id: string;
@@ -30,7 +30,7 @@ export interface UserPermissions {
 
 // Permissions par rôle (hardcodé pour MVP)
 export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
-  owner: {
+  manager: {
     canPublish: true,
     canSchedule: true,
     canDelete: true,
@@ -39,36 +39,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAnalytics: true,
     canApproveContent: true,
     canManageBilling: true
-  },
-  manager: {
-    canPublish: true,
-    canSchedule: true,
-    canDelete: true,
-    canManageUsers: true,      // Peut créer creators
-    canManageAccounts: true,
-    canViewAnalytics: true,
-    canApproveContent: true,
-    canManageBilling: false    // Pas accès billing
-  },
-  creator: {
-    canPublish: false,          // Seulement brouillons
-    canSchedule: true,
-    canDelete: false,           // Que ses propres posts
-    canManageUsers: false,
-    canManageAccounts: false,
-    canViewAnalytics: true,     // Que ses propres stats
-    canApproveContent: false,
-    canManageBilling: false
-  },
-  viewer: {
-    canPublish: false,
-    canSchedule: false,
-    canDelete: false,
-    canManageUsers: false,
-    canManageAccounts: false,
-    canViewAnalytics: true,     // Read-only
-    canApproveContent: false,
-    canManageBilling: false
   }
 };
 

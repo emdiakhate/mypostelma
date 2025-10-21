@@ -8,56 +8,12 @@ import { User, UserRole, ROLE_PERMISSIONS } from '@/types/user';
 export const mockUsers: User[] = [
   {
     id: '1',
-    email: 'admin@postelma.com',
-    name: 'Admin Postelma',
-    role: 'owner',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date('2024-01-01'),
-    permissions: ROLE_PERMISSIONS.owner,
-    isActive: true,
-    lastLogin: new Date()
-  },
-  {
-    id: '2',
     email: 'manager@postelma.com',
     name: 'Manager Postelma',
     role: 'manager',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date('2024-01-15'),
+    createdAt: new Date('2024-01-01'),
     permissions: ROLE_PERMISSIONS.manager,
-    isActive: true,
-    lastLogin: new Date()
-  },
-  {
-    id: '3',
-    email: 'creator1@postelma.com',
-    name: 'Creator One',
-    role: 'creator',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date('2024-02-01'),
-    permissions: ROLE_PERMISSIONS.creator,
-    isActive: true,
-    lastLogin: new Date()
-  },
-  {
-    id: '4',
-    email: 'creator2@postelma.com',
-    name: 'Creator Two',
-    role: 'creator',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date('2024-02-15'),
-    permissions: ROLE_PERMISSIONS.creator,
-    isActive: true,
-    lastLogin: new Date()
-  },
-  {
-    id: '5',
-    email: 'viewer@postelma.com',
-    name: 'Viewer Postelma',
-    role: 'viewer',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date('2024-03-01'),
-    permissions: ROLE_PERMISSIONS.viewer,
     isActive: true,
     lastLogin: new Date()
   }

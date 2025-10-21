@@ -128,14 +128,13 @@ export const useAuth = (): UseAuthReturn => {
     if (!userRole) return false;
 
     const accessRules: Record<string, Record<UserRole, boolean>> = {
-      dashboard: { owner: true, manager: true, creator: true, viewer: true },
-      calendar: { owner: true, manager: true, creator: true, viewer: true },
-      publications: { owner: true, manager: true, creator: true, viewer: true },
-      analytics: { owner: true, manager: true, creator: true, viewer: true },
-      queue: { owner: true, manager: true, creator: false, viewer: false },
-      team: { owner: true, manager: true, creator: false, viewer: false },
-      'social-accounts': { owner: true, manager: true, creator: false, viewer: false },
-      settings: { owner: true, manager: false, creator: false, viewer: false },
+      dashboard: { manager: true },
+      calendar: { manager: true },
+      publications: { manager: true },
+      analytics: { manager: true },
+      queue: { manager: true },
+      'social-accounts': { manager: true },
+      settings: { manager: true },
     };
 
     return accessRules[resource]?.[userRole] ?? false;
@@ -155,11 +154,11 @@ export const useAuth = (): UseAuthReturn => {
         canManageBilling: false
       };
 
-  const isOwner = userRole === 'owner';
+  const isOwner = false;
   const isManager = userRole === 'manager';
-  const isCreator = userRole === 'creator';
-  const isViewer = userRole === 'viewer';
-  const isAdmin = isOwner || isManager;
+  const isCreator = false;
+  const isViewer = false;
+  const isAdmin = isManager;
 
   return {
     user,

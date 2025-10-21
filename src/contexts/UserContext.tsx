@@ -150,12 +150,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // TODO: Remplacer par un appel API réel
       const mockUser: User = {
         id: '1',
-        email: 'admin@postelma.com',
-        name: 'Admin Postelma',
-        role: 'owner',
+        email: 'manager@postelma.com',
+        name: 'Manager Postelma',
+        role: 'manager',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
         createdAt: new Date('2024-01-01'),
-        permissions: ROLE_PERMISSIONS.owner,
+        permissions: ROLE_PERMISSIONS.manager,
         isActive: true,
         lastLogin: new Date()
       };
@@ -185,18 +185,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
           createdAt: new Date('2024-01-15'),
           permissions: ROLE_PERMISSIONS.manager,
-          isActive: true,
-          lastLogin: new Date(),
-          status: 'active'
-        },
-        {
-          id: '3',
-          email: 'creator@postelma.com',
-          name: 'Creator Postelma',
-          role: 'creator',
-          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-          createdAt: new Date('2024-02-01'),
-          permissions: ROLE_PERMISSIONS.creator,
           isActive: true,
           lastLogin: new Date(),
           status: 'active'
@@ -493,9 +481,9 @@ export const usePermissions = () => {
     currentUser,
     hasPermission,
     canAccess,
-    isOwner: currentUser?.role === 'owner',
+    isOwner: false,
     isManager: currentUser?.role === 'manager',
-    isCreator: currentUser?.role === 'creator',
-    isViewer: currentUser?.role === 'viewer',
+    isCreator: false,
+    isViewer: false,
   };
 };

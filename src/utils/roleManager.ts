@@ -24,10 +24,8 @@ export const assignDefaultRole = async (userId: string): Promise<UserRole> => {
       return 'manager'; // Par défaut manager en cas d'erreur
     }
 
-    // Si aucun utilisateur n'existe, c'est le premier = owner
-    // Sinon = manager
-    const isFirstUser = !existingUsers || existingUsers.length === 0;
-    const defaultRole: UserRole = isFirstUser ? 'owner' : 'manager';
+    // Tous les utilisateurs sont managers
+    const defaultRole: UserRole = 'manager';
 
     // Essayer d'insérer le rôle dans la base de données
     const { error: insertError } = await supabase
