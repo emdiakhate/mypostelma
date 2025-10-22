@@ -556,9 +556,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }
 
       if (publishType === 'now') {
-        console.log('Immediate post published via webhook');
-        alert('Publications envoyées avec succès !');
-        onClose();
+          console.log('Immediate post published via webhook');
+          alert('Publications envoyées avec succès !');
+          onClose();
       } else if (scheduledDateTime) {
         console.log('Scheduled post created via webhook');
 

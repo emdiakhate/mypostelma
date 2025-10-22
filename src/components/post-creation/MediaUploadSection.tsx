@@ -324,7 +324,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                 {selectedImages.map((media, index) => {
                   const isVideo = media.startsWith('data:video/');
                   return (
-                    <div key={index} className="relative group">
+                  <div key={index} className="relative group">
                       {isVideo ? (
                         <video
                           src={media}
@@ -335,19 +335,19 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                         <img 
                           src={media} 
                           alt={`Media ${index + 1}`} 
-                          className="w-full h-24 object-cover rounded border"
-                        />
+                      className="w-full h-24 object-cover rounded border"
+                    />
                       )}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          removeImage(index);
-                        }}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        removeImage(index);
+                      }}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
                   );
                 })}
                 {selectedImages.length < 4 && (

@@ -165,12 +165,12 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
               )}
             >
-              <div className={cn(
+                  <div className={cn(
                 "w-6 h-6 rounded-full flex items-center justify-center",
                 platform.color
-              )}>
+                  )}>
                 <PlatformIcon className="w-4 h-4 text-white" />
-              </div>
+                  </div>
               <span className="text-sm font-medium">{platform.name}</span>
             </button>
           );
