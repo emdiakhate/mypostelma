@@ -83,7 +83,7 @@ const ConnectAccountModal: React.FC<ConnectAccountModalProps> = ({
     setIsConnecting(true);
     
     try {
-      // TODO: Remplacer par vrai OAuth Ayrshare
+      // TODO: Remplacer par vrai OAuth Upload Post
       // 1. Appeler POST /api/profiles/connect
       // 2. Rediriger vers authUrl
       // 3. Gérer callback /auth/callback

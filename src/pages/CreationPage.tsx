@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Palette, Rotate3D, Home, Megaphone, Users, User,
-  Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2
+  Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2,
+  Video, Play, Building, Store, Egg, Shirt
 } from "lucide-react";
 import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
@@ -29,6 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 // Types
@@ -58,6 +60,18 @@ interface Template {
   hasMultipleInputs?: boolean; // Indique si le template nécessite plusieurs images en entrée
   resultCount?: number; // Nombre d'images à afficher
   useCases: string[];
+}
+
+// Interface pour les templates vidéo
+interface VideoTemplate {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  videoUrl: string;
+  categories: string[];
+  icon: React.ComponentType<{ className?: string }>;
+  badge: string;
 }
 
 // Données des 6 modèles
@@ -236,6 +250,70 @@ const templates: Template[] = [
     hasMultipleInputs: true,
     resultCount: 1,
     useCases: ['UGC', 'E-commerce', 'Marketing', 'Publicité']
+  }
+];
+
+// Données des 6 templates vidéo
+const videoTemplates: VideoTemplate[] = [
+  {
+    id: 'immobilier',
+    title: 'Immobilier',
+    description: 'Créez des visites virtuelles immobilières professionnelles',
+    thumbnail: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+    categories: ['Immobilier', 'Visite', 'Professionnel'],
+    icon: Building,
+    badge: 'Populaire'
+  },
+  {
+    id: 'boutique',
+    title: 'Présentation Boutique',
+    description: 'Showcase de magasin/boutique avec ambiance professionnelle',
+    thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4',
+    categories: ['Commerce', 'Boutique', 'Retail'],
+    icon: Store,
+    badge: 'Nouveau'
+  },
+  {
+    id: 'ferme-avicole',
+    title: 'Ferme Avicole',
+    description: 'Vidéo de ferme avec poules/volailles pour secteur agricole',
+    thumbnail: 'https://images.unsplash.com/photo-1548550023-8bdb5b6b1b5a?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4',
+    categories: ['Agriculture', 'Ferme', 'Élevage'],
+    icon: Egg,
+    badge: 'Spécialisé'
+  },
+  {
+    id: 'nike-sport',
+    title: 'Nike Sport',
+    description: 'Présentation produit sportif style Nike avec dynamisme',
+    thumbnail: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+    categories: ['Sport', 'Mode', 'Dynamique'],
+    icon: Shirt,
+    badge: 'Trending'
+  },
+  {
+    id: 'restaurant',
+    title: 'Restaurant',
+    description: 'Présentation de restaurant avec ambiance et plats',
+    thumbnail: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4',
+    categories: ['Restaurant', 'Gastronomie', 'Hospitality'],
+    icon: Store,
+    badge: 'Populaire'
+  },
+  {
+    id: 'salon-beaute',
+    title: 'Salon de Beauté',
+    description: 'Présentation de salon de beauté avec services',
+    thumbnail: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop',
+    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4',
+    categories: ['Beauté', 'Salon', 'Services'],
+    icon: Store,
+    badge: 'Nouveau'
   }
 ];
 
@@ -815,6 +893,150 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   );
 }
 
+// Composant VideoTemplateCard
+function VideoTemplateCard({ template }: { template: VideoTemplate }) {
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  return (
+    <>
+      <Card className="overflow-hidden hover:shadow-lg transition-all group">
+        {/* Badge en haut */}
+        {template.badge && (
+          <div className="absolute top-4 right-4 z-10">
+            <Badge variant="default" className="bg-gradient-to-r from-purple-600 to-pink-600">
+              {template.badge}
+            </Badge>
+          </div>
+        )}
+
+        {/* Thumbnail vidéo */}
+        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+          <img
+            src={template.thumbnail}
+            alt={template.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+          {/* Overlay avec bouton play */}
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-white/90 rounded-full p-3">
+              <Play className="w-6 h-6 text-gray-800" />
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <template.icon className="w-5 h-5 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg mb-1">{template.title}</CardTitle>
+              <CardDescription className="text-sm text-gray-600 mb-3">
+                {template.description}
+              </CardDescription>
+              
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1 mb-3">
+                {template.categories.map((category) => (
+                  <Badge key={category} variant="outline" className="text-xs">
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowPreviewModal(true)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Aperçu
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => toast.success('Template vidéo sélectionné !')}
+          >
+            <Video className="w-4 h-4 mr-2" />
+            Utiliser
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Modal Aperçu Vidéo */}
+      <VideoPreviewModal
+        open={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        template={template}
+      />
+    </>
+  );
+}
+
+// Modal de prévisualisation vidéo
+function VideoPreviewModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: VideoTemplate }) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <template.icon className="w-6 h-6 text-purple-600" />
+            {template.title}
+          </DialogTitle>
+          <DialogDescription>{template.description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Lecteur vidéo */}
+          <div className="relative rounded-lg overflow-hidden bg-black">
+            <video
+              controls
+              className="w-full h-auto max-h-96"
+              poster={template.thumbnail}
+            >
+              <source src={template.videoUrl} type="video/mp4" />
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          </div>
+
+          {/* Description détaillée */}
+          <div className="space-y-2">
+            <h4 className="font-semibold">À propos de ce template</h4>
+            <p className="text-sm text-gray-600">
+              Ce template vidéo est parfait pour {template.categories.join(', ').toLowerCase()}. 
+              Il vous permet de créer des contenus professionnels adaptés à votre secteur d'activité.
+            </p>
+          </div>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2">
+            {template.categories.map((category) => (
+              <Badge key={category} variant="secondary">
+                {category}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Fermer
+          </Button>
+          <Button onClick={() => {
+            toast.success('Template vidéo sélectionné !');
+            onClose();
+          }}>
+            Utiliser ce template
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Page principale
 export default function CreationPage() {
   const [category, setCategory] = useState('all');
@@ -834,46 +1056,65 @@ export default function CreationPage() {
           </p>
         </div>
         
-        {/* Filtres par catégorie */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <Button 
-            variant={category === 'all' ? 'default' : 'outline'} 
-            onClick={() => setCategory('all')}
-          >
-            Tous
-          </Button>
-          <Button 
-            variant={category === 'variation' ? 'default' : 'outline'}
-            onClick={() => setCategory('variation')}
-          >
-            Variations
-          </Button>
-          <Button 
-            variant={category === 'contexte' ? 'default' : 'outline'}
-            onClick={() => setCategory('contexte')}
-          >
-            Mise en contexte
-          </Button>
-          <Button 
-            variant={category === 'marketing' ? 'default' : 'outline'}
-            onClick={() => setCategory('marketing')}
-          >
-            Marketing
-          </Button>
-          <Button 
-            variant={category === 'ecommerce' ? 'default' : 'outline'}
-            onClick={() => setCategory('ecommerce')}
-          >
-            E-commerce
-          </Button>
-        </div>
-      </div>
+        {/* Onglets Image/Vidéo */}
+        <Tabs defaultValue="image" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="image">Image</TabsTrigger>
+            <TabsTrigger value="video">Vidéo</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="image" className="space-y-6">
+            {/* Filtres par catégorie pour les images */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Button 
+                variant={category === 'all' ? 'default' : 'outline'} 
+                onClick={() => setCategory('all')}
+              >
+                Tous
+              </Button>
+              <Button 
+                variant={category === 'variation' ? 'default' : 'outline'}
+                onClick={() => setCategory('variation')}
+              >
+                Variations
+              </Button>
+              <Button 
+                variant={category === 'contexte' ? 'default' : 'outline'}
+                onClick={() => setCategory('contexte')}
+              >
+                Mise en contexte
+              </Button>
+              <Button 
+                variant={category === 'marketing' ? 'default' : 'outline'}
+                onClick={() => setCategory('marketing')}
+              >
+                Marketing
+              </Button>
+              <Button 
+                variant={category === 'ecommerce' ? 'default' : 'outline'}
+                onClick={() => setCategory('ecommerce')}
+              >
+                E-commerce
+              </Button>
+            </div>
 
-      {/* Grid des modèles */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        {filteredTemplates.map((template) => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
+            {/* Grid des modèles d'images */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTemplates.map((template) => (
+                <TemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="video" className="space-y-6">
+            {/* Grid des templates vidéo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videoTemplates.map((template) => (
+                <VideoTemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

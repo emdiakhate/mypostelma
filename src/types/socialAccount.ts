@@ -22,7 +22,7 @@ export interface SocialAccount {
   isConnected: boolean;
   connectedAt: Date;
   lastSync?: Date;
-  profileKey?: string; // Pour Ayrshare plus tard
+  profileKey?: string; // Pour Upload Post plus tard
   status: 'connected' | 'reconnect_needed' | 'disconnected';
   internalName?: string; // Alias interne pour l'utilisateur
   permissions?: {
