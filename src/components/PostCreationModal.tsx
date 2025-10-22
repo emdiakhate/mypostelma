@@ -160,6 +160,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [videoImage, setVideoImage] = useState<File | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  
 
   // Hooks pour l'analyse
   const bestTimeRecommendation = useBestTime(selectedPlatforms[0] as any, []);
