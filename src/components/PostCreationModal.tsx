@@ -257,14 +257,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         
         console.log('AI Generation payload:', payload);
         
-        // Ajouter un timeout de 60 secondes
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
-        });
-        
-        const webhookPromise = callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
-        
-        const rawResponse = await Promise.race([webhookPromise, timeoutPromise]);
+        const rawResponse = await callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
         
         console.log('Raw webhook response:', rawResponse);
         console.log('Is array?', Array.isArray(rawResponse));

@@ -128,7 +128,7 @@ export async function callWebhook<T = any>(
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 secondes
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 secondes (2 minutes)
     
     const response = await fetch(url, {
       method: 'POST',
