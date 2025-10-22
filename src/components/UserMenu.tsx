@@ -15,22 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { 
   LogOut, 
   User, 
   Settings, 
   ChevronDown
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-// Configuration du rôle manager
-const roleConfig = {
-  manager: {
-    label: 'Manager',
-    className: 'bg-blue-100 text-blue-800 border-blue-200'
-  }
-};
 
 const UserMenu: React.FC = () => {
   const { currentUser, logout } = useAuth();
@@ -53,8 +44,6 @@ const UserMenu: React.FC = () => {
     return null;
   }
 
-  const roleInfo = roleConfig.manager;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -69,13 +58,6 @@ const UserMenu: React.FC = () => {
           {/* Infos utilisateur */}
           <div className="text-left hidden sm:block">
             <div className="text-sm font-medium">{currentUser.user_metadata?.name || currentUser.email}</div>
-            {/* Badge du rôle à la place de l'email */}
-            <Badge 
-              variant="secondary" 
-              className={cn("text-xs mt-0.5", roleInfo.className)}
-            >
-              {roleInfo.label}
-            </Badge>
           </div>
 
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
