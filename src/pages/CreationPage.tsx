@@ -279,8 +279,8 @@ const videoTemplates: VideoTemplate[] = [
     id: 'ferme-avicole',
     title: 'Ferme Avicole',
     description: 'Vidéo de ferme avec poules/volailles pour secteur agricole',
-    thumbnail: 'https://images.unsplash.com/photo-1548550023-8bdb5b6b1b5a?w=400&h=300&fit=crop',
-    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4',
+    thumbnail: 'https://img.youtube.com/vi/WFbZtk26KSM/maxresdefault.jpg',
+    videoUrl: 'https://www.youtube.com/watch?v=WFbZtk26KSM',
     categories: ['Agriculture', 'Ferme', 'Élevage'],
     icon: Egg,
     badge: 'Spécialisé'
@@ -992,14 +992,29 @@ function VideoPreviewModal({ open, onClose, template }: { open: boolean; onClose
         <div className="space-y-4">
           {/* Lecteur vidéo */}
           <div className="relative rounded-lg overflow-hidden bg-black">
-            <video
-              controls
-              className="w-full h-auto max-h-96"
-              poster={template.thumbnail}
-            >
-              <source src={template.videoUrl} type="video/mp4" />
-              Votre navigateur ne supporte pas la lecture vidéo.
-            </video>
+            {template.videoUrl.includes('youtube.com') ? (
+              // Iframe YouTube
+              <iframe
+                width="100%"
+                height="400"
+                src={template.videoUrl.replace('watch?v=', 'embed/')}
+                title={template.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-96"
+              />
+            ) : (
+              // Lecteur vidéo HTML5 standard
+              <video
+                controls
+                className="w-full h-auto max-h-96"
+                poster={template.thumbnail}
+              >
+                <source src={template.videoUrl} type="video/mp4" />
+                Votre navigateur ne supporte pas la lecture vidéo.
+              </video>
+            )}
           </div>
 
           {/* Description détaillée */}
