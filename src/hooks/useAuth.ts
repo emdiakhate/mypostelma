@@ -115,7 +115,7 @@ export const useAuth = (): UseAuthReturn => {
   const hasPermission = useCallback((permission: keyof UserPermissions): boolean => {
     if (!userRole) return false;
     const rolePermissions = ROLE_PERMISSIONS[userRole];
-    return rolePermissions[permission];
+    return rolePermissions?.[permission] || false;
   }, [userRole]);
 
   // Role check
