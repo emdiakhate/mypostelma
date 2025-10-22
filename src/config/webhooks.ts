@@ -86,6 +86,25 @@ export interface AiImageGenerationResponse {
 }
 
 /**
+ * Fonction pour tester la connectivité d'un webhook
+ */
+export async function testWebhookConnectivity(url: string): Promise<boolean> {
+  try {
+    console.log(`🔍 Test de connectivité pour: ${url}`);
+    const response = await fetch(url, {
+      method: 'HEAD',
+      mode: 'cors',
+      signal: AbortSignal.timeout(10000) // 10 secondes pour le test
+    });
+    console.log(`✅ Webhook accessible: ${response.status}`);
+    return response.ok;
+  } catch (error) {
+    console.error(`❌ Webhook inaccessible:`, error);
+    return false;
+  }
+}
+
+/**
  * Fonction utilitaire pour vérifier si une image se charge correctement
  * avec retry en cas d'échec
  */
@@ -166,6 +185,19 @@ export async function callWebhook<T = any>(
     }
   } catch (error) {
     console.error('Webhook call error:', error);
+    
+    // Gestion spécifique des erreurs de connexion
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('❌ Erreur de connexion au webhook:', url);
+      console.error('Vérifiez que le serveur N8N est accessible et que le webhook existe');
+      throw new Error(`Impossible de se connecter au webhook. Vérifiez que le serveur N8N est accessible.`);
+    }
+    
+    if (error.name === 'AbortError') {
+      console.error('❌ Timeout du webhook après 2 minutes');
+      throw new Error(`Le webhook a pris trop de temps à répondre (timeout après 2 minutes).`);
+    }
+    
     throw error;
   }
 }

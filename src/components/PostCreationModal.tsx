@@ -14,7 +14,7 @@ import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing'
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
 import { TONE_OPTIONS } from '@/data/toneOptions';
-import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiUgcWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiUgcWebhookPayload, AiImageGenerationResponse, checkImageLoad, testWebhookConnectivity } from '@/config/webhooks';
 import { toast } from 'sonner';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
@@ -244,6 +244,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       
       setIsGeneratingImage(true);
       try {
+        // Tester la connectivité du webhook avant l'appel
+        const isWebhookAccessible = await testWebhookConnectivity(WEBHOOK_URLS.AI_EDIT_COMBINE);
+        if (!isWebhookAccessible) {
+          toast.error('Le service de génération IA n\'est pas accessible. Veuillez réessayer plus tard.');
+          setIsGeneratingImage(false);
+          return;
+        }
+        
         const payload: AiEditCombineWebhookPayload = {
           type: aiGenerationType,
           prompt: aiPrompt,
