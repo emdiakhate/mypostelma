@@ -101,65 +101,8 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
         return;
       }
       
-      setIsGeneratingImage(true);
-      try {
-        const payload: AiEditCombineWebhookPayload = {
-          type: aiGenerationType,
-          prompt: aiPrompt,
-          sourceImages: aiSourceImages,
-          options: {
-            style: 'realistic',
-            intensity: 0.8,
-            quality: 'high'
-          }
-        };
-        
-        console.log('AI Generation payload:', payload);
-        
-        // Ajouter un timeout de 60 secondes
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout: Le webhook n\'a pas répondu dans les 60 secondes')), 60000);
-        });
-        
-        const webhookPromise = callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
-        
-        const response = await Promise.race([webhookPromise, timeoutPromise]);
-        
-        if (response && response.success && response.imageUrl) {
-          console.log('N8N Response received:', response);
-          
-          // Vérifier que l'image se charge correctement avec retry
-          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
-          
-          if (imageLoads) {
-            // Utiliser l'URL directe de l'image pour l'affichage
-            setGeneratedImages([response.imageUrl]);
-            toast.success('Image générée avec succès !');
-            
-            // Log des informations supplémentaires pour debug
-            if (response.driveFileId) {
-              console.log('Drive File ID:', response.driveFileId);
-            }
-            if (response.driveLink) {
-              console.log('Drive Link:', response.driveLink);
-            }
-            if (response.thumbnailUrl) {
-              console.log('Thumbnail URL:', response.thumbnailUrl);
-            }
-          } else {
-            toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
-            console.error('Image failed to load:', response.imageUrl);
-          }
-        } else {
-          console.error('Invalid response from N8N:', response);
-          toast.error(response?.error || 'Aucune image générée');
-        }
-      } catch (error) {
-        console.error('Erreur génération IA:', error);
-        toast.error('Erreur lors de la génération d\'images');
-      } finally {
-        setIsGeneratingImage(false);
-      }
+      // Webhook désactivé - utiliser uniquement PostCreationModal pour la combinaison
+      toast.info('Génération d\'images IA temporairement désactivée. Utilisez le modal de création de post pour la combinaison.');
     } else {
       // Pour les autres types (simple, ugc), simulation pour le développement
       setIsGeneratingImage(true);

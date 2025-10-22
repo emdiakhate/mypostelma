@@ -555,15 +555,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }
 
       if (publishType === 'now') {
-        if (hasPermission('canPublish')) {
-          console.log('Immediate post published via webhook');
-          alert('Publications envoyées avec succès !');
-          onClose();
-        } else {
-          console.log('Post submitted for approval via webhook');
-          alert('Contenu soumis pour approbation !');
-          onClose();
-        }
+        console.log('Immediate post published via webhook');
+        alert('Publications envoyées avec succès !');
+        onClose();
       } else if (scheduledDateTime) {
         console.log('Scheduled post created via webhook');
 
@@ -762,7 +756,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             onRegenerateCaptions={clearCaptions}
             onPublish={publishPosts}
             isPublishing={isPublishingLocal}
-            hasPublishPermission={hasPermission('canPublish')}
+            hasPublishPermission={true}
             selectedAccountsCount={selectedAccounts.length}
             isEditing={isEditing}
           />
