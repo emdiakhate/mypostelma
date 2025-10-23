@@ -26,13 +26,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLeads, useLeadAnalytics, useLeadStatus } from '@/hooks/useLeads';
+import { useLeads, useLeadStatus } from '@/hooks/useLeads';
 import { Lead, LeadStatus } from '@/types/leads';
 import { cn } from '@/lib/utils';
 
 const LeadGenerationPage: React.FC = () => {
   const { leads, loading, error, loadLeads } = useLeads();
-  const { analytics, loading: analyticsLoading } = useLeadAnalytics();
   const { getStatusColor, getStatusLabel } = useLeadStatus();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -221,7 +220,7 @@ const LeadGenerationPage: React.FC = () => {
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-red-600">Erreur: {error}</p>
+              <p className="text-red-600">Erreur: {error.message}</p>
               <Button onClick={loadLeads} className="mt-4">
                 Réessayer
               </Button>

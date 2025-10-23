@@ -4,68 +4,86 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Lead, LeadStatus, LeadSearchParams, LeadAnalytics, LeadCampaign, LeadTemplate } from '@/types/leads';
-import { LeadService, CampaignService, TemplateService } from '@/services/leadService';
+import { Lead, LeadStatus } from '@/types/leads';
+import { LeadsService } from '@/services/leads';
+import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
 
   const loadLeads = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const loadedLeads = await LeadService.getAllLeads();
-      setLeads(loadedLeads);
+      const result = await LeadsService.getLeads({
+        sortBy: 'added_at',
+        sortOrder: 'desc'
+      });
+      setLeads(result.leads);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des leads');
+      setError(err as Error);
+      toast.error('Erreur lors du chargement des leads');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const addLead = useCallback(async (lead: Omit<Lead, 'id' | 'addedAt'>) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour créer un lead');
+      return;
+    }
+
     try {
-      setError(null);
-      const newLead = await LeadService.addLead(lead);
-      setLeads(prev => [...prev, newLead]);
+      const newLead = await LeadsService.createLead(lead, user.id);
+      setLeads(prev => [newLead, ...prev]);
+      toast.success('Lead créé avec succès');
       return newLead;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de l\'ajout du lead');
+      toast.error('Erreur lors de la création du lead');
       throw err;
     }
-  }, []);
+  }, [user]);
 
   const updateLead = useCallback(async (id: string, updates: Partial<Lead>) => {
     try {
-      setError(null);
-      const updatedLead = await LeadService.updateLead(id, updates);
+      const updatedLead = await LeadsService.updateLead(id, updates);
       setLeads(prev => prev.map(lead => lead.id === id ? updatedLead : lead));
+      toast.success('Lead mis à jour avec succès');
       return updatedLead;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour du lead');
+      toast.error('Erreur lors de la mise à jour du lead');
       throw err;
     }
   }, []);
 
   const deleteLead = useCallback(async (id: string) => {
     try {
-      setError(null);
-      await LeadService.deleteLead(id);
+      await LeadsService.deleteLead(id);
       setLeads(prev => prev.filter(lead => lead.id !== id));
+      toast.success('Lead supprimé avec succès');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression du lead');
+      toast.error('Erreur lors de la suppression du lead');
       throw err;
     }
   }, []);
 
-  const searchLeads = useCallback(async (params: LeadSearchParams) => {
+  const updateLeadStatus = useCallback(async (id: string, status: LeadStatus) => {
     try {
-      setError(null);
-      return await LeadService.searchLeads(params);
+      const updatedLead = await LeadsService.updateLeadStatus(id, status);
+      setLeads(prev => prev.map(lead => lead.id === id ? updatedLead : lead));
+      toast.success('Statut mis à jour avec succès');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la recherche des leads');
+      toast.error('Erreur lors de la mise à jour du statut');
       throw err;
     }
   }, []);
@@ -82,130 +100,14 @@ export function useLeads() {
     addLead,
     updateLead,
     deleteLead,
-    searchLeads
-  };
-}
-
-export function useLeadAnalytics() {
-  const [analytics, setAnalytics] = useState<LeadAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadAnalytics = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await LeadService.getAnalytics();
-      setAnalytics(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des analytics');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAnalytics();
-  }, [loadAnalytics]);
-
-  return {
-    analytics,
-    loading,
-    error,
-    loadAnalytics
-  };
-}
-
-export function useCampaigns() {
-  const [campaigns, setCampaigns] = useState<LeadCampaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadCampaigns = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const loadedCampaigns = await CampaignService.getAllCampaigns();
-      setCampaigns(loadedCampaigns);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des campagnes');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const createCampaign = useCallback(async (campaign: Omit<LeadCampaign, 'id' | 'createdAt' | 'updatedAt' | 'stats'>) => {
-    try {
-      setError(null);
-      const newCampaign = await CampaignService.createCampaign(campaign);
-      setCampaigns(prev => [...prev, newCampaign]);
-      return newCampaign;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la création de la campagne');
-      throw err;
-    }
-  }, []);
-
-  useEffect(() => {
-    loadCampaigns();
-  }, [loadCampaigns]);
-
-  return {
-    campaigns,
-    loading,
-    error,
-    loadCampaigns,
-    createCampaign
-  };
-}
-
-export function useTemplates() {
-  const [templates, setTemplates] = useState<LeadTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadTemplates = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const loadedTemplates = await TemplateService.getAllTemplates();
-      setTemplates(loadedTemplates);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des templates');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const createTemplate = useCallback(async (template: Omit<LeadTemplate, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      setError(null);
-      const newTemplate = await TemplateService.createTemplate(template);
-      setTemplates(prev => [...prev, newTemplate]);
-      return newTemplate;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la création du template');
-      throw err;
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
-
-  return {
-    templates,
-    loading,
-    error,
-    loadTemplates,
-    createTemplate
+    updateLeadStatus,
   };
 }
 
 export function useLeadStatus() {
   const updateLeadStatus = useCallback(async (leadId: string, status: LeadStatus) => {
     try {
-      await LeadService.updateLead(leadId, { 
+      await LeadsService.updateLead(leadId, { 
         status,
         lastContactedAt: status === 'contacted' ? new Date() : undefined
       });

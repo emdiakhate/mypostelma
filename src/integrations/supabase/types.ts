@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      leads: {
+        Row: {
+          added_at: string
+          address: string
+          category: string
+          city: string
+          created_at: string
+          email: string | null
+          id: string
+          last_contacted_at: string | null
+          metrics: Json | null
+          name: string
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          social_media: Json | null
+          source: string
+          status: Database["public"]["Enums"]["lead_status"]
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          added_at?: string
+          address: string
+          category: string
+          city: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          metrics?: Json | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          social_media?: Json | null
+          source?: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          added_at?: string
+          address?: string
+          category?: string
+          city?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          metrics?: Json | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          social_media?: Json | null
+          source?: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       media_archives: {
         Row: {
           created_at: string | null
@@ -226,6 +295,12 @@ export type Database = {
     }
     Enums: {
       app_role: "manager"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "interested"
+        | "client"
+        | "not_interested"
       post_status: "pending" | "scheduled" | "published" | "failed" | "draft"
     }
     CompositeTypes: {
@@ -355,6 +430,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["manager"],
+      lead_status: [
+        "new",
+        "contacted",
+        "interested",
+        "client",
+        "not_interested",
+      ],
       post_status: ["pending", "scheduled", "published", "failed", "draft"],
     },
   },
