@@ -24,7 +24,7 @@ serve(async (req) => {
 
     // Configure endpoint and payload based on generation type
     if (type === 'simple') {
-      endpoint = 'https://queue.fal.run/fal-ai/fast-nano-banana';
+      endpoint = 'https://queue.fal.run/fal-ai/nano-banana';
       payload = {
         prompt,
         image_size: "square_hd",
@@ -32,7 +32,7 @@ serve(async (req) => {
         num_images: 1,
       };
     } else if (type === 'edit' && image_url) {
-      endpoint = 'https://queue.fal.run/fal-ai/fast-nano-banana';
+      endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
       payload = {
         prompt,
         image_url,
@@ -42,7 +42,7 @@ serve(async (req) => {
       };
     } else if (type === 'combine' && image_url) {
       // For combining images, use image_url as array
-      endpoint = 'https://queue.fal.run/fal-ai/fast-nano-banana';
+      endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
       payload = {
         prompt,
         image_url: Array.isArray(image_url) ? image_url[0] : image_url,
@@ -50,8 +50,17 @@ serve(async (req) => {
         num_inference_steps: 4,
         num_images: 1,
       };
+    } else if (type === 'ugc' && image_url) {
+      endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
+      payload = {
+        prompt: prompt || "Transform this image",
+        image_url,
+        image_size: "square_hd",
+        num_inference_steps: 4,
+        num_images: 1,
+      };
     } else {
-      throw new Error('Invalid generation type or missing image_url for edit/combine');
+      throw new Error('Invalid generation type or missing image_url for edit/combine/ugc');
     }
 
     console.log('Calling fal.ai with payload:', payload);
@@ -74,14 +83,51 @@ serve(async (req) => {
     const result = await response.json();
     console.log('fal.ai response:', result);
 
-    // Extract image URL from response
-    const imageUrl = result.images?.[0]?.url || result.image?.url;
+    // fal.ai returns a request_id for async processing
+    const requestId = result.request_id;
+
+    if (!requestId) {
+      throw new Error('No request_id received from fal.ai');
+    }
+
+    // Poll for completion
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max
+    let imageUrl = null;
+
+    while (attempts < maxAttempts && !imageUrl) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+
+      const statusResponse = await fetch(`${endpoint}/requests/${requestId}`, {
+        headers: {
+          'Authorization': `Key ${FAL_AI_API_KEY}`,
+        },
+      });
+
+      if (statusResponse.ok) {
+        const statusResult = await statusResponse.json();
+        console.log(`Status check attempt ${attempts + 1}:`, statusResult);
+
+        if (statusResult.status === 'COMPLETED') {
+          imageUrl = statusResult.images?.[0]?.url || statusResult.image?.url;
+          break;
+        } else if (statusResult.status === 'FAILED') {
+          throw new Error('Image generation failed');
+        }
+      }
+
+      attempts++;
+    }
+
+    if (!imageUrl) {
+      throw new Error('Image generation timeout');
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true,
         imageUrl,
-        result 
+        requestId 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
