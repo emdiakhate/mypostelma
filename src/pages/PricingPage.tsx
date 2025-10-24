@@ -17,10 +17,30 @@ const PricingPage: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (plan: 'pro' | 'business') => {
-    setLoading(plan);
-    // Simulation pour la démo - redirection vers page de checkout simulée
-    navigate(`/checkout?plan=${plan}`);
-    setLoading(null);
+    try {
+      setLoading(plan);
+      
+      const priceId = PRICE_IDS[plan];
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        // Ouvrir Stripe Checkout dans un nouvel onglet
+        window.open(data.url, '_blank');
+        toast.success('Redirection vers le paiement...');
+      } else {
+        throw new Error('URL de checkout non reçue');
+      }
+    } catch (error) {
+      console.error('Erreur checkout:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création du checkout');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
