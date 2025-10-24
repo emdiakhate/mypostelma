@@ -83,37 +83,48 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
   }, []);
 
   const handleGenerateImage = useCallback(async () => {
-    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
-      // Utiliser le webhook N8N pour l'édition et la combinaison
-      if (!aiPrompt.trim()) {
-        toast.error('Veuillez saisir un prompt pour la génération');
-        return;
-      }
-      
-      if (aiSourceImages.length === 0) {
-        toast.error('Veuillez ajouter des images sources');
-        return;
-      }
-      
-      // Empêcher les appels multiples
-      if (isGeneratingImage) {
-        console.log('Génération déjà en cours, appel ignoré');
-        return;
-      }
-      
-      // Webhook désactivé - utiliser uniquement PostCreationModal pour la combinaison
-      toast.info('Génération d\'images IA temporairement désactivée. Utilisez le modal de création de post pour la combinaison.');
-    } else {
-      // Pour les autres types (simple, ugc), simulation pour le développement
-      setIsGeneratingImage(true);
-      setTimeout(() => {
-        const mockImage = `https://images.unsplash.com/photo-${Date.now()}?w=800&h=800&fit=crop`;
-        setGeneratedImages(prev => [...prev, mockImage]);
-        setIsGeneratingImage(false);
-        toast.success('Image générée (simulation) !');
-      }, 2000);
+    if (!aiPrompt.trim() && aiGenerationType !== 'ugc') {
+      toast.error('Veuillez saisir un prompt pour la génération');
+      return;
     }
-  }, [aiGenerationType, aiPrompt, aiSourceImages]);
+    
+    const selectedType = aiGenerationTypes.find(t => t.id === aiGenerationType);
+    if (selectedType && selectedType.requiresImages > 0 && aiSourceImages.length < selectedType.requiresImages) {
+      toast.error(`Veuillez ajouter ${selectedType.requiresImages} image${selectedType.requiresImages > 1 ? 's' : ''} source${selectedType.requiresImages > 1 ? 's' : ''}`);
+      return;
+    }
+    
+    if (isGeneratingImage) return;
+    
+    setIsGeneratingImage(true);
+    
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('fal-image-generation', {
+        body: {
+          prompt: aiPrompt,
+          image_url: aiSourceImages[0] || null,
+          type: aiGenerationType
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (!data.success || !data.imageUrl) {
+        throw new Error('Échec de la génération d\'image');
+      }
+      
+      setGeneratedImages(prev => [...prev, data.imageUrl]);
+      toast.success('Image générée avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur génération image:', error);
+      toast.error('Erreur lors de la génération de l\'image');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  }, [aiGenerationType, aiPrompt, aiSourceImages, isGeneratingImage]);
 
   const handleUseGeneratedImage = useCallback((imageUrl: string) => {
     onUseImage(imageUrl);

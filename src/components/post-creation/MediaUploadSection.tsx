@@ -189,55 +189,50 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   }, [onVideoImageChange]);
 
   const handleGenerateVideo = useCallback(async () => {
-    if (isGeneratingVideo) return; // Éviter les appels multiples
+    if (isGeneratingVideo) return;
     
-    // Déclencher l'état de chargement
     if (onGenerateVideo) {
       onGenerateVideo();
     }
     
     try {
-      let imageData = null;
+      const { supabase } = await import('@/integrations/supabase/client');
       
-      // Si mode image-to-video, convertir l'image en base64
+      let imageUrl = null;
+      
+      // Si mode image-to-video, uploader l'image vers Supabase Storage
       if (videoMode === 'image-to-video' && videoImage) {
-        imageData = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(videoImage);
-        });
+        const fileName = `video-source-${Date.now()}.${videoImage.name.split('.').pop()}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('media-archives')
+          .upload(fileName, videoImage);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('media-archives')
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
       }
       
-      // Appel au webhook N8N
-      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/video', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: videoMode, // 'image-to-video' ou 'text-to-video'
+      const { data, error } = await supabase.functions.invoke('fal-video-generation', {
+        body: {
+          mode: videoMode,
           prompt: videoMode === 'image-to-video' ? videoPrompt : textVideoPrompt,
-          duration: videoMode === 'image-to-video' ? videoDuration : textVideoDuration,
-          style: videoStyle,
-          image: imageData // base64 de l'image ou null
-        })
+          image_url: imageUrl,
+          duration: parseInt(videoMode === 'image-to-video' ? videoDuration || '5' : textVideoDuration || '5')
+        }
       });
       
-      if (!response.ok) {
-        throw new Error('Erreur lors de la génération de la vidéo');
+      if (error) throw error;
+      
+      if (!data.success || !data.videoUrl) {
+        throw new Error('Échec de la génération vidéo');
       }
       
-      const result = await response.json();
-      console.log('Vidéo générée:', result);
-      
-      // Construire l'URL de la vidéo
-      const videoUrl = `https://drive.google.com/uc?export=view&id=${result.driveFileId}`;
-      
-      // Passer l'URL de la vidéo au composant parent
       if (onGenerateVideo) {
-        onGenerateVideo(videoUrl);
-        console.log('URL de la vidéo générée:', videoUrl);
+        onGenerateVideo(data.videoUrl);
       }
       
       toast.success('Vidéo générée avec succès !');
@@ -245,14 +240,8 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
     } catch (error) {
       console.error('Erreur génération vidéo:', error);
       toast.error('Erreur lors de la génération de la vidéo');
-    } finally {
-      // Arrêter l'état de chargement
-      if (onGenerateVideo) {
-        console.log('Génération vidéo terminée');
-        // On peut ajouter une fonction pour arrêter le chargement si nécessaire
-      }
     }
-  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, videoStyle, onGenerateVideo]);
+  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo]);
 
   const handleAiSourceImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

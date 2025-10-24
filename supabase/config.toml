@@ -1,1 +1,7 @@
 project_id = "qltfylleiwjvtngmsdyg"
+
+[functions.fal-image-generation]
+verify_jwt = false
+
+[functions.fal-video-generation]
+verify_jwt = false
