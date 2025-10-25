@@ -270,7 +270,7 @@ const videoTemplates: VideoTemplate[] = [
     title: 'Présentation Boutique',
     description: 'Showcase de magasin/boutique avec ambiance professionnelle',
     thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
-    videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4',
+    videoUrl: '/presentation-boutique.mp4',
     categories: ['Commerce', 'Boutique', 'Retail'],
     icon: Store,
     badge: 'Nouveau'
