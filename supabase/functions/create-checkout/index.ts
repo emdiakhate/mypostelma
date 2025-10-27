@@ -100,7 +100,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/app/calendar?subscription=success`,
+      success_url: `${origin}/checkout-success`,
       cancel_url: `${origin}/pricing?subscription=canceled`,
     });
 

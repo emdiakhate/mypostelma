@@ -24,6 +24,8 @@ import SettingsPage from "./pages/SettingsPage";
 import CreationPage from "./pages/CreationPage";
 import PricingPage from "./pages/PricingPage";
 import CheckoutSimulation from "./pages/CheckoutSimulation";
+import ConnectSocialAccounts from "./pages/ConnectSocialAccounts";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,7 @@ function MainLayout() {
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/creation" element={<CreationPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
+        <Route path="/connect-accounts" element={<ConnectSocialAccounts />} />
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
@@ -61,6 +64,7 @@ const ProtectedRoutes = () => {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/checkout" element={<CheckoutSimulation />} />
+      <Route path="/checkout-success" element={<CheckoutSuccess />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
