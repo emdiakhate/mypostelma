@@ -17,14 +17,17 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
+  // Récupérer l'URL de retour depuis location.state
+  const returnUrl = (window.history.state?.usr?.from as string) || '/app/dashboard';
+
   // Redirect si déjà connecté
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/app/dashboard');
+        navigate(returnUrl);
       }
     });
-  }, [navigate]);
+  }, [navigate, returnUrl]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +78,7 @@ export default function AuthPage() {
           description: 'Vous pouvez maintenant vous connecter.'
         });
         // Auto-confirm activé, on peut se connecter directement
-        navigate('/app/dashboard');
+        navigate(returnUrl);
       }
     } catch (error: any) {
       toast({
@@ -119,7 +122,7 @@ export default function AuthPage() {
           throw error;
         }
       } else {
-        navigate('/app/dashboard');
+        navigate(returnUrl);
       }
     } catch (error: any) {
       toast({
