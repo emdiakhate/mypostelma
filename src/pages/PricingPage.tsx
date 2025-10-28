@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, X, ArrowLeft } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const PRICE_IDS = {
   pro: 'price_1SJDWVLR7t5EfdziGeffgVlg',
@@ -14,9 +15,17 @@ const PRICE_IDS = {
 
 const PricingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (plan: 'pro' | 'business') => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      toast.info('Vous devez être connecté pour souscrire à un abonnement');
+      navigate('/auth', { state: { from: `/pricing?plan=${plan}` } });
+      return;
+    }
+
     try {
       setLoading(plan);
       
