@@ -38,8 +38,8 @@ const PricingPage: React.FC = () => {
       if (error) throw error;
       
       if (data?.url) {
-        // Redirection directe vers Stripe Checkout
-        window.location.href = data.url;
+        // Ouvrir dans un nouvel onglet (Stripe ne peut pas s'ouvrir dans une iframe)
+        window.open(data.url, '_blank');
       } else {
         throw new Error('URL de checkout non reçue');
       }
