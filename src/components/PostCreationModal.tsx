@@ -719,6 +719,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             <ConnectedAccountsSelector 
               selectedAccounts={selectedAccounts}
               onAccountsChange={setSelectedAccounts}
+              mediaFile={videoImage}
+              videoUrl={generatedVideoUrl}
             />
           </div>
 

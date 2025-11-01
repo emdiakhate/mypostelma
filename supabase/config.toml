@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.fal-video-generation]
 verify_jwt = false
+
+[functions.generate-image-gemini]
+verify_jwt = true
+
+[functions.create-beta-subscription]
+verify_jwt = true

@@ -27,17 +27,34 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLeads, useLeadStatus } from '@/hooks/useLeads';
+import { useLeadGeneration } from '@/hooks/useLeadGeneration';
 import { Lead, LeadStatus } from '@/types/leads';
+import { LeadGenerationWidget } from '@/components/LeadGenerationWidget';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const LeadGenerationPage: React.FC = () => {
   const { leads, loading, error, loadLeads } = useLeads();
   const { getStatusColor, getStatusLabel } = useLeadStatus();
+  const { canGenerate, incrementCount } = useLeadGeneration();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showAddLead, setShowAddLead] = useState(false);
+
+  const handleGenerateLead = async () => {
+    if (!canGenerate) {
+      toast.error('Vous avez atteint la limite de génération de leads');
+      return;
+    }
+
+    const success = await incrementCount();
+    if (success) {
+      // Logique de génération de lead ici
+      setShowAddLead(true);
+    }
+  };
 
   // Filtrer les leads
   const filteredLeads = leads.filter(lead => {
@@ -82,12 +99,15 @@ const LeadGenerationPage: React.FC = () => {
             <Upload className="w-4 h-4 mr-2" />
             Importer
           </Button>
-          <Button onClick={() => setShowAddLead(true)}>
+          <Button onClick={handleGenerateLead} disabled={!canGenerate}>
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter un lead
+            Générer un Lead
           </Button>
         </div>
       </div>
+
+      {/* Widget de limite de génération */}
+      <LeadGenerationWidget />
 
       {/* Statistiques KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
