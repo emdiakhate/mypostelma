@@ -232,30 +232,75 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          beta_user: boolean | null
           created_at: string
           email: string
           id: string
           is_active: boolean
           last_login: string | null
+          lead_generation_count: number | null
+          lead_generation_limit: number | null
           name: string
+          posts_unlimited: boolean | null
         }
         Insert: {
           avatar?: string | null
+          beta_user?: boolean | null
           created_at?: string
           email: string
           id: string
           is_active?: boolean
           last_login?: string | null
+          lead_generation_count?: number | null
+          lead_generation_limit?: number | null
           name: string
+          posts_unlimited?: boolean | null
         }
         Update: {
           avatar?: string | null
+          beta_user?: boolean | null
           created_at?: string
           email?: string
           id?: string
           is_active?: boolean
           last_login?: string | null
+          lead_generation_count?: number | null
+          lead_generation_limit?: number | null
           name?: string
+          posts_unlimited?: boolean | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          beta_user: boolean | null
+          created_at: string
+          id: string
+          plan_type: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          beta_user?: boolean | null
+          created_at?: string
+          id?: string
+          plan_type?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          beta_user?: boolean | null
+          created_at?: string
+          id?: string
+          plan_type?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -292,6 +337,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_lead_generation: { Args: { p_user_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "manager"
