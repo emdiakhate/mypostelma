@@ -61,19 +61,27 @@ export function useUploadPost(): UseUploadPostReturn {
       
       console.log('[useUploadPost] Fetching Upload-Post profile for:', uploadPostUsername);
       const data = await UploadPostService.getUserProfile(uploadPostUsername);
-      setProfile(data.profile);
+      
+      // L'API retourne un double nesting: data.profile.profile
+      const actualProfile = (data.profile as any)?.profile || data.profile;
+      setProfile(actualProfile);
       
       // Extraire les comptes connectés
-      const accounts: ConnectedAccount[] = Object.entries(data.profile.social_accounts)
-        .filter(([_, value]) => value && typeof value === 'object')
-        .map(([platform, details]) => ({
-          platform: platform as ConnectedAccount['platform'],
-          display_name: (details as SocialAccountDetails).display_name || '',
-          social_images: (details as SocialAccountDetails).social_images,
-          username: (details as SocialAccountDetails).username
-        }));
-      
-      setConnectedAccounts(accounts);
+      if (actualProfile?.social_accounts) {
+        const accounts: ConnectedAccount[] = Object.entries(actualProfile.social_accounts)
+          .filter(([_, value]) => value && typeof value === 'object')
+          .map(([platform, details]) => ({
+            platform: platform as ConnectedAccount['platform'],
+            display_name: (details as SocialAccountDetails).display_name || '',
+            social_images: (details as SocialAccountDetails).social_images,
+            username: (details as SocialAccountDetails).username
+          }));
+        
+        console.log('[useUploadPost] Connected accounts:', accounts);
+        setConnectedAccounts(accounts);
+      } else {
+        setConnectedAccounts([]);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile';
       setError(errorMessage);

@@ -224,7 +224,7 @@ export default function SocialAccountsPage() {
                     <Button 
                       variant="outline"
                       size="sm"
-                      className="w-full"
+                      className="w-full border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                       onClick={() => handleDisconnectPlatform(platform.id)}
                     >
                       Déconnecter
@@ -234,7 +234,7 @@ export default function SocialAccountsPage() {
                   <Button 
                     variant="default"
                     size="sm"
-                    className="w-full"
+                    className="w-full bg-primary hover:bg-primary/90"
                     onClick={() => handleConnectPlatform(platform.id)}
                     disabled={connecting}
                   >
