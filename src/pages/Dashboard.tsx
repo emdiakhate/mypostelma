@@ -20,40 +20,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
-  // Mock data pour le dashboard
   const stats = [
-    { title: 'Publications cette semaine', value: '24', change: '+12%', trend: 'up' },
-    { title: 'Engagement moyen', value: '8.2%', change: '+2.1%', trend: 'up' },
-    { title: 'Publications programmées', value: '156', change: '+8', trend: 'up' },
-    { title: 'Plateformes actives', value: '6', change: '0', trend: 'stable' }
+    { title: 'Publications cette semaine', value: '0', change: '+0%', trend: 'stable' },
+    { title: 'Engagement moyen', value: '0%', change: '+0%', trend: 'stable' },
+    { title: 'Publications programmées', value: '0', change: '+0', trend: 'stable' },
+    { title: 'Plateformes actives', value: '0', change: '0', trend: 'stable' }
   ];
 
-  const recentPosts = [
-    {
-      id: '1',
-      content: '🥩 Découvrez notre sélection premium de viandes fraîches chez Mata Viande !',
-      platforms: ['instagram', 'facebook'],
-      scheduledTime: '2025-01-08 10:00',
-      status: 'scheduled',
-      engagement: { likes: 45, comments: 12, shares: 8 }
-    },
-    {
-      id: '2', 
-      content: '🍖 Nos steaks de bœuf sont parfaits pour vos grillades du weekend.',
-      platforms: ['twitter', 'linkedin'],
-      scheduledTime: '2025-01-08 14:30',
-      status: 'published',
-      engagement: { likes: 23, comments: 5, shares: 3 }
-    },
-    {
-      id: '3',
-      content: '📦 Livraison gratuite dès 50€ ! Commandez maintenant.',
-      platforms: ['instagram'],
-      scheduledTime: '2025-01-09 09:00',
-      status: 'pending',
-      engagement: { likes: 0, comments: 0, shares: 0 }
-    }
-  ];
+  const recentPosts: any[] = [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -156,44 +130,58 @@ const Dashboard = () => {
             <CardTitle>Publications récentes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentPosts.map((post) => (
-                <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                      {post.content}
-                    </p>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge className={getStatusColor(post.status)}>
-                        {getStatusIcon(post.status)}
-                        <span className="ml-1 capitalize">{post.status}</span>
-                      </Badge>
-                      <span className="text-xs text-gray-500">{post.scheduledTime}</span>
+            {recentPosts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">Aucune publication récente</p>
+                <Link to="/app/calendar">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer votre première publication
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {recentPosts.map((post) => (
+                    <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                          {post.content}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Badge className={getStatusColor(post.status)}>
+                            {getStatusIcon(post.status)}
+                            <span className="ml-1 capitalize">{post.status}</span>
+                          </Badge>
+                          <span className="text-xs text-gray-500">{post.scheduledTime}</span>
+                        </div>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                          <span>❤️ {post.engagement.likes}</span>
+                          <span>💬 {post.engagement.comments}</span>
+                          <span>🔄 {post.engagement.shares}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Button size="sm" variant="ghost">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                      <span>❤️ {post.engagement.likes}</span>
-                      <span>💬 {post.engagement.comments}</span>
-                      <span>🔄 {post.engagement.shares}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Button size="sm" variant="ghost">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-4">
-              <Link to="/calendar">
-                <Button variant="outline" className="w-full">
-                  Voir toutes les publications
-                </Button>
-              </Link>
-            </div>
+                <div className="mt-4">
+                  <Link to="/app/calendar">
+                    <Button variant="outline" className="w-full">
+                      Voir toutes les publications
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -204,24 +192,15 @@ const Dashboard = () => {
           <CardTitle>Vue d'ensemble des plateformes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', posts: 12, engagement: '8.2%' },
-              { name: 'Facebook', color: 'bg-blue-600', posts: 8, engagement: '6.1%' },
-              { name: 'Twitter', color: 'bg-black', posts: 15, engagement: '4.3%' },
-              { name: 'LinkedIn', color: 'bg-blue-700', posts: 5, engagement: '12.1%' },
-              { name: 'YouTube', color: 'bg-red-600', posts: 3, engagement: '15.2%' },
-              { name: 'TikTok', color: 'bg-black', posts: 7, engagement: '9.8%' }
-            ].map((platform, index) => (
-              <div key={index} className="text-center p-4 border rounded-lg">
-                <div className={`w-12 h-12 ${platform.color} rounded-lg mx-auto mb-3 flex items-center justify-center`}>
-                  <span className="text-white font-bold text-sm">{platform.name[0]}</span>
-                </div>
-                <h3 className="font-semibold text-sm text-gray-900">{platform.name}</h3>
-                <p className="text-xs text-gray-600">{platform.posts} posts</p>
-                <p className="text-xs text-green-600 font-medium">{platform.engagement}</p>
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">Connectez vos comptes sociaux pour voir vos statistiques</p>
+            <Link to="/app/settings/accounts">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Connecter mes comptes
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

@@ -119,7 +119,7 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
 
   const handleContinue = () => {
     onComplete();
-    navigate('/app/dashboard');
+    navigate('/app/settings/accounts');
   };
 
   return (

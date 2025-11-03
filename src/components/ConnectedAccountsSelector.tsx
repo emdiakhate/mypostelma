@@ -1,12 +1,11 @@
 /**
  * Composant pour sélectionner les comptes connectés
- * Phase 2: Gestion Multi-Comptes Sociaux
+ * Utilise Upload-Post pour afficher uniquement les comptes réellement connectés
  */
 
-import React, { useState, useEffect } from 'react';
-import { SocialAccount, PLATFORM_CONFIG } from '@/types/socialAccount';
+import React, { useMemo } from 'react';
+import { useUploadPost } from '@/hooks/useUploadPost';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -15,13 +14,14 @@ import {
   Linkedin, 
   Twitter, 
   Music, 
-  Youtube, 
-  Bookmark,
+  Youtube,
   Users,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface ConnectedAccountsSelectorProps {
   selectedAccounts: string[];
@@ -38,109 +38,43 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   mediaFile,
   videoUrl
 }) => {
-  const [connectedAccounts, setConnectedAccounts] = useState<SocialAccount[]>([]);
+  const { connectedAccounts, loading } = useUploadPost();
 
   // Vérifier si c'est une vidéo
   const isVideo = (mediaFile && mediaFile.type.startsWith('video/')) || videoUrl;
   const isImage = mediaFile && mediaFile.type.startsWith('image/');
-
-  // Plateformes disponibles selon le type de média
-  const videoOnlyPlatforms = ['tiktok', 'youtube'];
-  const imageOnlyPlatforms = ['instagram', 'facebook', 'linkedin', 'twitter', 'threads'];
-
-  // Charger les comptes connectés depuis localStorage
-  useEffect(() => {
-    const loadAccounts = () => {
-      try {
-        const stored = localStorage.getItem('postelma_social_accounts');
-        if (stored) {
-          const accounts = JSON.parse(stored);
-          // Convertir les dates string en Date objects
-          const parsedAccounts = accounts.map((account: any) => ({
-            ...account,
-            connectedAt: new Date(account.connectedAt),
-            lastSync: account.lastSync ? new Date(account.lastSync) : undefined
-          }));
-          setConnectedAccounts(parsedAccounts);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des comptes:', error);
-      }
+  
+  // Mapper les comptes connectés aux plateformes disponibles
+  const availablePlatforms = useMemo(() => {
+    const platformMap = {
+      instagram: { name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', restriction: '📸 Images uniquement', videoOnly: false, icon: Instagram },
+      facebook: { name: 'Facebook', color: 'bg-blue-600', restriction: '📸 Images uniquement', videoOnly: false, icon: Facebook },
+      twitter: { name: 'X (Twitter)', color: 'bg-black', restriction: '📸 Images uniquement', videoOnly: false, icon: Twitter },
+      x: { name: 'X', color: 'bg-black', restriction: '📸 Images uniquement', videoOnly: false, icon: Twitter },
+      linkedin: { name: 'LinkedIn', color: 'bg-blue-700', restriction: '📸 Images uniquement', videoOnly: false, icon: Linkedin },
+      youtube: { name: 'YouTube', color: 'bg-red-600', restriction: '🎥 Vidéo uniquement', videoOnly: true, icon: Youtube },
+      tiktok: { name: 'TikTok', color: 'bg-black', restriction: '🎥 Vidéo uniquement', videoOnly: true, icon: Music },
     };
-    loadAccounts();
-  }, []);
 
-  const getPlatformIcon = (platform: string) => {
-    switch (platform) {
-      case 'instagram': return Instagram;
-      case 'facebook': return Facebook;
-      case 'linkedin': return Linkedin;
-      case 'twitter': return Twitter;
-      case 'tiktok': return Music;
-      case 'youtube': return Youtube;
-      case 'pinterest': return Bookmark;
-      default: return Instagram;
-    }
-  };
-
-  const formatFollowers = (count: number) => {
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    } else if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`;
-    }
-    return count.toString();
-  };
-
-  const handleAccountToggle = (accountId: string) => {
-    if (selectedAccounts.includes(accountId)) {
-      onAccountsChange(selectedAccounts.filter(id => id !== accountId));
-    } else {
-      onAccountsChange([...selectedAccounts, accountId]);
-    }
-  };
-
-  const handleConnectAccounts = () => {
-    // Rediriger vers la page des comptes sociaux
-    window.location.href = '/settings/accounts';
-  };
-
-  // Affichage des plateformes même sans comptes connectés
-  const allPlatforms = [
-    { id: 'instagram', name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', restriction: '📸 Images uniquement', videoOnly: false },
-    { id: 'facebook', name: 'Facebook', color: 'bg-blue-600', restriction: '📸 Images uniquement', videoOnly: false },
-    { id: 'twitter', name: 'X (Twitter)', color: 'bg-black', restriction: '📸 Images uniquement', videoOnly: false },
-    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-700', restriction: '📸 Images uniquement', videoOnly: false },
-    { id: 'youtube', name: 'YouTube', color: 'bg-red-600', restriction: '🎥 Vidéo uniquement', videoOnly: true },
-    { id: 'tiktok', name: 'TikTok', color: 'bg-black', restriction: '🎥 Vidéo uniquement', videoOnly: true },
-  ];
-
-  // Filtrer les plateformes selon le type de média
-  const platforms = allPlatforms.filter(platform => {
-    if (isVideo) {
-      // Si vidéo, uniquement TikTok et YouTube
-      return platform.videoOnly;
-    } else if (isImage) {
-      // Si image, tout sauf TikTok et YouTube
-      return !platform.videoOnly;
-    }
-    // Si pas de média, toutes les plateformes sont disponibles
-    return true;
-  });
+    return connectedAccounts
+      .map(account => ({
+        id: account.platform,
+        displayName: account.display_name,
+        username: account.username,
+        image: account.social_images,
+        ...platformMap[account.platform as keyof typeof platformMap]
+      }))
+      .filter(platform => {
+        if (isVideo) {
+          return platform.videoOnly;
+        } else if (isImage) {
+          return !platform.videoOnly;
+        }
+        return true;
+      });
+  }, [connectedAccounts, isVideo, isImage]);
 
   const handlePlatformToggle = (platformId: string) => {
-    const platform = allPlatforms.find(p => p.id === platformId);
-    
-    // Vérifier la compatibilité avant de sélectionner
-    if (isVideo && !platform?.videoOnly) {
-      // Vidéo uploadée, ne peut pas sélectionner plateforme image
-      return;
-    }
-    if (isImage && platform?.videoOnly) {
-      // Image uploadée, ne peut pas sélectionner plateforme vidéo
-      return;
-    }
-
     if (selectedAccounts.includes(platformId)) {
       onAccountsChange(selectedAccounts.filter(p => p !== platformId));
     } else {
@@ -148,84 +82,88 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
     }
   };
 
-  if (connectedAccounts.length === 0) {
+  if (loading) {
     return (
-      <div className={cn("space-y-4", className)}>
-        <div className="space-y-3">
-          <label className="block text-sm font-medium">Plateformes</label>
-          <div className="flex flex-wrap gap-2">
-            {platforms.map((platform) => (
-              <button
-                key={platform.id}
-                onClick={() => handlePlatformToggle(platform.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium text-white transition-all",
-                  platform.color,
-                  selectedAccounts.includes(platform.id) 
-                    ? "ring-2 ring-offset-2 ring-blue-500" 
-                    : "opacity-70 hover:opacity-100"
-                )}
-              >
-                {platform.name}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
+    );
+  }
+
+  if (availablePlatforms.length === 0) {
+    return (
+      <Card className={cn("border-dashed", className)}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Aucun compte connecté
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Connectez vos réseaux sociaux pour publier du contenu
+            </p>
+            <Link to="/app/settings/accounts">
+              <Button variant="outline" size="sm">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Connecter mes comptes
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Publier sur
-        </h3>
-        <Badge variant="outline" className="text-sm">
-          {selectedAccounts.length} plateforme{selectedAccounts.length > 1 ? 's' : ''} sélectionnée{selectedAccounts.length > 1 ? 's' : ''}
-        </Badge>
-      </div>
-      
-      <div className="flex flex-wrap gap-3">
-        {platforms.map((platform) => {
-          const PlatformIcon = getPlatformIcon(platform.id);
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {availablePlatforms.map((platform) => {
           const isSelected = selectedAccounts.includes(platform.id);
-          const isDisabled = (isVideo && !platform.videoOnly) || (isImage && platform.videoOnly);
+          const Icon = platform.icon;
           
           return (
-            <div key={platform.id} className="relative">
-              <button
-                onClick={() => handlePlatformToggle(platform.id)}
-                disabled={isDisabled}
-                className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg border-2 transition-all duration-200",
-                  isSelected 
-                    ? "border-blue-500 bg-blue-50" 
-                    : isDisabled
-                    ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                )}
-              >
-                <div className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center",
-                  platform.color
-                )}>
-                  <PlatformIcon className="w-4 h-4 text-white" />
+            <Card
+              key={platform.id}
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                isSelected && "ring-2 ring-primary"
+              )}
+              onClick={() => handlePlatformToggle(platform.id)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => handlePlatformToggle(platform.id)}
+                    className="flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", platform.color)}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{platform.name}</p>
+                        <p className="text-xs text-gray-500 truncate">@{platform.username}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-medium">{platform.name}</span>
-                {platform.restriction && (
-                  <span className="text-[10px] text-gray-500">{platform.restriction}</span>
-                )}
-              </button>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
-      
-      {selectedAccounts.length === 0 && (
-        <div className="text-center py-4">
-          <p className="text-sm text-gray-500">
-            Sélectionnez au moins une plateforme pour publier
+
+      {/* Message d'information sur le type de média */}
+      {(isVideo || isImage) && (
+        <div className="flex items-start space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-blue-700">
+            {isVideo 
+              ? 'Seules les plateformes supportant les vidéos sont disponibles (TikTok, YouTube)'
+              : 'Seules les plateformes supportant les images sont disponibles'
+            }
           </p>
         </div>
       )}

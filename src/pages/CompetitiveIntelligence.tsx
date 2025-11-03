@@ -16,7 +16,8 @@ import {
   Heart,
   MessageCircle,
   Share2,
-  Eye
+  Eye,
+  Plus
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { format } from 'date-fns';
@@ -64,195 +65,8 @@ interface Competitor {
   engagementHistory: { date: string; engagement: number }[];
 }
 
-// Données mockées réalistes
-const mockCompetitors: Competitor[] = [
-  {
-    id: '1',
-    name: 'Social Media Pro',
-    platform: 'Instagram',
-    handle: '@socialmediapro',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    bio: 'Expert en marketing digital et stratégies sociales. Je partage mes conseils pour booster votre présence en ligne.',
-    posts: [
-      {
-        id: '1',
-        content: '🚀 5 stratégies pour augmenter votre engagement sur Instagram en 2024! Swipe pour découvrir mes conseils d\'expert 👆 #InstagramTips #SocialMediaMarketing #Engagement',
-        image: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=400&h=400&fit=crop',
-        publishedAt: new Date('2024-01-15T10:00:00'),
-        likes: 1250,
-        comments: 89,
-        shares: 45,
-        views: 3200,
-        hashtags: ['#InstagramTips', '#SocialMediaMarketing', '#Engagement'],
-        engagement: 4.2
-      },
-      {
-        id: '2',
-        content: '💡 Le secret des stories qui convertissent: timing + contenu authentique! Qui d\'autre utilise cette stratégie? #Stories #Conversion #Authenticity',
-        image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=400&fit=crop',
-        publishedAt: new Date('2024-01-12T14:30:00'),
-        likes: 890,
-        comments: 67,
-        shares: 23,
-        views: 2100,
-        hashtags: ['#Stories', '#Conversion', '#Authenticity'],
-        engagement: 3.8
-      }
-    ],
-    metrics: {
-      postsPerWeek: 5,
-      avgEngagement: 4.1,
-      totalFollowers: 125000,
-      engagementRate: 3.2,
-      topHashtags: [
-        { tag: '#SocialMediaMarketing', count: 45 },
-        { tag: '#InstagramTips', count: 38 },
-        { tag: '#Engagement', count: 32 },
-        { tag: '#DigitalMarketing', count: 28 },
-        { tag: '#ContentStrategy', count: 25 }
-      ],
-      bestPostingTimes: [
-        { hour: 9, day: 'Lundi', engagement: 4.5 },
-        { hour: 14, day: 'Mercredi', engagement: 4.2 },
-        { hour: 18, day: 'Vendredi', engagement: 4.8 }
-      ],
-      toneAnalysis: {
-        tone: 'Professionnel',
-        avgCaptionLength: 120,
-        emojiUsage: 85,
-        ctaUsage: 60,
-        preferredFormats: [
-          { format: 'Image unique', percentage: 60 },
-          { format: 'Carousel', percentage: 30 },
-          { format: 'Reel', percentage: 10 }
-        ]
-      }
-    },
-    engagementHistory: [
-      { date: '2024-01-01', engagement: 3.8 },
-      { date: '2024-01-02', engagement: 4.1 },
-      { date: '2024-01-03', engagement: 3.9 },
-      { date: '2024-01-04', engagement: 4.3 },
-      { date: '2024-01-05', engagement: 4.0 }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Content Creator Hub',
-    platform: 'Instagram',
-    handle: '@contentcreatorhub',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-    bio: 'Créatrice de contenu passionnée. Je partage mon quotidien et mes conseils pour une vie créative et inspirante.',
-    posts: [
-      {
-        id: '3',
-        content: '✨ Mon setup créatif du jour! Qui d\'autre travaille depuis chez soi? Dites-moi vos astuces pour rester motivé 💪 #WorkFromHome #CreativeLife #Motivation',
-        image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=400&fit=crop',
-        publishedAt: new Date('2024-01-14T09:00:00'),
-        likes: 2100,
-        comments: 156,
-        shares: 78,
-        views: 4500,
-        hashtags: ['#WorkFromHome', '#CreativeLife', '#Motivation'],
-        engagement: 5.2
-      }
-    ],
-    metrics: {
-      postsPerWeek: 7,
-      avgEngagement: 4.8,
-      totalFollowers: 89000,
-      engagementRate: 4.1,
-      topHashtags: [
-        { tag: '#CreativeLife', count: 52 },
-        { tag: '#WorkFromHome', count: 41 },
-        { tag: '#Motivation', count: 38 },
-        { tag: '#Lifestyle', count: 35 },
-        { tag: '#Inspiration', count: 29 }
-      ],
-      bestPostingTimes: [
-        { hour: 8, day: 'Mardi', engagement: 5.1 },
-        { hour: 19, day: 'Jeudi', engagement: 4.9 },
-        { hour: 12, day: 'Samedi', engagement: 5.3 }
-      ],
-      toneAnalysis: {
-        tone: 'Inspirant',
-        avgCaptionLength: 95,
-        emojiUsage: 92,
-        ctaUsage: 45,
-        preferredFormats: [
-          { format: 'Image unique', percentage: 70 },
-          { format: 'Reel', percentage: 20 },
-          { format: 'Carousel', percentage: 10 }
-        ]
-      }
-    },
-    engagementHistory: [
-      { date: '2024-01-01', engagement: 4.5 },
-      { date: '2024-01-02', engagement: 4.8 },
-      { date: '2024-01-03', engagement: 4.6 },
-      { date: '2024-01-04', engagement: 5.0 },
-      { date: '2024-01-05', engagement: 4.7 }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Marketing Insights',
-    platform: 'LinkedIn',
-    handle: '@marketinginsights',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-    bio: 'Directeur Marketing chez TechCorp. Je partage les dernières tendances du marketing digital et les insights de l\'industrie.',
-    posts: [
-      {
-        id: '4',
-        content: '📊 Les 3 métriques clés à suivre en 2024 pour optimiser vos campagnes marketing. Voici mon analyse basée sur 10 ans d\'expérience dans le secteur.',
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop',
-        publishedAt: new Date('2024-01-13T11:00:00'),
-        likes: 450,
-        comments: 89,
-        shares: 156,
-        views: 1200,
-        hashtags: ['#MarketingMetrics', '#DigitalMarketing', '#Analytics'],
-        engagement: 2.8
-      }
-    ],
-    metrics: {
-      postsPerWeek: 3,
-      avgEngagement: 2.9,
-      totalFollowers: 45000,
-      engagementRate: 2.1,
-      topHashtags: [
-        { tag: '#DigitalMarketing', count: 28 },
-        { tag: '#MarketingMetrics', count: 22 },
-        { tag: '#Analytics', count: 19 },
-        { tag: '#B2B', count: 16 },
-        { tag: '#Strategy', count: 14 }
-      ],
-      bestPostingTimes: [
-        { hour: 8, day: 'Lundi', engagement: 3.2 },
-        { hour: 13, day: 'Mercredi', engagement: 2.9 },
-        { hour: 16, day: 'Vendredi', engagement: 3.1 }
-      ],
-      toneAnalysis: {
-        tone: 'Professionnel',
-        avgCaptionLength: 180,
-        emojiUsage: 25,
-        ctaUsage: 30,
-        preferredFormats: [
-          { format: 'Image unique', percentage: 80 },
-          { format: 'Carousel', percentage: 15 },
-          { format: 'Reel', percentage: 5 }
-        ]
-      }
-    },
-    engagementHistory: [
-      { date: '2024-01-01', engagement: 2.7 },
-      { date: '2024-01-02', engagement: 2.9 },
-      { date: '2024-01-03', engagement: 2.8 },
-      { date: '2024-01-04', engagement: 3.1 },
-      { date: '2024-01-05', engagement: 2.9 }
-    ]
-  }
-];
+// Données vides
+const mockCompetitors: Competitor[] = [];
 
 const CompetitiveIntelligence: React.FC = () => {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>('1');
@@ -302,42 +116,63 @@ const CompetitiveIntelligence: React.FC = () => {
         </Button>
       </div>
 
-      {/* Sélecteur de concurrents */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {mockCompetitors.map((comp) => (
-          <Card 
-            key={comp.id} 
-            className={`cursor-pointer transition-all ${
-              selectedCompetitor === comp.id 
-                ? 'ring-2 ring-blue-500 bg-blue-50' 
-                : 'hover:shadow-md'
-            }`}
-            onClick={() => setSelectedCompetitor(comp.id)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <img 
-                  src={comp.avatar} 
-                  alt={comp.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{comp.name}</h3>
-                  <p className="text-sm text-gray-600">{comp.handle}</p>
-                  <div className="flex items-center mt-1">
-                    <Badge variant="secondary" className="text-xs">
-                      {comp.platform}
-                    </Badge>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {formatNumber(comp.metrics.totalFollowers)} followers
-                    </span>
+      {/* Empty state */}
+      {mockCompetitors.length === 0 ? (
+        <Card>
+          <CardContent className="py-16">
+            <div className="text-center max-w-md mx-auto">
+              <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun concurrent ajouté</h3>
+              <p className="text-gray-600 mb-6">
+                Commencez à analyser vos concurrents pour améliorer votre stratégie
+              </p>
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un concurrent
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Sélecteur de concurrents */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {mockCompetitors.map((comp) => (
+              <Card 
+                key={comp.id} 
+                className={`cursor-pointer transition-all ${
+                  selectedCompetitor === comp.id 
+                    ? 'ring-2 ring-blue-500 bg-blue-50' 
+                    : 'hover:shadow-md'
+                }`}
+                onClick={() => setSelectedCompetitor(comp.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src={comp.avatar} 
+                      alt={comp.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{comp.name}</h3>
+                      <p className="text-sm text-gray-600">{comp.handle}</p>
+                      <div className="flex items-center mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {comp.platform}
+                        </Badge>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {formatNumber(comp.metrics.totalFollowers)} followers
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
 
       {competitor && (
         <div className="space-y-6">
