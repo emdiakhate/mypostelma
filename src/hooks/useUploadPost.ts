@@ -75,15 +75,25 @@ export function useUploadPost(): UseUploadPostReturn {
       const userName = user.user_metadata?.name || user.email?.split('@')[0] || '';
       const formattedUsername = formatUsernameForUploadPost(userName, user.id);
       
+      console.log('[useUploadPost] Generating connect URL for:', formattedUsername);
       const { access_url } = await UploadPostService.generateConnectUrl(formattedUsername, options);
-      window.location.href = access_url;
+      
+      console.log('[useUploadPost] Opening connect URL in new window:', access_url);
+      
+      // Ouvrir dans une nouvelle fenêtre au lieu de rediriger (évite les problèmes CSP)
+      const connectWindow = window.open(access_url, '_blank', 'width=800,height=700,scrollbars=yes,resizable=yes');
+      
+      if (!connectWindow) {
+        throw new Error('Impossible d\'ouvrir la fenêtre de connexion. Veuillez autoriser les popups.');
+      }
+      
+      setLoading(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate connect URL';
       setError(errorMessage);
-      console.error('Error generating connect URL:', err);
-      throw err;
-    } finally {
+      console.error('[useUploadPost] Error generating connect URL:', err);
       setLoading(false);
+      throw err;
     }
   };
 

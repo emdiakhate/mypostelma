@@ -87,12 +87,16 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
         connectTitle: 'Premiers pas - Connectez vos réseaux sociaux',
         connectDescription: 'Liez vos comptes pour commencer à publier automatiquement',
         platforms: ['tiktok', 'instagram', 'facebook', 'linkedin', 'x', 'threads'],
-        redirectButtonText: 'Continuer vers le tableau de bord'
+        redirectButtonText: 'Revenir à PostElma'
       });
       
-    } catch (error) {
-      console.error('Error connecting accounts:', error);
-      toast.error('Erreur lors de la connexion des comptes');
+      toast.success('Fenêtre de connexion ouverte. Connectez vos comptes puis revenez ici.');
+      
+    } catch (error: any) {
+      console.error('[OnboardingModal] Error connecting accounts:', error);
+      const errorMsg = error?.message || 'Erreur lors de la connexion des comptes';
+      toast.error(errorMsg);
+    } finally {
       setConnecting(false);
     }
   };
