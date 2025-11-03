@@ -61,7 +61,10 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
         
         if (updateError) {
           console.error('[OnboardingModal] Error saving username to profile:', updateError);
+          throw new Error(`Impossible de sauvegarder le nom d'utilisateur: ${updateError.message}`);
         }
+        
+        console.log('[OnboardingModal] Username saved to profile successfully');
         
         setProfileCreated(true);
         
