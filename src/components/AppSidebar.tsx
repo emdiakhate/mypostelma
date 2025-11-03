@@ -26,7 +26,6 @@ interface SidebarItem {
 const sidebarItems: SidebarItem[] = [
   { id: 'publishing', label: 'Publication', icon: Edit3, active: true },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
-  { id: 'queue', label: 'File d\'attente Sprout', icon: Clock, count: 12 },
   { id: 'drafts', label: 'Brouillons', icon: FileText, count: 8 },
   { id: 'approval', label: 'En attente d\'approbation', icon: CheckCircle, count: 3 },
   { id: 'rejected', label: 'Rejetés', icon: XCircle, count: 1 },

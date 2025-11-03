@@ -12,7 +12,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PostDetailPage from "./pages/PostDetailPage";
 import Analytics from "./pages/Analytics";
-import QueuePage from "./pages/QueuePage";
+
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
 import AuthPage from "./pages/AuthPage";
@@ -37,7 +37,7 @@ function MainLayout() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calendar" element={<Index />} />
         <Route path="/analytics" element={<Analytics />} />
-        <Route path="/queue" element={<QueuePage />} />
+        
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitiveIntelligence />} />
         <Route path="/settings" element={<SettingsPage />} />

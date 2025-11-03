@@ -139,8 +139,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   );
   const [activePreview, setActivePreview] = useState('instagram');
   const [campaign, setCampaign] = useState(initialData?.campaign || '');
-  const [publishType, setPublishType] = useState<'now' | 'scheduled'>('now');
-  const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(null);
+  const [publishType, setPublishType] = useState<'now' | 'scheduled'>(
+    isEditing && initialData?.scheduledTime ? 'scheduled' : 'now'
+  );
+  const [scheduledDateTime, setScheduledDateTime] = useState<Date | null>(
+    isEditing && initialData?.scheduledTime 
+      ? new Date(initialData.scheduledTime)
+      : null
+  );
   const [tone, setTone] = useState<string>('automatic');
   const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
 
@@ -525,40 +531,65 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         toast.error('Erreur lors de la publication');
         return;
       }
-      // Si on est en mode édition et qu'on a une date programmée, on met à jour le post
-      if (isEditing && scheduledDateTime) {
-        const scheduledPost = {
-          id: initialData?.id || `post-${Date.now()}`,
-          content: finalCaptions[selectedPlatforms[0]] || content,
-          platforms: selectedPlatforms,
-          image: selectedImages[0],
-          images: selectedImages,
-          video: generatedVideoUrl || undefined,
-          videoThumbnail: generatedVideoUrl || undefined,
-          scheduledTime: scheduledDateTime,
-          dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
-          timeSlot: calculateTimeSlot(scheduledDateTime),
-          status: 'scheduled' as const,
-          captions: finalCaptions,
-          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
-          campaign,
-          campaignColor: initialData?.campaignColor
-        };
+      // Si on est en mode édition
+      if (isEditing) {
+        if (publishType === 'now') {
+          // Publier maintenant et mettre à jour le post dans le calendrier
+          const publishedPost = {
+            ...initialData,
+            id: initialData?.id || `post-${Date.now()}`,
+            content: finalCaptions[selectedPlatforms[0]] || content,
+            platforms: selectedPlatforms,
+            accounts: selectedAccounts,
+            images: selectedImages,
+            video: generatedVideoUrl || undefined,
+            videoThumbnail: generatedVideoUrl || undefined,
+            status: 'published' as const,
+            captions: finalCaptions,
+            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+            campaign,
+            campaignColor: initialData?.campaignColor
+          };
 
-        // Note: Webhook gère la publication, pas besoin de publishPost
-        console.log('Scheduled post created via webhook');
+          console.log('Publishing post immediately');
+          onSave(publishedPost);
+          toast.success('Post publié avec succès !');
+          onClose();
+          return;
+        } else if (scheduledDateTime) {
+          // Modifier la programmation
+          const scheduledPost = {
+            ...initialData,
+            id: initialData?.id || `post-${Date.now()}`,
+            content: finalCaptions[selectedPlatforms[0]] || content,
+            platforms: selectedPlatforms,
+            accounts: selectedAccounts,
+            images: selectedImages,
+            video: generatedVideoUrl || undefined,
+            videoThumbnail: generatedVideoUrl || undefined,
+            scheduledTime: scheduledDateTime,
+            dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
+            timeSlot: calculateTimeSlot(scheduledDateTime),
+            status: 'scheduled' as const,
+            captions: finalCaptions,
+            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+            campaign,
+            campaignColor: initialData?.campaignColor
+          };
 
-        onSave(scheduledPost);
-        alert('Post modifié avec succès !');
-        onClose();
-        // Redirection vers le calendrier géré par le parent
-        return;
+          console.log('Updating scheduled post');
+          onSave(scheduledPost);
+          toast.success('Post modifié avec succès !');
+          onClose();
+          return;
+        }
       }
 
+      // Mode création
       if (publishType === 'now') {
-          console.log('Immediate post published via webhook');
-          alert('Publications envoyées avec succès !');
-          onClose();
+        console.log('Immediate post published via webhook');
+        toast.success('Publications envoyées avec succès !');
+        onClose();
       } else if (scheduledDateTime) {
         console.log('Scheduled post created via webhook');
 
@@ -566,7 +597,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           id: `post-${Date.now()}`,
           content: finalCaptions[selectedPlatforms[0]] || content,
           platforms: selectedPlatforms,
-          images: selectedImages, // Passer images au lieu de image
+          accounts: selectedAccounts,
+          images: selectedImages,
           video: generatedVideoUrl || undefined,
           videoThumbnail: generatedVideoUrl || undefined,
           scheduledTime: scheduledDateTime,
@@ -582,9 +614,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         console.log('Saving scheduled post:', scheduledPost);
         console.log('Post images:', scheduledPost.images);
         
-        // Laisser le système CalendarView gérer la sauvegarde via onCreatePost
         onSave(scheduledPost);
-        alert('Post programmé avec succès !');
+        toast.success('Post programmé avec succès !');
         onClose();
       }
     } catch (error) {

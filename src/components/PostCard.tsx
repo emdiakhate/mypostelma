@@ -195,7 +195,14 @@ const PostCard: React.FC<PostCardProps> = memo(({
               </span>
             </div>
           )}
-          <span className="text-[10px] text-foreground font-medium truncate">{post.author}</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[10px] text-foreground font-medium truncate">{post.author}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{post.author}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Badge de statut */}
