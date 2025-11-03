@@ -29,12 +29,12 @@ export class UploadPostService {
 
   /**
    * Crée un profil Upload-Post pour l'utilisateur
-   * @param userId - ID de l'utilisateur (utilisé comme username)
+   * @param username - Nom de l'utilisateur (utilisé comme username dans Upload-Post)
    */
-  static async createUserProfile(userId: string): Promise<CreateProfileResponse> {
+  static async createUserProfile(username: string): Promise<CreateProfileResponse> {
     try {
       const { data, error } = await supabase.functions.invoke('upload-post-create-profile', {
-        body: { username: userId }
+        body: { username }
       });
 
       if (error) throw error;
@@ -49,17 +49,17 @@ export class UploadPostService {
 
   /**
    * Génère une URL de connexion JWT pour connecter les réseaux sociaux
-   * @param userId - ID de l'utilisateur
+   * @param username - Nom de l'utilisateur
    * @param options - Options de personnalisation
    */
   static async generateConnectUrl(
-    userId: string, 
+    username: string, 
     options?: ConnectUrlOptions
   ): Promise<GenerateJWTResponse> {
     try {
       const { data, error } = await supabase.functions.invoke('upload-post-generate-jwt', {
         body: {
-          username: userId,
+          username,
           redirect_url: options?.redirectUrl,
           logo_image: options?.logoImage,
           connect_title: options?.connectTitle,
@@ -81,12 +81,12 @@ export class UploadPostService {
 
   /**
    * Récupère le profil utilisateur avec les comptes connectés
-   * @param userId - ID de l'utilisateur
+   * @param username - Nom de l'utilisateur
    */
-  static async getUserProfile(userId: string): Promise<GetProfileResponse> {
+  static async getUserProfile(username: string): Promise<GetProfileResponse> {
     try {
       const { data, error } = await supabase.functions.invoke('upload-post-get-profile', {
-        body: { username: userId }
+        body: { username }
       });
 
       if (error) throw error;
@@ -101,12 +101,12 @@ export class UploadPostService {
 
   /**
    * Récupère les pages Facebook de l'utilisateur
-   * @param userId - ID de l'utilisateur
+   * @param username - Nom de l'utilisateur
    */
-  static async getFacebookPages(userId: string): Promise<GetFacebookPagesResponse> {
+  static async getFacebookPages(username: string): Promise<GetFacebookPagesResponse> {
     try {
       const { data, error } = await supabase.functions.invoke('upload-post-facebook-pages', {
-        body: { profile: userId }
+        body: { profile: username }
       });
 
       if (error) throw error;
@@ -121,11 +121,11 @@ export class UploadPostService {
 
   /**
    * Vérifie si un profil existe pour l'utilisateur
-   * @param userId - ID de l'utilisateur
+   * @param username - Nom de l'utilisateur
    */
-  static async profileExists(userId: string): Promise<boolean> {
+  static async profileExists(username: string): Promise<boolean> {
     try {
-      await this.getUserProfile(userId);
+      await this.getUserProfile(username);
       return true;
     } catch (error) {
       return false;

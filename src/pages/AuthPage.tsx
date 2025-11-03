@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar } from 'lucide-react';
+import { OnboardingModal } from '@/components/OnboardingModal';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [newUserId, setNewUserId] = useState<string | null>(null);
+  const [newUserName, setNewUserName] = useState<string>('');
 
   // Récupérer l'URL de retour depuis location.state
   const returnUrl = (window.history.state?.usr?.from as string) || '/app/dashboard';
@@ -53,7 +57,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -75,10 +79,15 @@ export default function AuthPage() {
       } else {
         toast({
           title: 'Compte créé !',
-          description: 'Vous pouvez maintenant vous connecter.'
+          description: 'Bienvenue sur PostElma'
         });
-        // Auto-confirm activé, on peut se connecter directement
-        navigate(returnUrl);
+        
+        // Afficher le modal d'onboarding
+        if (data.user) {
+          setNewUserId(data.user.id);
+          setNewUserName(name);
+          setShowOnboarding(true);
+        }
       }
     } catch (error: any) {
       toast({
@@ -136,8 +145,21 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md">
+    <>
+      {/* Modal d'onboarding */}
+      {showOnboarding && newUserId && (
+        <OnboardingModal
+          isOpen={showOnboarding}
+          userId={newUserId}
+          userName={newUserName}
+          onComplete={() => {
+            setShowOnboarding(false);
+          }}
+        />
+      )}
+
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 rounded-full bg-primary/10">
@@ -241,5 +263,6 @@ export default function AuthPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
