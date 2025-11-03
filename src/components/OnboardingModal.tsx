@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useUploadPost } from '@/hooks/useUploadPost';
 import { ConnectedAccountCard } from '@/components/settings/ConnectedAccountCard';
 import { UploadPostService } from '@/services/uploadPost.service';
+import { formatUsernameForUploadPost } from '@/utils/usernameFormatter';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -34,15 +35,18 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
   const [creatingProfile, setCreatingProfile] = useState(false);
   const [profileCreated, setProfileCreated] = useState(false);
 
-  // Créer le profil Upload-Post avec le nom de l'utilisateur
+  // Créer le profil Upload-Post avec le nom de l'utilisateur formaté
   useEffect(() => {
     const createProfile = async () => {
       if (!isOpen || profileCreated) return;
 
       setCreatingProfile(true);
       try {
-        // Utiliser le nom de l'utilisateur au lieu de son ID
-        await UploadPostService.createUserProfile(userName);
+        // Formater le nom d'utilisateur pour respecter les règles Upload-Post
+        const formattedUsername = formatUsernameForUploadPost(userName, userId);
+        console.log(`Creating Upload-Post profile with username: ${formattedUsername}`);
+        
+        await UploadPostService.createUserProfile(formattedUsername);
         setProfileCreated(true);
         await refreshProfile();
       } catch (error) {
@@ -118,7 +122,7 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
                 <div>
                   <h4 className="font-medium">Profil créé</h4>
                   <p className="text-sm text-muted-foreground">
-                    Votre profil <strong>{userName}</strong> a été créé avec succès
+                    Votre profil <strong>@{formatUsernameForUploadPost(userName, userId)}</strong> a été créé avec succès
                   </p>
                 </div>
               </div>

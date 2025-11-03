@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { UploadPostService } from '@/services/uploadPost.service';
+import { formatUsernameForUploadPost } from '@/utils/usernameFormatter';
 import type { 
   UploadPostProfile, 
   ConnectedAccount, 
@@ -36,9 +37,11 @@ export function useUploadPost(): UseUploadPostReturn {
       setLoading(true);
       setError(null);
       
-      // Utiliser le nom de l'utilisateur au lieu de son ID
-      const userName = user.user_metadata?.name || user.email?.split('@')[0] || user.id;
-      const data = await UploadPostService.getUserProfile(userName);
+      // Générer le username formaté à partir du nom de l'utilisateur
+      const userName = user.user_metadata?.name || user.email?.split('@')[0] || '';
+      const formattedUsername = formatUsernameForUploadPost(userName, user.id);
+      
+      const data = await UploadPostService.getUserProfile(formattedUsername);
       setProfile(data.profile);
       
       // Extraire les comptes connectés
@@ -68,9 +71,11 @@ export function useUploadPost(): UseUploadPostReturn {
       setLoading(true);
       setError(null);
       
-      // Utiliser le nom de l'utilisateur au lieu de son ID
-      const userName = user.user_metadata?.name || user.email?.split('@')[0] || user.id;
-      const { access_url } = await UploadPostService.generateConnectUrl(userName, options);
+      // Générer le username formaté à partir du nom de l'utilisateur
+      const userName = user.user_metadata?.name || user.email?.split('@')[0] || '';
+      const formattedUsername = formatUsernameForUploadPost(userName, user.id);
+      
+      const { access_url } = await UploadPostService.generateConnectUrl(formattedUsername, options);
       window.location.href = access_url;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate connect URL';
