@@ -69,7 +69,7 @@ serve(async (req) => {
 
     const response = await fetch(analyticsUrl, {
       headers: {
-        'x-api-key': UPLOAD_POST_API_KEY,
+        'Authorization': `Apikey ${UPLOAD_POST_API_KEY}`,
       },
     });
 
