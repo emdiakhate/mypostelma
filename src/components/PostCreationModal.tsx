@@ -20,6 +20,7 @@ import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
 import PublishOptionsSection from './post-creation/PublishOptionsSection';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -47,15 +48,39 @@ const PreviewSection = memo<PreviewSectionProps>(({
   selectedImages, 
   generatedCaptions 
 }) => {
+  const { currentUser } = useAuth();
+  const [profileName, setProfileName] = useState('Postelma');
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+
+  // Charger les données du profil
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!currentUser) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('name, avatar')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (data) {
+        setProfileName(data.name);
+        setProfileAvatar(data.avatar);
+      }
+    };
+
+    loadProfile();
+  }, [currentUser]);
+
   const renderPreview = () => {
     const currentCaption = generatedCaptions?.[activePreview as keyof typeof generatedCaptions];
     const displayContent = currentCaption || content || 'Votre contenu apparaîtra ici...';
-    const profilePicture = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face';
+    const profilePicture = profileAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face';
     
     const previewProps = {
       content: displayContent,
       image: selectedImages.length > 0 ? selectedImages : '',
-      author: 'Postelma',
+      author: profileName,
       profilePicture,
       timestamp: '2h'
     };

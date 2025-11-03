@@ -44,8 +44,8 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   const isVideo = (mediaFile && mediaFile.type.startsWith('video/')) || videoUrl;
   const isImage = mediaFile && mediaFile.type.startsWith('image/');
   
-  // Mapper les comptes connectés aux plateformes disponibles
-  const availablePlatforms = useMemo(() => {
+  // Mapper toutes les plateformes disponibles avec leur statut de connexion
+  const allPlatforms = useMemo(() => {
     const platformMap = {
       instagram: { name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', restriction: '📸 Images uniquement', videoOnly: false, icon: Instagram },
       facebook: { name: 'Facebook', color: 'bg-blue-600', restriction: '📸 Images uniquement', videoOnly: false, icon: Facebook },
@@ -56,25 +56,40 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       tiktok: { name: 'TikTok', color: 'bg-black', restriction: '🎥 Vidéo uniquement', videoOnly: true, icon: Music },
     };
 
-    return connectedAccounts
-      .map(account => ({
-        id: account.platform,
-        displayName: account.display_name,
-        username: account.username,
-        image: account.social_images,
-        ...platformMap[account.platform as keyof typeof platformMap]
-      }))
-      .filter(platform => {
-        if (isVideo) {
-          return platform.videoOnly;
-        } else if (isImage) {
-          return !platform.videoOnly;
-        }
-        return true;
-      });
+    // Créer une map des comptes connectés
+    const connectedMap = new Map(
+      connectedAccounts.map(account => [account.platform, account])
+    );
+
+    // Retourner toutes les plateformes avec leur statut
+    return Object.entries(platformMap).map(([platformId, config]) => {
+      const connectedAccount = connectedMap.get(platformId as any);
+      const isConnected = !!connectedAccount;
+      
+      // Filtrer par type de média
+      let shouldShow = true;
+      if (isVideo && !config.videoOnly) {
+        shouldShow = false;
+      } else if (isImage && config.videoOnly) {
+        shouldShow = false;
+      }
+
+      return {
+        id: platformId,
+        displayName: connectedAccount?.display_name || config.name,
+        username: connectedAccount?.username,
+        image: connectedAccount?.social_images,
+        isConnected,
+        shouldShow,
+        ...config
+      };
+    }).filter(platform => platform.shouldShow);
   }, [connectedAccounts, isVideo, isImage]);
 
-  const handlePlatformToggle = (platformId: string) => {
+  const handlePlatformToggle = (platformId: string, isConnected: boolean) => {
+    // Ne permettre la sélection que si le compte est connecté
+    if (!isConnected) return;
+
     if (selectedAccounts.includes(platformId)) {
       onAccountsChange(selectedAccounts.filter(p => p !== platformId));
     } else {
@@ -90,61 +105,54 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
     );
   }
 
-  if (availablePlatforms.length === 0) {
-    return (
-      <Card className={cn("border-dashed", className)}>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Aucun compte connecté
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Connectez vos réseaux sociaux pour publier du contenu
-            </p>
-            <Link to="/app/settings/accounts">
-              <Button variant="outline" size="sm">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Connecter mes comptes
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className={cn("space-y-4", className)}>
+      <h3 className="text-sm font-semibold text-muted-foreground">Plateformes</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {availablePlatforms.map((platform) => {
+        {allPlatforms.map((platform) => {
           const isSelected = selectedAccounts.includes(platform.id);
           const Icon = platform.icon;
+          const isDisabled = !platform.isConnected;
           
           return (
             <Card
               key={platform.id}
               className={cn(
-                "cursor-pointer transition-all hover:shadow-md",
-                isSelected && "ring-2 ring-primary"
+                "cursor-pointer transition-all",
+                isDisabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-md",
+                isSelected && !isDisabled && "ring-2 ring-primary"
               )}
-              onClick={() => handlePlatformToggle(platform.id)}
+              onClick={() => handlePlatformToggle(platform.id, platform.isConnected)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     checked={isSelected}
-                    onCheckedChange={() => handlePlatformToggle(platform.id)}
+                    disabled={isDisabled}
+                    onCheckedChange={() => handlePlatformToggle(platform.id, platform.isConnected)}
                     className="flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", platform.color)}>
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center", 
+                        platform.color,
+                        isDisabled && "grayscale opacity-60"
+                      )}>
                         <Icon className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{platform.name}</p>
-                        <p className="text-xs text-gray-500 truncate">@{platform.username}</p>
+                        <p className={cn(
+                          "font-medium text-sm truncate",
+                          isDisabled && "text-muted-foreground"
+                        )}>
+                          {platform.name}
+                        </p>
+                        {platform.isConnected ? (
+                          <p className="text-xs text-gray-500 truncate">@{platform.username}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Non connecté</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -154,6 +162,18 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
           );
         })}
       </div>
+
+      {/* Lien pour connecter les comptes */}
+      {connectedAccounts.length === 0 && (
+        <div className="flex items-center justify-center p-4 border border-dashed rounded-lg">
+          <Link to="/app/settings/accounts">
+            <Button variant="outline" size="sm">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Connecter mes comptes
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Message d'information sur le type de média */}
       {(isVideo || isImage) && (

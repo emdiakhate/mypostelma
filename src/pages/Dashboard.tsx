@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Calendar, 
@@ -13,19 +13,47 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
-  Pause
+  Pause,
+  Archive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useUploadPost } from '@/hooks/useUploadPost';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { PLATFORMS } from '@/config/platforms';
 
 const Dashboard = () => {
-  const stats = [
-    { title: 'Publications cette semaine', value: '0', change: '+0%', trend: 'stable' },
-    { title: 'Engagement moyen', value: '0%', change: '+0%', trend: 'stable' },
-    { title: 'Publications programmées', value: '0', change: '+0', trend: 'stable' },
-    { title: 'Plateformes actives', value: '0', change: '0', trend: 'stable' }
-  ];
+  const { connectedAccounts, loading: accountsLoading } = useUploadPost();
+  const platforms = connectedAccounts.map(acc => acc.platform);
+  const { data: analyticsData, loading: analyticsLoading } = useAnalytics(
+    connectedAccounts[0]?.username || '',
+    platforms
+  );
+
+  // Calculer les stats réelles
+  const stats = useMemo(() => {
+    const totalFollowers = analyticsData?.analytics 
+      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.followers || 0), 0)
+      : 0;
+
+    const totalImpressions = analyticsData?.analytics
+      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.impressions || 0), 0)
+      : 0;
+
+    const totalReach = analyticsData?.analytics
+      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.reach || 0), 0)
+      : 0;
+
+    const activePlatforms = connectedAccounts.length;
+
+    return [
+      { title: 'Abonnés totaux', value: totalFollowers.toLocaleString(), change: '+0%', trend: 'stable' },
+      { title: 'Impressions', value: totalImpressions.toLocaleString(), change: '+0%', trend: 'stable' },
+      { title: 'Portée', value: totalReach.toLocaleString(), change: '+0', trend: 'stable' },
+      { title: 'Plateformes actives', value: activePlatforms.toString(), change: '0', trend: 'stable' }
+    ];
+  }, [analyticsData, connectedAccounts]);
 
   const recentPosts: any[] = [];
 
@@ -97,27 +125,27 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/calendar">
+              <Link to="/app/calendar">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
                   <Calendar className="w-6 h-6 mb-2" />
                   <span className="text-sm">Planifier</span>
                 </Button>
               </Link>
-              <Link to="/analytics">
+              <Link to="/app/analytics">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
                   <BarChart3 className="w-6 h-6 mb-2" />
                   <span className="text-sm">Analytics</span>
                 </Button>
               </Link>
-              <Link to="/queue">
+              <Link to="/app/publications">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
-                  <Users className="w-6 h-6 mb-2" />
-                  <span className="text-sm">File d'attente</span>
+                  <Clock className="w-6 h-6 mb-2" />
+                  <span className="text-sm">Publications</span>
                 </Button>
               </Link>
-              <Link to="/archives">
+              <Link to="/app/archives">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
-                  <Eye className="w-6 h-6 mb-2" />
+                  <Archive className="w-6 h-6 mb-2" />
                   <span className="text-sm">Archives</span>
                 </Button>
               </Link>
@@ -192,16 +220,51 @@ const Dashboard = () => {
           <CardTitle>Vue d'ensemble des plateformes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">Connectez vos comptes sociaux pour voir vos statistiques</p>
-            <Link to="/app/settings/accounts">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Connecter mes comptes
-              </Button>
-            </Link>
-          </div>
+          {connectedAccounts.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Connectez vos comptes sociaux pour voir vos statistiques</p>
+              <Link to="/app/settings/accounts">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Connecter mes comptes
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {connectedAccounts.map((account) => {
+                const platformConfig = PLATFORMS.find(p => p.id === account.platform);
+                const platformData = analyticsData?.analytics?.[account.platform];
+
+                return (
+                  <div key={account.platform} className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${platformConfig?.bgClass}`}>
+                        <span className="text-white text-lg">
+                          {platformConfig?.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{platformConfig?.name}</p>
+                        <p className="text-xs text-muted-foreground">@{account.username}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <p className="flex justify-between">
+                        <span className="text-muted-foreground">Abonnés:</span>
+                        <span className="font-medium">{platformData?.followers?.toLocaleString() || '0'}</span>
+                      </p>
+                      <p className="flex justify-between">
+                        <span className="text-muted-foreground">Portée:</span>
+                        <span className="font-medium">{platformData?.reach?.toLocaleString() || '0'}</span>
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
