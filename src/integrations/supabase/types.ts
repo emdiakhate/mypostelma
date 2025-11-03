@@ -242,6 +242,7 @@ export type Database = {
           lead_generation_limit: number | null
           name: string
           posts_unlimited: boolean | null
+          upload_post_username: string | null
         }
         Insert: {
           avatar?: string | null
@@ -255,6 +256,7 @@ export type Database = {
           lead_generation_limit?: number | null
           name: string
           posts_unlimited?: boolean | null
+          upload_post_username?: string | null
         }
         Update: {
           avatar?: string | null
@@ -268,6 +270,7 @@ export type Database = {
           lead_generation_limit?: number | null
           name?: string
           posts_unlimited?: boolean | null
+          upload_post_username?: string | null
         }
         Relationships: []
       }

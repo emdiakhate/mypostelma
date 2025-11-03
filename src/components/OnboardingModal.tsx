@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,16 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
         
         const result = await UploadPostService.createUserProfile(formattedUsername);
         console.log('[OnboardingModal] Profile created successfully:', result);
+        
+        // Stocker le username dans le profil Supabase
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ upload_post_username: formattedUsername })
+          .eq('id', userId);
+        
+        if (updateError) {
+          console.error('[OnboardingModal] Error saving username to profile:', updateError);
+        }
         
         setProfileCreated(true);
         

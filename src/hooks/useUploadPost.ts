@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { UploadPostService } from '@/services/uploadPost.service';
 import { formatUsernameForUploadPost } from '@/utils/usernameFormatter';
 import type { 
@@ -37,11 +38,29 @@ export function useUploadPost(): UseUploadPostReturn {
       setLoading(true);
       setError(null);
       
-      // Générer le username formaté à partir du nom de l'utilisateur
-      const userName = user.user_metadata?.name || user.email?.split('@')[0] || '';
-      const formattedUsername = formatUsernameForUploadPost(userName, user.id);
+      // Récupérer le username Upload-Post depuis le profil Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('upload_post_username')
+        .eq('id', user.id)
+        .single();
       
-      const data = await UploadPostService.getUserProfile(formattedUsername);
+      if (profileError) {
+        console.error('[useUploadPost] Error fetching profile from DB:', profileError);
+        throw profileError;
+      }
+      
+      const uploadPostUsername = profileData?.upload_post_username;
+      
+      if (!uploadPostUsername) {
+        console.log('[useUploadPost] No Upload-Post username found in profile');
+        setProfile(null);
+        setConnectedAccounts([]);
+        return;
+      }
+      
+      console.log('[useUploadPost] Fetching Upload-Post profile for:', uploadPostUsername);
+      const data = await UploadPostService.getUserProfile(uploadPostUsername);
       setProfile(data.profile);
       
       // Extraire les comptes connectés
@@ -71,12 +90,21 @@ export function useUploadPost(): UseUploadPostReturn {
       setLoading(true);
       setError(null);
       
-      // Générer le username formaté à partir du nom de l'utilisateur
-      const userName = user.user_metadata?.name || user.email?.split('@')[0] || '';
-      const formattedUsername = formatUsernameForUploadPost(userName, user.id);
+      // Récupérer le username Upload-Post depuis le profil Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('upload_post_username')
+        .eq('id', user.id)
+        .single();
       
-      console.log('[useUploadPost] Generating connect URL for:', formattedUsername);
-      const { access_url } = await UploadPostService.generateConnectUrl(formattedUsername, options);
+      if (profileError || !profileData?.upload_post_username) {
+        throw new Error('Aucun profil Upload-Post trouvé. Veuillez d\'abord créer votre profil.');
+      }
+      
+      const uploadPostUsername = profileData.upload_post_username;
+      
+      console.log('[useUploadPost] Generating connect URL for:', uploadPostUsername);
+      const { access_url } = await UploadPostService.generateConnectUrl(uploadPostUsername, options);
       
       console.log('[useUploadPost] Opening connect URL in new window:', access_url);
       
