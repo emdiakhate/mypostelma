@@ -45,8 +45,22 @@ serve(async (req) => {
     }
     logStep('User authenticated', { userId: user.id, email: user.email });
 
-    const url = new URL(req.url);
-    const username = url.searchParams.get('username') || user.id;
+    // Récupérer le username depuis le body ou les query params
+    let username: string;
+    if (req.method === 'POST') {
+      const body = await req.json();
+      username = body.username;
+      logStep('Username from POST body', { username });
+    } else {
+      const url = new URL(req.url);
+      username = url.searchParams.get('username') || user.id;
+      logStep('Username from query params', { username });
+    }
+    
+    if (!username) {
+      throw new Error('Username is required');
+    }
+    
     logStep('Fetching profile', { username });
 
     const response = await fetch(
