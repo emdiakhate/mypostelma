@@ -34,34 +34,50 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
   const [connecting, setConnecting] = useState(false);
   const [creatingProfile, setCreatingProfile] = useState(false);
   const [profileCreated, setProfileCreated] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
 
   // Créer le profil Upload-Post avec le nom de l'utilisateur formaté
   useEffect(() => {
     const createProfile = async () => {
-      if (!isOpen || profileCreated) return;
+      if (!isOpen || profileCreated || creatingProfile) return;
 
       setCreatingProfile(true);
+      setCreationError(null);
+      
       try {
         // Formater le nom d'utilisateur pour respecter les règles Upload-Post
         const formattedUsername = formatUsernameForUploadPost(userName, userId);
-        console.log(`Creating Upload-Post profile with username: ${formattedUsername}`);
+        console.log(`[OnboardingModal] Creating Upload-Post profile with username: ${formattedUsername}`);
         
-        await UploadPostService.createUserProfile(formattedUsername);
+        const result = await UploadPostService.createUserProfile(formattedUsername);
+        console.log('[OnboardingModal] Profile created successfully:', result);
+        
         setProfileCreated(true);
+        
+        // Attendre un peu avant de rafraîchir pour que l'API soit à jour
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await refreshProfile();
-      } catch (error) {
-        console.error('Error creating Upload-Post profile:', error);
-        // Continuer même si le profil existe déjà
-        setProfileCreated(true);
+        
+        toast.success(`Profil @${formattedUsername} créé avec succès`);
+      } catch (error: any) {
+        console.error('[OnboardingModal] Error creating Upload-Post profile:', error);
+        const errorMessage = error?.message || 'Erreur lors de la création du profil';
+        setCreationError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setCreatingProfile(false);
       }
     };
 
     createProfile();
-  }, [isOpen, userId, userName, profileCreated]);
+  }, [isOpen, userId, userName, profileCreated, creatingProfile]);
 
   const handleConnectAccounts = async () => {
+    if (!profileCreated) {
+      toast.error('Veuillez d\'abord créer votre profil');
+      return;
+    }
+    
     try {
       setConnecting(true);
       
@@ -108,7 +124,35 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Préparation de votre compte...</p>
+              <p className="text-muted-foreground">Création de votre profil...</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Profil : @{formatUsernameForUploadPost(userName, userId)}
+              </p>
+            </div>
+          </div>
+        ) : creationError ? (
+          <div className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+              <h4 className="font-medium text-destructive mb-2">Erreur de création du profil</h4>
+              <p className="text-sm text-destructive/90">{creationError}</p>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleSkip}
+                className="flex-1"
+              >
+                Passer cette étape
+              </Button>
+              <Button 
+                onClick={() => {
+                  setCreationError(null);
+                  setProfileCreated(false);
+                }}
+                className="flex-1"
+              >
+                Réessayer
+              </Button>
             </div>
           </div>
         ) : (

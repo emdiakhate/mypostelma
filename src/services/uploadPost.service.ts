@@ -33,16 +33,28 @@ export class UploadPostService {
    */
   static async createUserProfile(username: string): Promise<CreateProfileResponse> {
     try {
+      console.log(`[UploadPostService] Creating profile for username: ${username}`);
+      
       const { data, error } = await supabase.functions.invoke('upload-post-create-profile', {
         body: { username }
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to create profile');
+      console.log('[UploadPostService] Create profile response:', { data, error });
+
+      if (error) {
+        console.error('[UploadPostService] Supabase function error:', error);
+        throw new Error(error.message || 'Failed to create profile');
+      }
+      
+      if (!data?.success) {
+        const errorMsg = data?.error || data?.message || 'Failed to create profile';
+        console.error('[UploadPostService] API returned error:', errorMsg);
+        throw new Error(errorMsg);
+      }
 
       return data;
-    } catch (error) {
-      console.error('Error creating Upload-Post profile:', error);
+    } catch (error: any) {
+      console.error('[UploadPostService] Error creating Upload-Post profile:', error);
       throw error;
     }
   }
