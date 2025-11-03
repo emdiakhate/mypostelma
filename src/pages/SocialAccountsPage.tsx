@@ -134,45 +134,10 @@ export default function SocialAccountsPage() {
     toast.info('Fonctionnalité de déconnexion en cours de développement');
   };
 
-  if (loading && !profile) {
+  if (loading && connectedAccounts.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Afficher un message si pas de profil Upload-Post
-  if (!profile && !loading) {
-    return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Comptes Sociaux</h1>
-            <p className="text-muted-foreground">
-              Gérez vos comptes sociaux connectés
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="p-12">
-            <div className="text-center space-y-4">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Profil non configuré
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Votre profil Upload-Post n'a pas encore été créé. Veuillez compléter l'onboarding pour connecter vos comptes sociaux.
-                </p>
-                <Button onClick={() => window.location.reload()}>
-                  Rafraîchir la page
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -237,15 +202,12 @@ export default function SocialAccountsPage() {
                     </div>
                   </div>
                   
-                  {isConnected ? (
-                    <Badge variant="default" className="bg-green-500">
-                      Connecté
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      Non connecté
-                    </Badge>
-                  )}
+                  <Badge 
+                    variant={isConnected ? "default" : "secondary"}
+                    className={isConnected ? "bg-green-500" : ""}
+                  >
+                    {isConnected ? "Connecté" : "Déconnecté"}
+                  </Badge>
                 </div>
 
                 {isConnected && accountData ? (
