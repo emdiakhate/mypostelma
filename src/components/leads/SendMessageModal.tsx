@@ -179,28 +179,6 @@ export function SendMessageModal({
             </p>
           </div>
 
-          {/* Info sur les variables */}
-          {selectedTemplateId && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-900 font-medium mb-2">
-                ✨ Variables remplacées automatiquement :
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <code className="bg-blue-100 px-2 py-1 rounded">
-                  nom → {variables.nom}
-                </code>
-                <code className="bg-blue-100 px-2 py-1 rounded">
-                  entreprise → {variables.entreprise}
-                </code>
-                <code className="bg-blue-100 px-2 py-1 rounded">
-                  ville → {variables.ville}
-                </code>
-                <code className="bg-blue-100 px-2 py-1 rounded">
-                  catégorie → {variables.categorie}
-                </code>
-              </div>
-            </div>
-          )}
         </div>
 
         <DialogFooter>

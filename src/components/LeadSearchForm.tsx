@@ -65,6 +65,9 @@ const LeadSearchForm: React.FC<LeadSearchFormProps> = ({
       return;
     }
     
+    // Démarrer immédiatement la recherche pour changer le bouton
+    onSearch(searchParams);
+    
     try {
       const payload: ScrappingWebhookPayload = {
         query: searchParams.query,
@@ -79,8 +82,6 @@ const LeadSearchForm: React.FC<LeadSearchFormProps> = ({
       
       if (response && response.leads) {
         toast.success(`${response.leads.length} leads trouvés !`);
-        // Appeler la fonction onSearch avec les résultats
-        onSearch(searchParams);
       } else {
         toast.error('Aucun lead trouvé');
       }

@@ -54,6 +54,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
 }) => {
   console.log('LeadCard rendered for:', lead.Titre);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
 
   // Parser les réseaux sociaux depuis les arrays JSON stringifiés
   const parseSocialMedia = (jsonString: string): string[] => {
@@ -119,6 +120,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
   const handleAddToLeads = () => {
     if (onAddToLeads) {
       onAddToLeads(lead);
+      setIsAdded(true);
       toast.success('Lead ajouté à votre liste !');
     }
   };
@@ -294,10 +296,14 @@ const LeadCard: React.FC<LeadCardProps> = ({
           <Button
             size="sm"
             onClick={handleAddToLeads}
-            className="flex-1"
+            className={cn(
+              "flex-1 transition-colors",
+              isAdded && "bg-green-600 hover:bg-green-700"
+            )}
+            disabled={isAdded}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter aux leads
+            {isAdded ? 'Ajouté' : 'Ajouter aux leads'}
           </Button>
         </div>
       </CardContent>
