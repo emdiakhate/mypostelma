@@ -101,15 +101,44 @@ export function useUploadPost(): UseUploadPostReturn {
       // Récupérer le username Upload-Post depuis le profil Supabase
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('upload_post_username')
+        .select('upload_post_username, name')
         .eq('id', user.id)
         .single();
       
-      if (profileError || !profileData?.upload_post_username) {
-        throw new Error('Aucun profil Upload-Post trouvé. Veuillez d\'abord créer votre profil.');
+      if (profileError) {
+        throw new Error('Erreur lors de la récupération du profil utilisateur.');
       }
       
-      const uploadPostUsername = profileData.upload_post_username;
+      let uploadPostUsername = profileData?.upload_post_username;
+      
+      // Si pas de username, créer le profil Upload-Post
+      if (!uploadPostUsername) {
+        console.log('[useUploadPost] No upload_post_username found, creating Upload-Post profile');
+        
+        // Générer le username depuis le nom de l'utilisateur
+        uploadPostUsername = formatUsernameForUploadPost(profileData?.name || 'user', user.id);
+        
+        try {
+          // Créer le profil dans Upload-Post
+          await UploadPostService.createUserProfile(uploadPostUsername);
+          console.log('[useUploadPost] Upload-Post profile created:', uploadPostUsername);
+          
+          // Sauvegarder le username dans le profil Supabase
+          await supabase
+            .from('profiles')
+            .update({ upload_post_username: uploadPostUsername })
+            .eq('id', user.id);
+        } catch (createError) {
+          // Si le profil existe déjà dans Upload-Post, on continue
+          console.log('[useUploadPost] Profile may already exist in Upload-Post:', createError);
+          
+          // Sauvegarder quand même le username dans le profil Supabase
+          await supabase
+            .from('profiles')
+            .update({ upload_post_username: uploadPostUsername })
+            .eq('id', user.id);
+        }
+      }
       
       console.log('[useUploadPost] Generating connect URL for:', uploadPostUsername);
       const { access_url } = await UploadPostService.generateConnectUrl(uploadPostUsername, options);

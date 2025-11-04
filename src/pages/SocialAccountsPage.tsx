@@ -167,7 +167,8 @@ export default function SocialAccountsPage() {
   };
 
   const handleDisconnectPlatform = async (platformId: SocialPlatform) => {
-    toast.info('Fonctionnalité de déconnexion en cours de développement');
+    // Rediriger vers la landing page
+    window.location.href = '/';
   };
 
   // Loading skeleton
@@ -280,7 +281,7 @@ export default function SocialAccountsPage() {
                             
                             <div>
                               <p className="font-bold text-lg">
-                                {accountData.username || accountData.display_name}
+                                {accountData.display_name || accountData.username}
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 @{accountData.username || accountData.display_name?.toLowerCase().replace(/\s/g, '')}
