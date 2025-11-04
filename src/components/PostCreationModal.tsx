@@ -20,6 +20,7 @@ import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
 import PublishOptionsSection from './post-creation/PublishOptionsSection';
+import VoiceRecorderButton from './VoiceRecorderButton';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PostCreationModalProps {
@@ -571,7 +572,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             videoThumbnail: generatedVideoUrl || undefined,
             status: 'published' as const,
             captions: finalCaptions,
-            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+            author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
             campaign,
             campaignColor: initialData?.campaignColor
           };
@@ -597,7 +598,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             timeSlot: calculateTimeSlot(scheduledDateTime),
             status: 'scheduled' as const,
             captions: finalCaptions,
-            author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+            author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
             campaign,
             campaignColor: initialData?.campaignColor
           };
@@ -631,7 +632,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           timeSlot: calculateTimeSlot(scheduledDateTime),
           status: 'scheduled' as const,
           captions: finalCaptions,
-          author: currentUser?.user_metadata?.name || currentUser?.email || 'Unknown',
+          author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
           campaign,
           campaignColor: initialData?.campaignColor
         };
@@ -684,9 +685,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
           {/* Content */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
-              Contenu de la publication
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium">
+                Contenu de la publication
+              </label>
+              <VoiceRecorderButton 
+                onTranscription={(text) => setContent(prev => prev + (prev ? ' ' : '') + text)}
+              />
+            </div>
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}

@@ -225,13 +225,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1" style={{ backgroundColor: '#f5f5f5' }}>
+      <div className="flex-1 bg-gray-100 p-1">
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-px" style={{ backgroundColor: '#e5e5e5' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
             {weekDays.map((day) => (
               <div 
                 key={day.key} 
-                className="flex flex-col bg-white"
+                className="flex flex-col bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden"
               >
                 {/* Day Header */}
                 <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
@@ -259,8 +259,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "p-2 space-y-2 min-h-[100px]",
-                        snapshot.isDraggingOver && "bg-blue-50/30"
+                        "p-2 space-y-2 min-h-[150px] bg-gray-50",
+                        snapshot.isDraggingOver && "bg-blue-50/50"
                       )}
                     >
                       {postsByDay[day.key]?.map((post, index) => {

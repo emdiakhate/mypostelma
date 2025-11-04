@@ -24,27 +24,10 @@ const SettingsPage: React.FC = () => {
     emailNotifications: true,
     pushNotifications: false,
     weeklyReports: true,
-    mentionAlerts: true,
     
     // Paramètres d'affichage
     theme: 'light',
-    compactMode: false,
-    showEngagementMetrics: true,
-    
-    // Paramètres de sécurité
-    twoFactorAuth: false,
-    sessionTimeout: '24',
-    
-    // Paramètres de publication
-    autoSchedule: false,
-    defaultPlatforms: ['instagram'],
-    captionLength: 'medium',
-    
-    // Paramètres IA
-    aiTone: 'automatic',
-    aiLanguage: 'fr',
-    autoHashtags: true,
-    smartScheduling: true
+    compactMode: false
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -84,19 +67,8 @@ const SettingsPage: React.FC = () => {
       emailNotifications: true,
       pushNotifications: false,
       weeklyReports: true,
-      mentionAlerts: true,
       theme: 'light',
-      compactMode: false,
-      showEngagementMetrics: true,
-      twoFactorAuth: false,
-      sessionTimeout: '24',
-      autoSchedule: false,
-      defaultPlatforms: ['instagram'],
-      captionLength: 'medium',
-      aiTone: 'automatic',
-      aiLanguage: 'fr',
-      autoHashtags: true,
-      smartScheduling: true
+      compactMode: false
     };
     
     setSettings(defaultSettings);
@@ -135,14 +107,6 @@ const SettingsPage: React.FC = () => {
               <Button variant="ghost" className="w-full justify-start">
                 <Palette className="w-4 h-4 mr-2" />
                 Apparence
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                <Shield className="w-4 h-4 mr-2" />
-                Sécurité
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                <Globe className="w-4 h-4 mr-2" />
-                Publication
               </Button>
             </CardContent>
           </Card>
@@ -257,18 +221,6 @@ const SettingsPage: React.FC = () => {
                 />
               </div>
 
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Alertes de mentions</Label>
-                  <p className="text-sm text-gray-500">Être notifié des mentions</p>
-                </div>
-                <Switch
-                  checked={settings.mentionAlerts}
-                  onCheckedChange={(checked) => handleSettingChange('mentionAlerts', checked)}
-                />
-              </div>
             </CardContent>
           </Card>
 
@@ -308,130 +260,9 @@ const SettingsPage: React.FC = () => {
                   onCheckedChange={(checked) => handleSettingChange('compactMode', checked)}
                 />
               </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Afficher les métriques d'engagement</Label>
-                  <p className="text-sm text-gray-500">Afficher les statistiques d'engagement</p>
-                </div>
-                <Switch
-                  checked={settings.showEngagementMetrics}
-                  onCheckedChange={(checked) => handleSettingChange('showEngagementMetrics', checked)}
-                />
-              </div>
             </CardContent>
           </Card>
 
-          {/* Sécurité */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Sécurité
-              </CardTitle>
-              <CardDescription>
-                Paramètres de sécurité de votre compte
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Authentification à deux facteurs</Label>
-                  <p className="text-sm text-gray-500">Sécuriser votre compte avec 2FA</p>
-                </div>
-                <Switch
-                  checked={settings.twoFactorAuth}
-                  onCheckedChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="sessionTimeout">Délai d'expiration de session (heures)</Label>
-                <Select value={settings.sessionTimeout} onValueChange={(value) => handleSettingChange('sessionTimeout', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 heure</SelectItem>
-                    <SelectItem value="8">8 heures</SelectItem>
-                    <SelectItem value="24">24 heures</SelectItem>
-                    <SelectItem value="168">7 jours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Publication */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Publication
-              </CardTitle>
-              <CardDescription>
-                Paramètres par défaut pour les publications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Planification automatique</Label>
-                  <p className="text-sm text-gray-500">Planifier automatiquement les publications</p>
-                </div>
-                <Switch
-                  checked={settings.autoSchedule}
-                  onCheckedChange={(checked) => handleSettingChange('autoSchedule', checked)}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="captionLength">Longueur des légendes</Label>
-                <Select value={settings.captionLength} onValueChange={(value) => handleSettingChange('captionLength', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">Court (50-100 caractères)</SelectItem>
-                    <SelectItem value="medium">Moyen (100-200 caractères)</SelectItem>
-                    <SelectItem value="long">Long (200+ caractères)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Hashtags automatiques</Label>
-                  <p className="text-sm text-gray-500">Suggérer automatiquement des hashtags</p>
-                </div>
-                <Switch
-                  checked={settings.autoHashtags}
-                  onCheckedChange={(checked) => handleSettingChange('autoHashtags', checked)}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Planification intelligente</Label>
-                  <p className="text-sm text-gray-500">Suggérer les meilleurs moments pour publier</p>
-                </div>
-                <Switch
-                  checked={settings.smartScheduling}
-                  onCheckedChange={(checked) => handleSettingChange('smartScheduling', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Actions */}
           <Card>

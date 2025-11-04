@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
 interface BestTimeRecommendation {
   recommended: Date;
@@ -52,7 +53,10 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
             </div>
             <Button 
               size="sm" 
-              onClick={() => onUseBestTime(bestTimeRecommendation.recommended)}
+              onClick={() => {
+                onUseBestTime(bestTimeRecommendation.recommended);
+                toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
+              }}
               className="bg-green-500 hover:bg-green-600 text-white"
             >
               Utiliser ce créneau
@@ -76,6 +80,7 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
                 defaultDate.setDate(defaultDate.getDate() + 1);
                 defaultDate.setHours(18, 0, 0, 0);
                 onUseBestTime(defaultDate);
+                toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
               }}
               className="bg-green-500 hover:bg-green-600 text-white"
             >
@@ -95,7 +100,10 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
                     key={index}
                     variant="outline"
                     size="sm"
-                    onClick={() => onUseAlternativeTime(alt)}
+                    onClick={() => {
+                      onUseAlternativeTime(alt);
+                      toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
+                    }}
                     className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
                   >
                     {format(alt, 'EEEE HH:mm', { locale: fr })}
@@ -116,6 +124,7 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
                   altDate1.setDate(altDate1.getDate() + 2);
                   altDate1.setHours(14, 0, 0, 0);
                   onUseAlternativeTime(altDate1);
+                  toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
                 }}
                 className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
               >
@@ -129,6 +138,7 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
                   altDate2.setDate(altDate2.getDate() + 4);
                   altDate2.setHours(19, 0, 0, 0);
                   onUseAlternativeTime(altDate2);
+                  toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
                 }}
                 className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
               >
