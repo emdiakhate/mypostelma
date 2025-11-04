@@ -26,6 +26,7 @@ import PricingPage from "./pages/PricingPage";
 import CheckoutSimulation from "./pages/CheckoutSimulation";
 import ConnectSocialAccounts from "./pages/ConnectSocialAccounts";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
+import ConnectingAccountPage from "./pages/ConnectingAccountPage";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const ProtectedRoutes = () => {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/checkout" element={<CheckoutSimulation />} />
       <Route path="/checkout-success" element={<CheckoutSuccess />} />
+      <Route path="/connecting-account" element={<ConnectingAccountPage />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
