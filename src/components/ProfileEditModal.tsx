@@ -75,10 +75,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
         setIsUploading(true);
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
+        const filePath = `${userId}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('media-archives')
+          .from('avatars')
           .upload(filePath, avatarFile, { upsert: true });
 
         if (uploadError) {
@@ -91,7 +91,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
         // Récupérer l'URL publique
         const { data: { publicUrl } } = supabase.storage
-          .from('media-archives')
+          .from('avatars')
           .getPublicUrl(filePath);
 
         avatarUrl = publicUrl;
