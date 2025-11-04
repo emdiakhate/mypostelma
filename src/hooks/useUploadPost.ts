@@ -115,8 +115,13 @@ export function useUploadPost(): UseUploadPostReturn {
       if (!uploadPostUsername) {
         console.log('[useUploadPost] No upload_post_username found, creating Upload-Post profile');
         
-        // Générer le username depuis le nom de l'utilisateur
-        uploadPostUsername = formatUsernameForUploadPost(profileData?.name || 'user', user.id);
+        // Générer le username depuis le nom de l'utilisateur (même logique que le trigger)
+        const baseName = (profileData?.name || 'user')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_@-]/g, '_');
+        const userId = user.id.substring(0, 8);
+        uploadPostUsername = `${baseName}_${userId}`;
         
         try {
           // Créer le profil dans Upload-Post
