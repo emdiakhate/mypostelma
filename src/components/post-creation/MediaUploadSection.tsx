@@ -200,7 +200,10 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
       
       // Si mode image-to-video, uploader l'image vers Supabase Storage
       if (videoMode === 'image-to-video' && videoImage) {
-        const fileName = `video-source-${Date.now()}.${videoImage.name.split('.').pop()}`;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Utilisateur non authentifié');
+        
+        const fileName = `${user.id}/video-source-${Date.now()}.${videoImage.name.split('.').pop()}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('media-archives')
           .upload(fileName, videoImage);
