@@ -30,7 +30,7 @@ const aiGenerationTypes = [
   { 
     id: 'edit', 
     name: 'Édition d\'image', 
-    description: 'Modifier ou combiner des images', 
+    description: 'Modifier ou combiner une ou plusieurs images', 
     icon: Edit,
     requiresImages: 1,
     allowMultiple: true
