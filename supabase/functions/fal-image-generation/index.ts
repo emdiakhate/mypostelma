@@ -92,11 +92,11 @@ serve(async (req) => {
 
     // Poll for completion
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 40; // 40 seconds max
     let imageUrl = null;
 
     while (attempts < maxAttempts && !imageUrl) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
 
       const statusResponse = await fetch(`${endpoint}/requests/${requestId}`, {
         headers: {
