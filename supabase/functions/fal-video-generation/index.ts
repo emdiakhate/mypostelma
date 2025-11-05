@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +7,8 @@ const corsHeaders = {
 };
 
 const FAL_AI_API_KEY = Deno.env.get('FAL_AI_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -68,7 +71,7 @@ serve(async (req) => {
 
     // Poll for completion
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 30; // 2.5 minutes max to avoid timeout
     let videoUrl = null;
 
     while (attempts < maxAttempts && !videoUrl) {
@@ -85,7 +88,6 @@ serve(async (req) => {
         console.log(`Status check attempt ${attempts + 1}:`, statusResult);
 
         if (statusResult.status === 'COMPLETED') {
-          // Seedance returns data.video.url
           videoUrl = statusResult.data?.video?.url || statusResult.video?.url || statusResult.output?.video?.url;
           break;
         } else if (statusResult.status === 'FAILED' || statusResult.status === 'failed') {
@@ -100,10 +102,55 @@ serve(async (req) => {
       throw new Error('Video generation timeout');
     }
 
+    console.log('Video generated successfully:', videoUrl);
+
+    // Download the video and upload to Supabase Storage
+    const videoResponse = await fetch(videoUrl);
+    if (!videoResponse.ok) {
+      throw new Error('Failed to download generated video');
+    }
+
+    const videoBlob = await videoResponse.blob();
+    const videoFileName = `generated-video-${Date.now()}.mp4`;
+
+    // Get user from request
+    const authHeader = req.headers.get('Authorization');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    let userId = 'anonymous';
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    // Upload to Supabase Storage
+    const storagePath = `${userId}/${videoFileName}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('media-archives')
+      .upload(storagePath, videoBlob, {
+        contentType: 'video/mp4',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw new Error(`Failed to upload video to storage: ${uploadError.message}`);
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('media-archives')
+      .getPublicUrl(storagePath);
+
+    console.log('Video uploaded to storage:', publicUrl);
+
     return new Response(
       JSON.stringify({ 
         success: true,
-        videoUrl,
+        videoUrl: publicUrl,
         requestId 
       }),
       { 
