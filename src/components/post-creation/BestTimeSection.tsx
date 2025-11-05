@@ -1,168 +1,139 @@
-import React, { memo } from 'react';
-import { Lightbulb, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { memo, useMemo } from 'react';
+import { Lightbulb, Clock, TrendingUp } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
-
-interface BestTimeRecommendation {
-  recommended: Date;
-  reason: string;
-  alternatives: Date[];
-}
+import { getBestPostingTimes, getDayFactor, getBestDay } from '@/data/bestPostingTimes';
 
 interface BestTimeSectionProps {
-  bestTimeRecommendation: BestTimeRecommendation | null;
-  engagementChartData: any[];
   onUseBestTime: (date: Date) => void;
-  onUseAlternativeTime: (date: Date) => void;
   selectedPlatforms: string[];
+  selectedDomain: string;
 }
 
 const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
-  bestTimeRecommendation,
-  engagementChartData,
   onUseBestTime,
-  onUseAlternativeTime,
-  selectedPlatforms
+  selectedPlatforms,
+  selectedDomain
 }) => {
+  const platform = selectedPlatforms[0] || 'instagram';
+  
+  // Charger les meilleurs horaires pour la plateforme et le domaine
+  const postingTimes = useMemo(() => {
+    return getBestPostingTimes(platform, selectedDomain);
+  }, [platform, selectedDomain]);
+
+  // Trouver le meilleur moment
+  const bestTime = useMemo(() => {
+    if (postingTimes.length === 0) return null;
+    return postingTimes.reduce((max, time) => 
+      time.engagement > max.engagement ? time : max
+    );
+  }, [postingTimes]);
+
+  // Obtenir le meilleur jour
+  const { day: bestDayName, boost } = useMemo(() => 
+    getBestDay(platform), [platform]
+  );
+
+  // Créer une date pour le meilleur moment (demain à cette heure)
+  const getBestDate = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const date = addDays(new Date(), 1);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
+
   return (
     <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-primary/20">
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">💡 Meilleur moment</h3>
+        <h3 className="font-semibold text-foreground">⏰ Meilleurs Moments</h3>
         <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-          Recommandé
+          Pour {platform}
         </Badge>
       </div>
       
       <div className="space-y-3">
-        {/* Moment recommandé */}
-        {bestTimeRecommendation ? (
-          <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-3">
-              <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <div>
-                <p className="font-medium text-foreground">
-                  {format(bestTimeRecommendation.recommended, 'EEEE dd/MM à HH:mm', { locale: fr })}
-                </p>
-                <p className="text-sm text-muted-foreground">{bestTimeRecommendation.reason}</p>
-              </div>
-            </div>
-            <Button 
-              size="sm" 
-              onClick={() => {
-                onUseBestTime(bestTimeRecommendation.recommended);
-                toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
-              }}
-              className="bg-green-500 hover:bg-green-600 text-white"
-            >
-              Utiliser ce créneau
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-3">
-              <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <div>
-                <p className="font-medium text-foreground">
-                  Mardi 15/01 à 18:00
-                </p>
-                <p className="text-sm text-muted-foreground">Moment optimal général pour {selectedPlatforms[0]}</p>
-              </div>
-            </div>
-            <Button 
-              size="sm" 
-              onClick={() => {
-                const defaultDate = new Date();
-                defaultDate.setDate(defaultDate.getDate() + 1);
-                defaultDate.setHours(18, 0, 0, 0);
-                onUseBestTime(defaultDate);
-                toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
-              }}
-              className="bg-green-500 hover:bg-green-600 text-white"
-            >
-              Utiliser ce créneau
-            </Button>
-          </div>
-        )}
-    
-        {/* Alternatives */}
-        {bestTimeRecommendation ? (
-          bestTimeRecommendation.alternatives.length > 0 && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Ou essayez :</p>
-              <div className="flex gap-2 flex-wrap">
-                {bestTimeRecommendation.alternatives.map((alt, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onUseAlternativeTime(alt);
-                      toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
-                    }}
-                    className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
-                  >
-                    {format(alt, 'EEEE HH:mm', { locale: fr })}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )
-        ) : (
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Ou essayez :</p>
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const altDate1 = new Date();
-                  altDate1.setDate(altDate1.getDate() + 2);
-                  altDate1.setHours(14, 0, 0, 0);
-                  onUseAlternativeTime(altDate1);
-                  toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
-                }}
-                className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
-              >
-                Jeudi 14h
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const altDate2 = new Date();
-                  altDate2.setDate(altDate2.getDate() + 4);
-                  altDate2.setHours(19, 0, 0, 0);
-                  onUseAlternativeTime(altDate2);
-                  toast.success('Créneau pré-rempli dans la section "Programmer la publication"');
-                }}
-                className="text-xs border-yellow-200 text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
-              >
-                Vendredi 19h
-              </Button>
-            </div>
+        {/* Info jour optimal */}
+        {boost > 0 && (
+          <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
+              <TrendingUp className="w-3 h-3" />
+              <span>
+                📈 Le {bestDayName} génère <strong>+{boost}%</strong> d'engagement sur {platform}
+              </span>
+            </p>
           </div>
         )}
 
-        {/* Graphique d'engagement */}
-        {engagementChartData.length > 0 && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-foreground mb-2">Engagement par heure</p>
-            <div className="h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={engagementChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="engagement" fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+        {/* Meilleurs moments */}
+        {postingTimes.length > 0 ? (
+          postingTimes.map((time, index) => {
+            const isBest = bestTime && time.time === bestTime.time;
+            const targetDate = getBestDate(time.time);
+            
+            return (
+              <div 
+                key={index}
+                className={`p-3 bg-background rounded-lg border ${
+                  isBest 
+                    ? 'border-green-400 dark:border-green-600 shadow-sm' 
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className={`w-4 h-4 ${isBest ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`} />
+                      <p className="font-medium text-foreground">
+                        {time.time} - {time.label}
+                      </p>
+                      {isBest && (
+                        <Badge className="bg-green-500 text-white text-xs">
+                          🔥 Meilleur
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground ml-6">
+                      💡 {time.reason}
+                    </p>
+                    <div className="ml-6 mt-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className={`h-full ${isBest ? 'bg-green-500' : 'bg-blue-500'}`}
+                            style={{ width: `${time.engagement}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          +{time.engagement}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      onUseBestTime(targetDate);
+                      toast.success(`Programmé pour demain à ${time.time}`);
+                    }}
+                    variant={isBest ? "default" : "outline"}
+                    className={isBest ? "bg-green-500 hover:bg-green-600 text-white" : ""}
+                  >
+                    Choisir
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-3 bg-background rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-muted-foreground">
+              Aucune recommandation disponible pour ce domaine
+            </p>
           </div>
         )}
       </div>

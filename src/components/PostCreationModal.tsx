@@ -181,6 +181,10 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
   const [isCreateToneOpen, setIsCreateToneOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<string>('mode-beaute');
+  
+  // Extract hashtags from content for tracking
+  const selectedHashtags = content.match(/#\w+/g) || [];
 
   // Personal tones hook
   const { personalTones } = usePersonalTones();
@@ -765,26 +769,22 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             />
           </div>
 
-          {/* Section Meilleurs moments */}
-          {selectedAccounts.length > 0 && (
-            <BestTimeSection 
-              bestTimeRecommendation={bestTimeRecommendation}
-              engagementChartData={engagementChartData}
-              onUseBestTime={handleUseBestTime}
-              onUseAlternativeTime={handleUseAlternativeTime}
-              selectedPlatforms={selectedPlatforms}
-            />
-          )}
-
           {/* Section Hashtags */}
           {selectedPlatforms.length > 0 && (
             <HashtagSection 
-              hashtagSuggestions={hashtagSuggestions}
-              hashtagSets={hashtagSets}
-              selectedHashtagSet={selectedHashtagSet}
-              onHashtagSetChange={setSelectedHashtagSet}
+              selectedDomain={selectedDomain}
+              onDomainChange={setSelectedDomain}
               onAddHashtag={handleAddHashtag}
-              onUseHashtagSet={handleUseHashtagSet}
+              selectedHashtags={selectedHashtags}
+            />
+          )}
+
+          {/* Section Meilleurs moments */}
+          {selectedAccounts.length > 0 && (
+            <BestTimeSection 
+              onUseBestTime={handleUseBestTime}
+              selectedPlatforms={selectedPlatforms}
+              selectedDomain={selectedDomain}
             />
           )}
 
