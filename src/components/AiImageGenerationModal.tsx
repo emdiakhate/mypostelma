@@ -191,7 +191,7 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
             {selectedType && selectedType.requiresImages > 0 && (
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Images sources (une ou plusieurs)
+                  Images sources (au moins 1 image)
                 </label>
                 <div className="border-2 border-dashed border-border rounded-lg p-4">
                   <input
