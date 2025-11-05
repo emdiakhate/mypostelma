@@ -17,7 +17,7 @@ interface AiImageGenerationModalProps {
   onUseImage: (imageUrl: string) => void;
 }
 
-type GenerationType = 'simple' | 'edit' | 'combine' | 'ugc';
+type GenerationType = 'simple' | 'edit';
 
 const aiGenerationTypes = [
   { 
@@ -30,23 +30,10 @@ const aiGenerationTypes = [
   { 
     id: 'edit', 
     name: 'Édition d\'image', 
-    description: 'Modifier une image existante', 
+    description: 'Modifier ou combiner des images', 
     icon: Edit,
-    requiresImages: 1 
-  },
-  { 
-    id: 'combine', 
-    name: 'Combinaison', 
-    description: 'Combiner deux images', 
-    icon: Layers,
-    requiresImages: 2 
-  },
-  { 
-    id: 'ugc', 
-    name: 'UGC', 
-    description: 'Contenu généré par utilisateur', 
-    icon: Users,
-    requiresImages: 1 
+    requiresImages: 1,
+    allowMultiple: true
   }
 ];
 
@@ -83,14 +70,14 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
   }, []);
 
   const handleGenerateImage = useCallback(async () => {
-    if (!aiPrompt.trim() && aiGenerationType !== 'ugc') {
+    if (!aiPrompt.trim()) {
       toast.error('Veuillez saisir un prompt pour la génération');
       return;
     }
     
     const selectedType = aiGenerationTypes.find(t => t.id === aiGenerationType);
     if (selectedType && selectedType.requiresImages > 0 && aiSourceImages.length < selectedType.requiresImages) {
-      toast.error(`Veuillez ajouter ${selectedType.requiresImages} image${selectedType.requiresImages > 1 ? 's' : ''} source${selectedType.requiresImages > 1 ? 's' : ''}`);
+      toast.error(`Veuillez ajouter au moins ${selectedType.requiresImages} image${selectedType.requiresImages > 1 ? 's' : ''}`);
       return;
     }
     
@@ -104,7 +91,7 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
       const { data, error } = await supabase.functions.invoke('fal-image-generation', {
         body: {
           prompt: aiPrompt,
-          image_url: aiSourceImages[0] || null,
+          image_urls: aiGenerationType === 'edit' ? aiSourceImages : null,
           type: aiGenerationType
         }
       });
@@ -187,19 +174,13 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
 
             {/* Prompt */}
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Prompt {aiGenerationType === 'ugc' ? '(optionnel)' : ''}
-              </label>
+              <label className="block text-sm font-medium mb-2">Prompt</label>
               <Textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder={
-                  aiGenerationType === 'ugc' 
-                    ? "Décrivez le contenu souhaité (optionnel)..." 
-                    : aiGenerationType === 'edit'
-                    ? "Décrivez les modifications à apporter..."
-                    : aiGenerationType === 'combine'
-                    ? "Décrivez comment combiner les images..."
+                  aiGenerationType === 'edit'
+                    ? "Décrivez les modifications à apporter ou comment combiner les images..."
                     : "Décrivez l'image que vous voulez générer..."
                 }
                 className="min-h-24 resize-none"
@@ -210,14 +191,14 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
             {selectedType && selectedType.requiresImages > 0 && (
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Images sources {selectedType.requiresImages > 1 ? `(${selectedType.requiresImages} images requises)` : '(1 image requise)'}
+                  Images sources (une ou plusieurs)
                 </label>
                 <div className="border-2 border-dashed border-border rounded-lg p-4">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleAiSourceImageUpload}
-                    multiple={selectedType.requiresImages > 1}
+                    multiple
                     className="hidden"
                     id="ai-source-upload"
                   />
@@ -242,17 +223,15 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
                             </button>
                           </div>
                         ))}
-                        {aiSourceImages.length < selectedType.requiresImages && (
-                          <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-32">
-                            <span className="text-muted-foreground text-xs">+ Ajouter</span>
-                          </div>
-                        )}
+                        <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-32">
+                          <span className="text-muted-foreground text-xs">+ Ajouter</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-8">
                         <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
                         <p className="text-sm text-foreground">
-                          Cliquez pour sélectionner {selectedType.requiresImages > 1 ? `${selectedType.requiresImages} images` : '1 image'}
+                          Cliquez pour sélectionner une ou plusieurs images
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           JPG, PNG ou WEBP

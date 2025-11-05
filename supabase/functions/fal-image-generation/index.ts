@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, image_url, type = 'simple' } = await req.json();
+    const { prompt, image_urls, type = 'simple' } = await req.json();
 
     if (!FAL_AI_API_KEY) {
       throw new Error('FAL_AI_API_KEY not configured');
@@ -31,36 +31,17 @@ serve(async (req) => {
         num_inference_steps: 4,
         num_images: 1,
       };
-    } else if (type === 'edit' && image_url) {
+    } else if (type === 'edit' && image_urls && image_urls.length > 0) {
       endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
       payload = {
         prompt,
-        image_url,
-        image_size: "square_hd",
-        num_inference_steps: 4,
-        num_images: 1,
-      };
-    } else if (type === 'combine' && image_url) {
-      // For combining images, use image_url as array
-      endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
-      payload = {
-        prompt,
-        image_url: Array.isArray(image_url) ? image_url[0] : image_url,
-        image_size: "square_hd",
-        num_inference_steps: 4,
-        num_images: 1,
-      };
-    } else if (type === 'ugc' && image_url) {
-      endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
-      payload = {
-        prompt: prompt || "Transform this image",
-        image_url,
+        image_urls: image_urls,
         image_size: "square_hd",
         num_inference_steps: 4,
         num_images: 1,
       };
     } else {
-      throw new Error('Invalid generation type or missing image_url for edit/combine/ugc');
+      throw new Error('Invalid generation type or missing image_urls for edit');
     }
 
     console.log('Calling fal.ai with payload:', payload);
