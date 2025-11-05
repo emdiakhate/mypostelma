@@ -24,11 +24,10 @@ serve(async (req) => {
 
     // Configure endpoint based on mode
     if (mode === 'image-to-video' && image_url) {
-      endpoint = 'https://queue.fal.run/fal-ai/luma-dream-machine/image-to-video';
+      endpoint = 'https://queue.fal.run/fal-ai/bytedance/seedance/v1/pro/fast/image-to-video';
       payload = {
         prompt,
         image_url,
-        duration,
       };
     } else if (mode === 'text-to-video') {
       endpoint = 'https://queue.fal.run/fal-ai/luma-dream-machine';
@@ -85,10 +84,11 @@ serve(async (req) => {
         const statusResult = await statusResponse.json();
         console.log(`Status check attempt ${attempts + 1}:`, statusResult);
 
-        if (statusResult.status === 'completed') {
-          videoUrl = statusResult.video?.url || statusResult.output?.video?.url;
+        if (statusResult.status === 'COMPLETED') {
+          // Seedance returns data.video.url
+          videoUrl = statusResult.data?.video?.url || statusResult.video?.url || statusResult.output?.video?.url;
           break;
-        } else if (statusResult.status === 'failed') {
+        } else if (statusResult.status === 'FAILED' || statusResult.status === 'failed') {
           throw new Error('Video generation failed');
         }
       }
