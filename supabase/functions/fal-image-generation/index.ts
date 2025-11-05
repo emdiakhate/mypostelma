@@ -64,12 +64,13 @@ serve(async (req) => {
     const result = await response.json();
     console.log('fal.ai response:', result);
 
-    // fal.ai returns a request_id and status_url for async processing
+    // fal.ai returns a request_id and response_url for async processing
     const requestId = result.request_id;
     const statusUrl = result.status_url;
+    const responseUrl = result.response_url;
 
-    if (!requestId || !statusUrl) {
-      throw new Error('No request_id or status_url received from fal.ai');
+    if (!requestId || !statusUrl || !responseUrl) {
+      throw new Error('No request_id, status_url or response_url received from fal.ai');
     }
 
     // Poll for completion
@@ -90,16 +91,26 @@ serve(async (req) => {
         const statusResult = await statusResponse.json();
         console.log(`Status check attempt ${attempts + 1}:`, statusResult);
 
-        // Si on a des images dans la réponse, c'est terminé
-        if (statusResult.images && statusResult.images.length > 0) {
-          imageUrl = statusResult.images[0].url;
-          console.log('Image générée avec succès:', imageUrl);
-          break;
-        } 
-        
-        // Vérifier aussi le format avec status
+        // Quand le statut est COMPLETED, récupérer le résultat via response_url
         if (statusResult.status === 'COMPLETED') {
-          imageUrl = statusResult.images?.[0]?.url || statusResult.image?.url;
+          const resultResponse = await fetch(responseUrl, {
+            headers: {
+              'Authorization': `Key ${FAL_AI_API_KEY}`,
+            },
+          });
+
+          if (resultResponse.ok) {
+            const finalResult = await resultResponse.json();
+            console.log('Final result:', finalResult);
+            
+            if (finalResult.images && finalResult.images.length > 0) {
+              imageUrl = finalResult.images[0].url;
+              console.log('Image générée avec succès:', imageUrl);
+            } else if (finalResult.image?.url) {
+              imageUrl = finalResult.image.url;
+              console.log('Image générée avec succès:', imageUrl);
+            }
+          }
           break;
         } else if (statusResult.status === 'FAILED') {
           throw new Error('Image generation failed');
