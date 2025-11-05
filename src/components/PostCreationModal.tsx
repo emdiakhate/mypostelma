@@ -425,9 +425,49 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       } finally {
         setIsGeneratingImage(false);
       }
-    } else {
-      // Pour le type simple, garder l'ancien comportement
-      toast.info('Génération simple non encore implémentée via webhook');
+    } else if (aiGenerationType === 'simple') {
+      // Génération simple avec FAL.ai
+      if (!aiPrompt.trim()) {
+        toast.error('Veuillez saisir un prompt pour la génération');
+        return;
+      }
+      
+      if (isGeneratingImage) {
+        console.log('Génération déjà en cours, appel ignoré');
+        return;
+      }
+      
+      setIsGeneratingImage(true);
+      try {
+        console.log('Appel FAL.ai pour génération simple avec prompt:', aiPrompt);
+        
+        const { data, error } = await supabase.functions.invoke('fal-image-generation', {
+          body: {
+            prompt: aiPrompt,
+            type: 'simple'
+          }
+        });
+        
+        if (error) {
+          console.error('Erreur edge function:', error);
+          throw error;
+        }
+        
+        console.log('Réponse FAL.ai:', data);
+        
+        if (data && data.success && data.imageUrl) {
+          setGeneratedImages([data.imageUrl]);
+          toast.success('Image générée avec succès !');
+        } else {
+          console.error('Réponse invalide de FAL.ai:', data);
+          toast.error(data?.error || 'Échec de la génération d\'image');
+        }
+      } catch (error) {
+        console.error('Erreur génération simple IA:', error);
+        toast.error('Erreur lors de la génération d\'image');
+      } finally {
+        setIsGeneratingImage(false);
+      }
     }
   }, [aiGenerationType, aiPrompt, aiSourceImages]);
 
