@@ -120,53 +120,11 @@ serve(async (req) => {
 
     console.log('Video generated successfully:', videoUrl);
 
-    // Download the video and upload to Supabase Storage
-    const videoResponse = await fetch(videoUrl);
-    if (!videoResponse.ok) {
-      throw new Error('Failed to download generated video');
-    }
-
-    const videoBlob = await videoResponse.blob();
-    const videoFileName = `generated-video-${Date.now()}.mp4`;
-
-    // Get user from request
-    const authHeader = req.headers.get('Authorization');
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    let userId = 'anonymous';
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) {
-        userId = user.id;
-      }
-    }
-
-    // Upload to Supabase Storage
-    const storagePath = `${userId}/${videoFileName}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('media-archives')
-      .upload(storagePath, videoBlob, {
-        contentType: 'video/mp4',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      throw new Error(`Failed to upload video to storage: ${uploadError.message}`);
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('media-archives')
-      .getPublicUrl(storagePath);
-
-    console.log('Video uploaded to storage:', publicUrl);
-
+    // Return the fal.ai URL directly (no storage upload to avoid size limits)
     return new Response(
       JSON.stringify({ 
         success: true,
-        videoUrl: publicUrl,
+        videoUrl: videoUrl,
         requestId 
       }),
       { 
