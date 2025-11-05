@@ -1,14 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { Mic, Square } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Mic, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface VoiceRecorderButtonProps {
   onTranscription: (text: string) => void;
 }
 
-const VoiceRecorderButton: React.FC<VoiceRecorderButtonProps> = ({ onTranscription }) => {
+const VoiceRecorderButton = ({ onTranscription }: VoiceRecorderButtonProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -104,27 +105,19 @@ const VoiceRecorderButton: React.FC<VoiceRecorderButtonProps> = ({ onTranscripti
   return (
     <Button
       type="button"
-      variant={isRecording ? "destructive" : "outline"}
-      size="sm"
+      variant="ghost"
+      size="icon"
       onClick={isRecording ? stopRecording : startRecording}
       disabled={isProcessing}
-      className="flex items-center gap-2"
+      className={cn(
+        "w-8 h-8 rounded-full",
+        isRecording && "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+      )}
     >
-      {isRecording ? (
-        <>
-          <Square className="w-4 h-4 animate-pulse" />
-          Arrêter
-        </>
-      ) : isProcessing ? (
-        <>
-          <Mic className="w-4 h-4 animate-pulse" />
-          Traitement...
-        </>
+      {isProcessing ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        <>
-          <Mic className="w-4 h-4" />
-          Message vocal
-        </>
+        <Mic className={cn("w-4 h-4", isRecording ? "text-white" : "text-muted-foreground")} />
       )}
     </Button>
   );

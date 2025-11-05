@@ -328,6 +328,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_writing_styles: {
+        Row: {
+          created_at: string | null
+          examples: string[]
+          id: string
+          is_active: boolean | null
+          name: string
+          style_description: string | null
+          style_instructions: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          examples: string[]
+          id?: string
+          is_active?: boolean | null
+          name: string
+          style_description?: string | null
+          style_instructions: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          examples?: string[]
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          style_description?: string | null
+          style_instructions?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

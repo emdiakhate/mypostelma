@@ -1,11 +1,13 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Sparkles, Mic } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { FacebookPreview, TwitterPreview, InstagramPreview, LinkedInPreview, TikTokPreview, YouTubePreview } from './PreviewModal';
 import { useBestTime, useEngagementChart } from '@/hooks/useBestTime';
@@ -21,6 +23,8 @@ import BestTimeSection from './post-creation/BestTimeSection';
 import HashtagSection from './post-creation/HashtagSection';
 import PublishOptionsSection from './post-creation/PublishOptionsSection';
 import VoiceRecorderButton from './VoiceRecorderButton';
+import { CreatePersonalToneModal } from './CreatePersonalToneModal';
+import { usePersonalTones } from '@/hooks/usePersonalTones';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PostCreationModalProps {
@@ -175,6 +179,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   );
   const [tone, setTone] = useState<string>('automatic');
   const [selectedHashtagSet, setSelectedHashtagSet] = useState<string>('');
+  const [isCreateToneOpen, setIsCreateToneOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  // Personal tones hook
+  const { personalTones } = usePersonalTones();
 
   // États pour la génération IA
   const [mediaSource, setMediaSource] = useState<'upload' | 'ai'>('upload');
@@ -595,8 +604,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex">
+    <>
+      <CreatePersonalToneModal 
+        open={isCreateToneOpen}
+        onOpenChange={setIsCreateToneOpen}
+      />
+      
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex">
         <div className="w-1/2 p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">
@@ -609,20 +624,31 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
           {/* Content */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium">
-                Contenu de la publication
-              </label>
-              <VoiceRecorderButton 
-                onTranscription={(text) => setContent(prev => prev + (prev ? ' ' : '') + text)}
+            <label className="block text-sm font-medium mb-2">
+              Contenu de la publication
+            </label>
+            <div className="relative">
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Rédigez votre message..."
+                className="min-h-24 resize-none pr-10"
               />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="absolute bottom-2 right-2">
+                      <VoiceRecorderButton 
+                        onTranscription={(text) => setContent(prev => prev + (prev ? ' ' : '') + text)}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Dicter votre message</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Rédigez votre message..."
-              className="min-h-24 resize-none"
-            />
             <div className="text-right text-xs text-gray-500 mt-1">
               {content.length}/2200 caractères
             </div>
@@ -630,23 +656,52 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             {/* Tone de voix */}
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">Tone de voix</label>
-              <Select value={tone} onValueChange={setTone}>
+              <Select value={tone} onValueChange={(value) => {
+                if (value === 'create-personal') {
+                  setIsCreateToneOpen(true);
+                } else {
+                  setTone(value);
+                }
+              }}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionner un tone" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TONE_OPTIONS.map((tone) => {
-                    const IconComponent = tone.icon;
+                  {TONE_OPTIONS.map((toneOption) => {
+                    const IconComponent = toneOption.icon;
                     return (
-                      <SelectItem key={tone.id} value={tone.id}>
+                      <SelectItem key={toneOption.id} value={toneOption.id}>
                         <div className="flex items-center gap-2">
-                          <IconComponent className={`w-4 h-4 ${tone.color}`} />
-                          <span>{tone.label}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{tone.description}</span>
+                          <IconComponent className={`w-4 h-4 ${toneOption.color}`} />
+                          <span>{toneOption.label}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{toneOption.description}</span>
                         </div>
                       </SelectItem>
                     );
                   })}
+                  
+                  {personalTones.length > 0 && (
+                    <>
+                      <Separator className="my-2" />
+                      {personalTones.map((personalTone) => (
+                        <SelectItem key={personalTone.id} value={personalTone.id}>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-gradient bg-gradient-to-r from-primary to-purple-600" />
+                            <span>{personalTone.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">Ton personnel</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  <Separator className="my-2" />
+                  <SelectItem value="create-personal">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Sparkles className="w-4 h-4" />
+                      <span>➕ Créer mon ton personnel</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -761,6 +816,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         />
       </div>
     </div>
+    </>
   );
 };
 
