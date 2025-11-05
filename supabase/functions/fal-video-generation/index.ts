@@ -91,7 +91,20 @@ serve(async (req) => {
         console.log(`Status check attempt ${attempts + 1}:`, statusResult);
 
         if (statusResult.status === 'COMPLETED') {
-          videoUrl = statusResult.data?.video?.url || statusResult.video?.url || statusResult.output?.video?.url;
+          // Fetch the final result from response_url
+          const resultResponse = await fetch(statusResult.response_url, {
+            headers: {
+              'Authorization': `Key ${FAL_AI_API_KEY}`,
+            },
+          });
+
+          if (resultResponse.ok) {
+            const finalResult = await resultResponse.json();
+            console.log('Final result from fal.ai:', finalResult);
+            videoUrl = finalResult.data?.video?.url || finalResult.video?.url || finalResult.output?.video?.url;
+          } else {
+            console.error('Failed to fetch final result:', await resultResponse.text());
+          }
           break;
         } else if (statusResult.status === 'FAILED' || statusResult.status === 'failed') {
           throw new Error('Video generation failed');
