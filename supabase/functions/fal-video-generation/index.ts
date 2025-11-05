@@ -62,22 +62,25 @@ serve(async (req) => {
     const result = await response.json();
     console.log('fal.ai video response:', result);
 
-    // fal.ai returns a request_id for async processing
+    // fal.ai returns status_url for checking progress
+    const statusUrl = result.status_url;
     const requestId = result.request_id;
 
-    if (!requestId) {
-      throw new Error('No request_id received from fal.ai');
+    if (!statusUrl || !requestId) {
+      throw new Error('No status_url or request_id received from fal.ai');
     }
 
     // Poll for completion
     let attempts = 0;
-    const maxAttempts = 30; // 2.5 minutes max to avoid timeout
+    const maxAttempts = 24; // 2 minutes max (5s * 24 = 120s)
     let videoUrl = null;
 
     while (attempts < maxAttempts && !videoUrl) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
 
-      const statusResponse = await fetch(`${endpoint}/requests/${requestId}`, {
+      console.log(`Checking status (attempt ${attempts + 1}/${maxAttempts})...`);
+      
+      const statusResponse = await fetch(statusUrl, {
         headers: {
           'Authorization': `Key ${FAL_AI_API_KEY}`,
         },
