@@ -64,22 +64,23 @@ serve(async (req) => {
     const result = await response.json();
     console.log('fal.ai response:', result);
 
-    // fal.ai returns a request_id for async processing
+    // fal.ai returns a request_id and status_url for async processing
     const requestId = result.request_id;
+    const statusUrl = result.status_url;
 
-    if (!requestId) {
-      throw new Error('No request_id received from fal.ai');
+    if (!requestId || !statusUrl) {
+      throw new Error('No request_id or status_url received from fal.ai');
     }
 
     // Poll for completion
     let attempts = 0;
-    const maxAttempts = 40; // 40 seconds max
+    const maxAttempts = 60; // 60 seconds max for image editing
     let imageUrl = null;
 
     while (attempts < maxAttempts && !imageUrl) {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
 
-      const statusResponse = await fetch(`${endpoint}/requests/${requestId}`, {
+      const statusResponse = await fetch(statusUrl, {
         headers: {
           'Authorization': `Key ${FAL_AI_API_KEY}`,
         },
