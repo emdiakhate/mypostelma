@@ -5,9 +5,11 @@ import { Post } from '@/types/Post';
 import PostCard from './PostCard';
 import PostCreationModal from './PostCreationModal';
 import PostPreviewModal from './PostPreviewModal';
+import { EmptyCalendarState } from './calendar/EmptyCalendarState';
+import { useUploadPost } from '@/hooks/useUploadPost';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { format, addDays, startOfWeek, addWeeks } from 'date-fns';
+import { Plus, ChevronLeft, ChevronRight, Clock, TrendingUp } from 'lucide-react';
+import { format, addDays, startOfWeek, addWeeks, isToday, isWeekend } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +51,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   // Hooks React Router
   const navigate = useNavigate();
+  
+  // Hook pour vérifier les comptes connectés
+  const { connectedAccounts } = useUploadPost();
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDayForPost, setSelectedDayForPost] = useState<string>('');
@@ -225,26 +230,65 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Contenu du calendrier */}
-      <div className="flex-1 bg-gray-100 p-1 min-h-[600px]">
+      <div className="flex-1 bg-gray-100 p-1 min-h-[600px] relative">
+        {/* Empty State - Affiché uniquement si aucun post */}
+        {posts.length === 0 && (
+          <EmptyCalendarState
+            hasConnectedAccounts={connectedAccounts.length > 0}
+            hasDrafts={false}
+            onCreatePost={() => handleCreatePost()}
+          />
+        )}
+
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 h-full">
-            {weekDays.map((day) => (
+            {weekDays.map((day) => {
+              const isCurrentDay = isToday(day.date);
+              const isWeekendDay = isWeekend(day.date);
+              const hasOptimalTime = [9, 12, 18].includes(day.date.getHours());
+              
+              return (
               <div 
                 key={day.key} 
-                className="flex flex-col bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden"
+                className={cn(
+                  "flex flex-col bg-white rounded-sm border shadow-sm overflow-hidden transition-all",
+                  isCurrentDay && "border-blue-400 border-2 shadow-md",
+                  isWeekendDay && !isCurrentDay && "bg-gray-50",
+                  "hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+                )}
+                onClick={(e) => {
+                  // Créer un post si on clique sur la cellule vide
+                  if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('empty-cell-area')) {
+                    handleCreatePost(day.key);
+                  }
+                }}
               >
                 {/* Day Header */}
-                <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                <div className={cn(
+                  "p-3 border-b flex-shrink-0",
+                  isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"
+                )}>
                   <div className="flex items-center justify-between group">
-                    <div>
-                      <h3 className="font-medium text-xs text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <h3 className={cn(
+                        "font-medium text-xs",
+                        isCurrentDay ? "text-blue-700 font-bold" : "text-gray-700"
+                      )}>
                         {day.name} {day.number}
                       </h3>
+                      {isCurrentDay && (
+                        <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                          Aujourd'hui
+                        </span>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleCreatePost(day.key)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreatePost(day.key);
+                      }}
                       className="h-5 w-5 p-0 hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Plus className="w-3 h-3" />
@@ -259,10 +303,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "p-2 space-y-2 min-h-[500px] flex-1 bg-gray-50",
-                        snapshot.isDraggingOver && "bg-blue-50/50"
+                        "p-2 space-y-2 min-h-[500px] flex-1 empty-cell-area",
+                        isWeekendDay && !isCurrentDay ? "bg-gray-50" : "bg-white",
+                        snapshot.isDraggingOver && "bg-blue-50/50",
+                        "relative group"
                       )}
                     >
+                      {postsByDay[day.key]?.length === 0 && posts.length > 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          <div className="text-center p-4">
+                            <Plus className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                            <p className="text-xs text-gray-500">Créer un post</p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {postsByDay[day.key]?.map((post, index) => {
                         if (!post.id) {
                           console.error('Post without ID:', post);
@@ -298,7 +353,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   )}
                 </Droppable>
             </div>
-          ))}
+              );
+            })}
         </div>
       </DragDropContext>
       </div>
