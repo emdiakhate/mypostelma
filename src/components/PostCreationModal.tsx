@@ -178,7 +178,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
   // États pour la génération IA
   const [mediaSource, setMediaSource] = useState<'upload' | 'ai'>('upload');
-  const [aiGenerationType, setAiGenerationType] = useState<'simple' | 'edit' | 'combine' | 'ugc'>('simple');
+  const [aiGenerationType, setAiGenerationType] = useState<'simple' | 'edit'>('simple');
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiSourceImages, setAiSourceImages] = useState<string[]>([]);
 
@@ -256,7 +256,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [hashtagSets]);
 
   const handleAiImageGeneration = useCallback(async () => {
-    if (aiGenerationType === 'edit' || aiGenerationType === 'combine') {
+    if (aiGenerationType === 'edit') {
       // Utiliser le webhook N8N pour l'édition et la combinaison
       if (!aiPrompt.trim()) {
         toast.error('Veuillez saisir un prompt pour la génération');
@@ -276,152 +276,36 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       
       setIsGeneratingImage(true);
       try {
-        // Tester la connectivité du webhook avant l'appel
-        const isWebhookAccessible = await testWebhookConnectivity(WEBHOOK_URLS.AI_EDIT_COMBINE);
-        if (!isWebhookAccessible) {
-          toast.error('Le service de génération IA n\'est pas accessible. Veuillez réessayer plus tard.');
-          setIsGeneratingImage(false);
-          return;
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        console.log('Appel FAL.ai pour édition avec prompt:', aiPrompt);
+        console.log('Images sources:', aiSourceImages.length);
+        
+        const { data, error } = await supabase.functions.invoke('fal-image-generation', {
+          body: {
+            prompt: aiPrompt,
+            type: 'edit',
+            image_urls: aiSourceImages
+          }
+        });
+        
+        if (error) {
+          console.error('Erreur edge function:', error);
+          throw error;
         }
         
-        const payload: AiEditCombineWebhookPayload = {
-          type: aiGenerationType,
-          prompt: aiPrompt,
-          sourceImages: aiSourceImages,
-          options: {
-            style: 'realistic',
-            intensity: 0.8,
-            quality: 'high'
-          }
-        };
+        console.log('Réponse FAL.ai:', data);
         
-        console.log('AI Generation payload:', payload);
-        
-        const rawResponse = await callWebhook<AiImageGenerationResponse | AiImageGenerationResponse[]>(WEBHOOK_URLS.AI_EDIT_COMBINE, payload);
-        
-        console.log('Raw webhook response:', rawResponse);
-        console.log('Is array?', Array.isArray(rawResponse));
-        
-        // Le webhook peut retourner un tableau ou un objet simple
-        const response = Array.isArray(rawResponse) ? rawResponse[0] : rawResponse;
-        
-        console.log('Processed response:', response);
-        console.log('Response keys:', response ? Object.keys(response) : 'null');
-        
-        if (response && response.success) {
-          console.log('N8N Response received:', response);
-          console.log('imageUrl:', response.imageUrl);
-          console.log('driveFileId:', response.driveFileId);
-          console.log('driveLink:', response.driveLink);
-          
-          // Prioriser imageUrl (base64) car elle est directement utilisable
-          let imageUrl = response.imageUrl;
-          
-          // Si pas d'imageUrl, essayer avec le Drive link
-          if (!imageUrl && response.driveFileId) {
-            imageUrl = `https://drive.google.com/uc?export=view&id=${response.driveFileId}`;
-            console.log('Using Drive URL:', imageUrl);
-          } else if (!imageUrl && response.driveLink) {
-            const driveIdMatch = response.driveLink.match(/\/d\/([^/]+)/);
-            if (driveIdMatch) {
-              imageUrl = `https://drive.google.com/uc?export=view&id=${driveIdMatch[1]}`;
-              console.log('Extracted Drive URL:', imageUrl);
-            }
-          }
-          
-          if (imageUrl) {
-            console.log('Final image URL:', imageUrl.substring(0, 100) + '...');
-            
-            // Pour les images base64, pas besoin de vérifier le chargement
-            if (imageUrl.startsWith('data:image')) {
-              setGeneratedImages([imageUrl]);
-              toast.success('Image générée avec succès !');
-            } else {
-              // Pour les URLs externes, vérifier le chargement
-              const imageLoads = await checkImageLoad(imageUrl, 3, 2000);
-              
-              if (imageLoads) {
-                setGeneratedImages([imageUrl]);
-                toast.success('Image générée avec succès !');
-              } else {
-                toast.error('L\'image générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
-                console.error('Image failed to load:', imageUrl);
-              }
-            }
-          } else {
-            console.error('No valid image URL found in response:', response);
-            toast.error('Aucune URL d\'image trouvée dans la réponse');
-          }
+        if (data && data.success && data.imageUrl) {
+          setGeneratedImages([data.imageUrl]);
+          toast.success('Image générée avec succès !');
         } else {
-          console.error('Invalid response from N8N:', response);
-          toast.error(response?.error || 'Aucune image générée');
+          console.error('Réponse invalide de FAL.ai:', data);
+          toast.error(data?.error || 'Échec de la génération d\'image');
         }
       } catch (error) {
         console.error('Erreur génération IA:', error);
         toast.error('Erreur lors de la génération d\'images');
-      } finally {
-        setIsGeneratingImage(false);
-      }
-    } else if (aiGenerationType === 'ugc') {
-      // Utiliser le webhook N8N pour la génération UGC
-      if (!aiPrompt.trim()) {
-        toast.error('Veuillez saisir un prompt pour la génération UGC');
-        return;
-      }
-      
-      if (aiSourceImages.length === 0) {
-        toast.error('Veuillez ajouter des images sources');
-        return;
-      }
-      
-      setIsGeneratingImage(true);
-      try {
-        const payload: AiUgcWebhookPayload = {
-          type: 'ugc',
-          prompt: aiPrompt,
-          sourceImages: aiSourceImages,
-          options: {
-            style: 'realistic',
-            quality: 'high',
-            aspectRatio: '1:1'
-          }
-        };
-        
-        console.log('AI UGC Generation payload:', payload);
-        const response = await callWebhook<AiImageGenerationResponse>(WEBHOOK_URLS.AI_UGC, payload);
-        
-        if (response && response.success && response.imageUrl) {
-          console.log('N8N UGC Response received:', response);
-          
-          // Vérifier que l'image se charge correctement avec retry
-          const imageLoads = await checkImageLoad(response.imageUrl, 3, 2000);
-          
-          if (imageLoads) {
-            // Utiliser l'URL directe de l'image pour l'affichage
-            setGeneratedImages([response.imageUrl]);
-            toast.success('Image UGC générée avec succès !');
-            
-            // Log des informations supplémentaires pour debug
-            if (response.driveFileId) {
-              console.log('Drive File ID:', response.driveFileId);
-            }
-            if (response.driveLink) {
-              console.log('Drive Link:', response.driveLink);
-            }
-            if (response.thumbnailUrl) {
-              console.log('Thumbnail URL:', response.thumbnailUrl);
-            }
-          } else {
-            toast.error('L\'image UGC générée n\'est pas encore accessible. Veuillez réessayer dans quelques secondes.');
-            console.error('UGC Image failed to load:', response.imageUrl);
-          }
-        } else {
-          console.error('Invalid UGC response from N8N:', response);
-          toast.error(response?.error || 'Aucune image UGC générée');
-        }
-      } catch (error) {
-        console.error('Erreur génération UGC IA:', error);
-        toast.error('Erreur lors de la génération d\'image UGC');
       } finally {
         setIsGeneratingImage(false);
       }

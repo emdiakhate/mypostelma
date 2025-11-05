@@ -41,8 +41,8 @@ interface MediaUploadSectionProps {
   onMediaSourceChange: (source: 'upload' | 'ai') => void;
   selectedImages: string[];
   onImagesChange: (images: string[]) => void;
-  aiGenerationType: 'simple' | 'edit' | 'combine' | 'ugc';
-  onAiGenerationTypeChange: (type: 'simple' | 'edit' | 'combine' | 'ugc') => void;
+  aiGenerationType: 'simple' | 'edit';
+  onAiGenerationTypeChange: (type: 'simple' | 'edit') => void;
   aiPrompt: string;
   onAiPromptChange: (prompt: string) => void;
   aiSourceImages: string[];
@@ -74,9 +74,7 @@ interface MediaUploadSectionProps {
 
 const aiGenerationTypes = [
   { id: 'simple', name: 'Génération simple', description: 'Créer une image à partir d\'un prompt', requiresImages: 0 },
-  { id: 'edit', name: 'Édition d\'image', description: 'Modifier une image existante', requiresImages: 1 },
-  { id: 'combine', name: 'Combinaison', description: 'Combiner deux images', requiresImages: 2 },
-  { id: 'ugc', name: 'UGC', description: 'Contenu généré par utilisateur', requiresImages: 1 }
+  { id: 'edit', name: 'Édition d\'image', description: 'Modifier ou combiner une ou plusieurs images', requiresImages: 1 }
 ];
 
 const videoGenerationTypes = [
@@ -399,31 +397,28 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
               {/* Prompt pour l'IA */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Prompt {aiGenerationType === 'ugc' ? '(optionnel)' : ''}
+                  Prompt
                 </label>
                 <Textarea
                   value={aiPrompt}
                   onChange={(e) => onAiPromptChange(e.target.value)}
-                  placeholder={aiGenerationType === 'ugc' 
-                    ? "Décrivez le contenu souhaité (optionnel)..." 
-                    : "Décrivez l'image que vous voulez générer..."
-                  }
+                  placeholder="Décrivez l'image que vous voulez générer..."
                   className="min-h-20"
                 />
               </div>
 
               {/* Upload d'images sources pour édition/combinaison */}
-              {(aiGenerationType === 'edit' || aiGenerationType === 'combine' || aiGenerationType === 'ugc') && (
+              {aiGenerationType === 'edit' && (
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Images sources {aiGenerationType === 'combine' ? '(2 images requises)' : '(1 image requise)'}
+                    Images sources (au moins 1 image)
                   </label>
                   <div className="border-2 border-dashed border-border rounded-lg p-4">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAiSourceImageUpload}
-                      multiple={aiGenerationType === 'combine'}
+                      multiple
                       className="hidden"
                       id="ai-source-upload"
                     />
@@ -445,18 +440,11 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                               </button>
                             </div>
                           ))}
-                          {(aiGenerationType === 'combine' ? aiSourceImages.length < 2 : aiSourceImages.length < 1) && (
-                            <div className="border-2 border-dashed border-border rounded flex items-center justify-center h-24">
-                              <span className="text-muted-foreground text-xs">
-                                + Ajouter {aiGenerationType === 'combine' ? 'image' : 'image'}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div className="text-center">
                           <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-foreground mb-2">Cliquez pour sélectionner {aiGenerationType === 'combine' ? '2 images' : '1 image'}</p>
+                          <p className="text-sm text-foreground mb-2">Cliquez pour sélectionner une ou plusieurs images</p>
                         </div>
                       )}
                     </label>
@@ -476,7 +464,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                     Génération en cours...
                   </>
                 ) : (
-                  `Générer ${aiGenerationType === 'simple' ? 'une image' : aiGenerationType === 'combine' ? 'une combinaison' : 'une édition'}`
+                  `Générer ${aiGenerationType === 'simple' ? 'une image' : 'une édition'}`
                 )}
               </Button>
 
