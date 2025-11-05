@@ -108,6 +108,14 @@ serve(async (req) => {
         const statusResult = await statusResponse.json();
         console.log(`Status check attempt ${attempts + 1}:`, statusResult);
 
+        // Si on a des images dans la réponse, c'est terminé
+        if (statusResult.images && statusResult.images.length > 0) {
+          imageUrl = statusResult.images[0].url;
+          console.log('Image générée avec succès:', imageUrl);
+          break;
+        } 
+        
+        // Vérifier aussi le format avec status
         if (statusResult.status === 'COMPLETED') {
           imageUrl = statusResult.images?.[0]?.url || statusResult.image?.url;
           break;
