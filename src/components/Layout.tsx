@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from './UserMenu';
+import { QuotaDisplay } from './QuotaDisplay';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -189,6 +190,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           </div>
         </div>
+
+        {/* Quotas Beta Testeurs */}
+        {!sidebarCollapsed && (
+          <div className="p-4 border-t border-gray-600">
+            <QuotaDisplay variant="compact" />
+          </div>
+        )}
 
         {/* Toggle Button */}
         <div className="p-4 border-t border-gray-600 bg-[#2c3548]">

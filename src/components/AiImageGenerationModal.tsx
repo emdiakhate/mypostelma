@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { WEBHOOK_URLS, callWebhook, AiEditCombineWebhookPayload, AiImageGenerationResponse, checkImageLoad } from '@/config/webhooks';
 import { toast } from 'sonner';
+import { QuotaDisplay } from '@/components/QuotaDisplay';
+import { useQuotas } from '@/hooks/useQuotas';
 
 interface AiImageGenerationModalProps {
   isOpen: boolean;
@@ -47,6 +49,7 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
   const [aiSourceImages, setAiSourceImages] = useState<string[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const { quotas, canUseQuota, getQuotaErrorMessage } = useQuotas();
 
   const handleAiSourceImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -74,14 +77,20 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
       toast.error('Veuillez saisir un prompt pour la génération');
       return;
     }
-    
+
     const selectedType = aiGenerationTypes.find(t => t.id === aiGenerationType);
     if (selectedType && selectedType.requiresImages > 0 && aiSourceImages.length < selectedType.requiresImages) {
       toast.error(`Veuillez ajouter au moins ${selectedType.requiresImages} image${selectedType.requiresImages > 1 ? 's' : ''}`);
       return;
     }
-    
+
     if (isGeneratingImage) return;
+
+    // Vérifier le quota avant de générer
+    if (!canUseQuota('ai_images')) {
+      toast.error(getQuotaErrorMessage('ai_images'));
+      return;
+    }
     
     setIsGeneratingImage(true);
     
@@ -133,6 +142,9 @@ const AiImageGenerationModal: React.FC<AiImageGenerationModalProps> = ({
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
               <h3 className="text-xl font-semibold">Générer avec IA</h3>
+              {quotas && quotas.beta_user && (
+                <QuotaDisplay variant="inline" showOnlyType="ai_images" />
+              )}
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />

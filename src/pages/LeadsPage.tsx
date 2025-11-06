@@ -74,6 +74,7 @@ import LeadsGrid from '@/components/LeadsGrid';
 import { N8NLeadData } from '@/components/LeadCard';
 import { QuickActionsButtons } from '@/components/leads/QuickActionsButtons';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
+import { QuotaDisplay } from '@/components/QuotaDisplay';
 
 const LEADS_PER_PAGE = 10;
 
@@ -552,8 +553,11 @@ const LeadsPage: React.FC = () => {
             <div>
               <CardTitle>Recherche de Leads</CardTitle>
               <CardDescription>
-                Trouvez automatiquement de nouveaux prospects
+                Trouvez automatiquement de nouveaux prospects (max 10 résultats par recherche)
               </CardDescription>
+            </div>
+            <div className="w-72">
+              <QuotaDisplay variant="compact" showOnlyType="lead_searches" />
             </div>
           </div>
         </CardHeader>
