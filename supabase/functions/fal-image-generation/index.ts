@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 const FAL_AI_API_KEY = Deno.env.get('FAL_AI_API_KEY');
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,6 +16,63 @@ serve(async (req) => {
   try {
     const { prompt, image_urls, type = 'simple' } = await req.json();
 
+    console.log('🎨 Image generation request:', { type, prompt, hasImages: !!image_urls });
+
+    // ÉTAPE 1: Essayer d'abord avec Gemini (gratuit)
+    if (GEMINI_API_KEY && type === 'simple') {
+      try {
+        console.log('🤖 Tentative avec Gemini Nano Banana...');
+        
+        const geminiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: `Generate a high-quality image: ${prompt}` }]
+              }],
+              generationConfig: {
+                responseMimeType: "image/png"
+              }
+            })
+          }
+        );
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          
+          // Gemini renvoie l'image en base64 dans le contenu
+          const imageData = geminiData.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+          
+          if (imageData && imageData.data) {
+            const imageUrl = `data:${imageData.mimeType};base64,${imageData.data}`;
+            console.log('✅ Image générée avec Gemini (gratuit)');
+            
+            return new Response(
+              JSON.stringify({ 
+                success: true,
+                imageUrl,
+                provider: 'gemini'
+              }),
+              { 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+              }
+            );
+          }
+        } else {
+          const errorText = await geminiResponse.text();
+          console.log('⚠️ Gemini quota épuisé ou erreur, fallback vers Fal.ai:', errorText);
+        }
+      } catch (geminiError) {
+        console.log('⚠️ Erreur Gemini, fallback vers Fal.ai:', geminiError);
+      }
+    }
+
+    // ÉTAPE 2: Fallback sur Fal.ai (payant)
+    console.log('💰 Utilisation de Fal.ai...');
+    
     if (!FAL_AI_API_KEY) {
       throw new Error('FAL_AI_API_KEY not configured');
     }
@@ -124,11 +182,14 @@ serve(async (req) => {
       throw new Error('Image generation timeout');
     }
 
+    console.log('✅ Image générée avec Fal.ai (payant)');
+    
     return new Response(
       JSON.stringify({ 
         success: true,
         imageUrl,
-        requestId 
+        requestId,
+        provider: 'fal_ai'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

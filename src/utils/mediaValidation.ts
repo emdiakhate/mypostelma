@@ -2,8 +2,10 @@ import { toast } from 'sonner';
 
 export type Platform = 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'threads' | 'tiktok' | 'youtube';
 
-const VIDEO_ONLY_PLATFORMS: Platform[] = ['tiktok', 'youtube'];
-const NO_VIDEO_PLATFORMS: Platform[] = ['instagram', 'facebook', 'linkedin', 'twitter', 'threads'];
+// TikTok et YouTube n'acceptent PAS les images
+const NO_IMAGE_PLATFORMS: Platform[] = ['tiktok', 'youtube'];
+// Toutes les autres plateformes peuvent utiliser des images ET des vidéos
+const ALL_MEDIA_PLATFORMS: Platform[] = ['instagram', 'facebook', 'linkedin', 'twitter', 'threads'];
 
 export interface MediaValidationResult {
   isValid: boolean;
@@ -30,33 +32,23 @@ export const validateMediaForPlatforms = (
   const isVideo = isVideoFile(file);
   const isImage = isImageFile(file);
 
-  // Si c'est une vidéo
+  // Si c'est une vidéo - toutes les plateformes acceptent les vidéos
   if (isVideo) {
-    const hasNonVideoPlat = selectedPlatforms.some(p => NO_VIDEO_PLATFORMS.includes(p));
+    return { isValid: true };
+  }
+
+  // Si c'est une image - TikTok et YouTube n'acceptent PAS les images
+  if (isImage) {
+    const hasNoImagePlat = selectedPlatforms.some(p => NO_IMAGE_PLATFORMS.includes(p));
     
-    if (hasNonVideoPlat) {
+    if (hasNoImagePlat) {
       const invalidPlatforms = selectedPlatforms
-        .filter(p => NO_VIDEO_PLATFORMS.includes(p))
+        .filter(p => NO_IMAGE_PLATFORMS.includes(p))
         .join(', ');
       
       return {
         isValid: false,
-        errorMessage: `❌ Les vidéos ne sont autorisées que sur TikTok et YouTube. Plateformes incompatibles : ${invalidPlatforms}`,
-      };
-    }
-
-    // Si uniquement TikTok/YouTube = OK
-    return { isValid: true };
-  }
-
-  // Si c'est une image
-  if (isImage) {
-    const hasVideoOnlyPlat = selectedPlatforms.some(p => VIDEO_ONLY_PLATFORMS.includes(p));
-    
-    if (hasVideoOnlyPlat) {
-      return {
-        isValid: false,
-        errorMessage: '❌ TikTok et YouTube acceptent uniquement des vidéos, pas des images',
+        errorMessage: `❌ Les images ne sont pas acceptées sur TikTok et YouTube. Plateformes incompatibles : ${invalidPlatforms}`,
       };
     }
 
@@ -81,15 +73,11 @@ export const showPlatformCompatibilityToast = (
 };
 
 export const getPlatformMediaRestrictions = (platform: Platform): string => {
-  if (VIDEO_ONLY_PLATFORMS.includes(platform)) {
+  if (NO_IMAGE_PLATFORMS.includes(platform)) {
     return '🎥 Vidéo uniquement';
   }
   
-  if (NO_VIDEO_PLATFORMS.includes(platform)) {
-    return '📸 Images uniquement';
-  }
-  
-  return '';
+  return '📸🎥 Images et vidéos';
 };
 
 export const getAvailablePlatforms = (file: File | null): Platform[] => {
@@ -99,9 +87,11 @@ export const getAvailablePlatforms = (file: File | null): Platform[] => {
 
   const isVideo = isVideoFile(file);
   
+  // Les vidéos sont acceptées sur toutes les plateformes
   if (isVideo) {
-    return VIDEO_ONLY_PLATFORMS;
+    return ['instagram', 'facebook', 'linkedin', 'twitter', 'threads', 'tiktok', 'youtube'];
   }
   
-  return NO_VIDEO_PLATFORMS;
+  // Les images sont acceptées partout sauf TikTok et YouTube
+  return ALL_MEDIA_PLATFORMS;
 };
