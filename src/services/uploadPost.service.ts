@@ -35,8 +35,17 @@ export class UploadPostService {
     try {
       console.log(`[UploadPostService] Creating profile for username: ${username}`);
       
+      // S'assurer que la session est active
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+      
       const { data, error } = await supabase.functions.invoke('upload-post-create-profile', {
-        body: { username }
+        body: { username },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       console.log('[UploadPostService] Create profile response:', { data, error });
