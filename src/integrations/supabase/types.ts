@@ -231,6 +231,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_image_generation_count: number | null
+          ai_image_generation_limit: number | null
+          ai_video_generation_count: number | null
+          ai_video_generation_limit: number | null
           avatar: string | null
           beta_user: boolean | null
           created_at: string
@@ -242,9 +246,14 @@ export type Database = {
           lead_generation_limit: number | null
           name: string
           posts_unlimited: boolean | null
+          quota_reset_date: string | null
           upload_post_username: string | null
         }
         Insert: {
+          ai_image_generation_count?: number | null
+          ai_image_generation_limit?: number | null
+          ai_video_generation_count?: number | null
+          ai_video_generation_limit?: number | null
           avatar?: string | null
           beta_user?: boolean | null
           created_at?: string
@@ -256,9 +265,14 @@ export type Database = {
           lead_generation_limit?: number | null
           name: string
           posts_unlimited?: boolean | null
+          quota_reset_date?: string | null
           upload_post_username?: string | null
         }
         Update: {
+          ai_image_generation_count?: number | null
+          ai_image_generation_limit?: number | null
+          ai_video_generation_count?: number | null
+          ai_video_generation_limit?: number | null
           avatar?: string | null
           beta_user?: boolean | null
           created_at?: string
@@ -270,6 +284,7 @@ export type Database = {
           lead_generation_limit?: number | null
           name?: string
           posts_unlimited?: boolean | null
+          quota_reset_date?: string | null
           upload_post_username?: string | null
         }
         Relationships: []
@@ -396,6 +411,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_quotas: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -403,7 +419,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_ai_image_generation: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      increment_ai_video_generation: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       increment_lead_generation: { Args: { p_user_id: string }; Returns: Json }
+      reset_user_quotas: { Args: { p_user_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "manager"
