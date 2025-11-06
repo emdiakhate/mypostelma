@@ -232,6 +232,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
         throw new Error('Échec de la génération vidéo');
       }
       
+      // Arrêter le chargement en appelant onGenerateVideo avec l'URL
       if (onGenerateVideo) {
         onGenerateVideo(data.videoUrl);
       }
@@ -241,6 +242,10 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
     } catch (error) {
       console.error('Erreur génération vidéo:', error);
       toast.error('Erreur lors de la génération de la vidéo');
+      // Arrêter le chargement en cas d'erreur
+      if (onGenerateVideo) {
+        onGenerateVideo();
+      }
     }
   }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo]);
 
@@ -677,7 +682,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
                     <video
                       src={generatedVideoUrl}
                       controls
-                      className="w-full"
+                      className="w-full max-h-64 object-contain"
                     />
                   </div>
                   <Button

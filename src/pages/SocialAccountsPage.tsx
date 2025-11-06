@@ -167,8 +167,8 @@ export default function SocialAccountsPage() {
   };
 
   const handleDisconnectPlatform = async (platformId: SocialPlatform) => {
-    // Rediriger vers la landing page
-    window.location.href = '/';
+    toast.success(`Déconnexion de ${platformId} effectuée`);
+    refreshProfile();
   };
 
   // Loading skeleton

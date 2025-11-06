@@ -33,10 +33,9 @@ serve(async (req) => {
         image_url,
       };
     } else if (mode === 'text-to-video') {
-      endpoint = 'https://queue.fal.run/fal-ai/luma-dream-machine';
+      endpoint = 'https://queue.fal.run/fal-ai/bytedance/seedance/v1/pro/fast/text-to-video';
       payload = {
         prompt,
-        duration,
       };
     } else {
       throw new Error('Invalid mode or missing image_url for image-to-video');

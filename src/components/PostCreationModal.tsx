@@ -375,27 +375,24 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
   // Fonctions pour la génération vidéo
   const handleGenerateVideo = useCallback(async (videoUrl?: string) => {
-    setIsGeneratingVideo(true);
-    try {
-      // La logique de génération vidéo est gérée dans MediaUploadSection
-      // Cette fonction gère seulement l'état de chargement
-      console.log('État de chargement vidéo activé');
-      
-      // Si une URL de vidéo est fournie, la sauvegarder
-      if (videoUrl) {
-        setGeneratedVideoUrl(videoUrl);
-        console.log('URL de la vidéo sauvegardée:', videoUrl);
-      }
-    } catch (error) {
-      console.error('Erreur génération vidéo:', error);
-      toast.error('Erreur lors de la génération de la vidéo');
+    if (videoUrl) {
+      // Si une URL de vidéo est fournie, arrêter le chargement et sauvegarder
+      setGeneratedVideoUrl(videoUrl);
       setIsGeneratingVideo(false);
+      console.log('URL de la vidéo sauvegardée:', videoUrl);
+    } else {
+      // Activer le chargement
+      setIsGeneratingVideo(true);
+      console.log('État de chargement vidéo activé');
     }
   }, []);
 
-  // Fonction pour arrêter le chargement vidéo
-  const handleStopVideoGeneration = useCallback(() => {
+  // Fonction pour arrêter le chargement vidéo et mettre à jour l'URL
+  const handleStopVideoGeneration = useCallback((videoUrl?: string) => {
     setIsGeneratingVideo(false);
+    if (videoUrl) {
+      setGeneratedVideoUrl(videoUrl);
+    }
   }, []);
 
   // Fonction pour gérer la fin de la génération vidéo
@@ -406,6 +403,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   // Fonction pour utiliser la vidéo générée
   const handleUseGeneratedVideo = useCallback((videoUrl: string) => {
     setGeneratedVideoUrl(videoUrl);
+    setIsGeneratingVideo(false);
+    setMediaSource('upload');
     toast.success('Vidéo ajoutée au post !');
   }, []);
 
