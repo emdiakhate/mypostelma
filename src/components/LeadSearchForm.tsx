@@ -51,7 +51,7 @@ const LeadSearchForm: React.FC<LeadSearchFormProps> = ({
   const [searchParams, setSearchParams] = useState<LeadSearchParams>({
     query: '',
     city: '',
-    maxResults: 50,
+    maxResults: 10, // Limite beta-testeurs: 10 résultats max
     includeEmail: true,
     includePhone: true,
     includeSocial: true
@@ -155,13 +155,13 @@ const LeadSearchForm: React.FC<LeadSearchFormProps> = ({
                   <Input
                     id="maxResults"
                     type="number"
-                    min="10"
-                    max="500"
+                    min="1"
+                    max="10"
                     value={searchParams.maxResults}
-                    onChange={(e) => handleInputChange('maxResults', parseInt(e.target.value) || 50)}
+                    onChange={(e) => handleInputChange('maxResults', Math.min(10, parseInt(e.target.value) || 10))}
                   />
                   <p className="text-xs text-gray-500">
-                    Entre 10 et 500 résultats
+                    Maximum 10 résultats pour les beta-testeurs
                   </p>
                 </div>
                 
