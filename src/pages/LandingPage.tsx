@@ -450,44 +450,44 @@ const LandingPage: React.FC = () => {
               {
                 icon: <Sparkles className="w-8 h-8 text-purple-600" />,
                 iconBg: "bg-purple-100",
-                title: 'Génération de contenu par IA',
-                description: 'Créez des captions engageantes et des images professionnelles en quelques secondes grâce à notre IA intégrée',
-                features: ['6 tons de voix', '4 types de génération d\'images', 'Personnalisation avancée']
+                title: 'IA de Génération de Contenu',
+                description: 'Créez images, vidéos, textes et captions avec notre IA multi-modèle intégrée',
+                features: ['Images IA (15/mois)', 'Vidéos IA (5/mois)', '6 tons personnalisables', 'Analyse de style d\'écriture']
               },
               {
                 icon: <Calendar className="w-8 h-8 text-blue-600" />,
                 iconBg: "bg-blue-100",
-                title: 'Planification et programmation',
+                title: 'Planification Intelligente',
                 description: 'Organisez votre contenu avec notre calendrier drag & drop et publiez au meilleur moment',
-                features: ['Meilleur moment suggéré', 'Multi-plateformes', 'Aperçu réaliste']
+                features: ['Meilleur moment suggéré', 'Multi-plateformes', 'Aperçu réaliste', 'Publication automatique']
               },
               {
                 icon: <BarChart3 className="w-8 h-8 text-[#1a4d2e]" />,
                 iconBg: "bg-[#e8f5e9]",
-                title: 'Analytics et insights',
-                description: 'Suivez vos performances en temps réel et optimisez votre stratégie avec des données précises',
-                features: ['Métriques détaillées', 'Comparaison concurrents', 'Export rapports']
+                title: 'Analytics Avancés',
+                description: 'Suivez vos performances en temps réel avec des métriques détaillées et des insights IA',
+                features: ['Métriques en temps réel', 'Comparaison concurrents', 'Suggestions hashtags', 'Export rapports']
               },
               {
                 icon: <Users className="w-8 h-8 text-orange-600" />,
                 iconBg: "bg-orange-100",
-                title: 'Génération de leads',
-                description: 'Trouvez et gérez vos prospects directement depuis la plateforme avec notre système de recherche intelligent',
-                features: ['Recherche avancée', 'Filtres multi-critères', 'Export CSV']
+                title: 'Lead Generation',
+                description: 'Trouvez et gérez vos prospects avec notre système intelligent de recherche et CRM intégré',
+                features: ['Recherche intelligente (5/mois)', 'Filtres multi-critères', 'Templates messages IA', 'Export CSV']
               },
               {
                 icon: <Shield className="w-8 h-8 text-indigo-600" />,
                 iconBg: "bg-indigo-100",
-                title: 'Collaboration en équipe',
-                description: 'Travaillez efficacement avec votre équipe grâce aux rôles, permissions et workflow d\'approbation',
-                features: ['4 niveaux de rôles', 'Workflow validation', 'Audit trail']
+                title: 'Sécurité & Collaboration',
+                description: 'Travaillez en équipe avec gestion des rôles, authentification email et système de quotas',
+                features: ['Vérification email', 'Rôles & permissions', 'Quotas beta testeurs', 'Audit trail']
               },
               {
                 icon: <Target className="w-8 h-8 text-red-600" />,
                 iconBg: "bg-red-100",
-                title: 'Analyse de la concurrence',
-                description: 'Surveillez vos concurrents et adaptez votre stratégie en fonction de leurs meilleures pratiques',
-                features: ['Suivi automatique', 'Suggestions IA', 'Benchmarks']
+                title: 'Archives & Organisation',
+                description: 'Gérez votre bibliothèque média avec stockage cloud, recherche avancée et optimisation automatique',
+                features: ['Stockage illimité', 'Archives organisées', 'Recherche rapide', 'Compression auto']
               }
             ].map((feature, index) => (
               <motion.div

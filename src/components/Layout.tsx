@@ -1,6 +1,7 @@
 import React, { useState, memo, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -24,6 +25,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Hook notifications pour surveiller les quotas
+  useNotifications();
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -41,6 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/settings') return 'settings';
     if (path === '/app/settings/accounts') return 'accounts';
     if (path === '/app/leads') return 'leads';
+    if (path === '/app/admin') return 'admin';
     if (path === '/app/publications') return 'publications';
     if (path === '/app/creation') return 'creation';
     
@@ -80,6 +84,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       case 'settings':
         navigate('/app/settings');
         break;
+      case 'admin':
+        navigate('/app/admin');
+        break;
       case 'logout':
         navigate('/logout');
         break;
@@ -112,6 +119,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
+      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin' },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
     ];
 
@@ -156,6 +164,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'accounts': return '/app/settings/accounts';
                     case 'leads': return '/app/leads';
                     case 'leads-analytics': return '/app/leads/analytics';
+                    case 'admin': return '/app/admin';
                     case 'leads-search': return '/app/leads/search';
                     default: return '/app/dashboard';
                   }
@@ -254,6 +263,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'publications' && 'Mes Publications'}
                 {activePage === 'creation' && 'Studio Création'}
                 {activePage === 'settings' && 'Paramètres'}
+                {activePage === 'admin' && 'Administration'}
               </h1>
             </div>
             

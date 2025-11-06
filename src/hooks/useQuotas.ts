@@ -43,7 +43,8 @@ export function useQuotas() {
       });
 
       if (error) throw error;
-      return data as UserQuotas;
+      if (!data) throw new Error('No quota data returned');
+      return data as unknown as UserQuotas;
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: true,

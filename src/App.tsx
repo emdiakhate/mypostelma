@@ -24,6 +24,7 @@ import PublicationsPage from "./pages/PublicationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreationPage from "./pages/CreationPage";
 import PricingPage from "./pages/PricingPage";
+import AdminPage from "./pages/AdminPage";
 import CheckoutSimulation from "./pages/CheckoutSimulation";
 import ConnectSocialAccounts from "./pages/ConnectSocialAccounts";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
@@ -49,6 +50,7 @@ function MainLayout() {
         <Route path="/creation" element={<CreationPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/connect-accounts" element={<ConnectSocialAccounts />} />
+        <Route path="/admin" element={<AdminPage />} />
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
