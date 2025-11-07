@@ -880,7 +880,7 @@ const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Plan Free */}
             <motion.div
-              className="p-8 rounded-2xl border-2 border-gray-200 bg-white shadow-xl"
+              className="p-8 rounded-2xl border-2 border-gray-200 bg-white shadow-xl opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -890,39 +890,39 @@ const LandingPage: React.FC = () => {
               <div className="text-center">
                 <Badge className="bg-gray-100 text-gray-800 mb-4">Gratuit</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">0€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour découvrir la plateforme</p>
+                <p className="text-muted-foreground mb-6">Pour découvrir la plateforme</p>
                 <Button 
                   variant="outline" 
                   className="w-full mb-6"
-                  asChild
+                  disabled
                 >
-                  <Link to="/app/calendar">Commencer gratuitement</Link>
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     1 compte social
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     10 posts/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Génération IA basique
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Analytics de base
                   </li>
-                  <li className="flex items-center text-sm text-gray-400">
+                  <li className="flex items-center text-sm text-muted-foreground">
                     <X className="w-4 h-4 mr-2" />
                     Lead generation
                   </li>
-                  <li className="flex items-center text-sm text-gray-400">
+                  <li className="flex items-center text-sm text-muted-foreground">
                     <X className="w-4 h-4 mr-2" />
                     Competitive intelligence
                   </li>
@@ -932,60 +932,60 @@ const LandingPage: React.FC = () => {
 
             {/* Plan Pro - Populaire */}
             <motion.div
-              className="p-8 rounded-2xl border-4 border-[#1a4d2e] bg-white shadow-xl relative scale-105"
+              className="p-8 rounded-2xl border-4 border-gray-300 bg-white shadow-xl relative scale-105 opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.07 }}
             >
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#1a4d2e] text-white">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white">
                 Le plus populaire
               </Badge>
               <div className="text-center">
-                <Badge className="bg-[#e8f5e9] text-[#1a4d2e] mb-4">Pro</Badge>
+                <Badge className="bg-gray-100 text-gray-600 mb-4">Pro</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">29€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour les entrepreneurs et PME</p>
+                <p className="text-muted-foreground mb-6">Pour les entrepreneurs et PME</p>
                 <Button 
                   className="w-full bg-gray-300 text-gray-500 shadow-lg mb-6 cursor-not-allowed"
                   disabled
                 >
-                  Essayer Pro (Bientôt)
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     5 comptes sociaux
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     100 posts/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Génération IA illimitée
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Analytics avancés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     50 leads/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     3 concurrents analysés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Best time to post
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Support prioritaire
                   </li>
                 </ul>
@@ -994,7 +994,7 @@ const LandingPage: React.FC = () => {
 
             {/* Plan Business */}
             <motion.div
-              className="p-8 rounded-2xl border-2 border-gray-300 bg-white shadow-xl"
+              className="p-8 rounded-2xl border-2 border-gray-300 bg-white shadow-xl opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -1002,54 +1002,54 @@ const LandingPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
             >
               <div className="text-center">
-                <Badge className="bg-[#e8f5e9] text-[#1a4d2e] mb-4">Business</Badge>
+                <Badge className="bg-gray-100 text-gray-600 mb-4">Business</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">79€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour les agences et grandes équipes</p>
+                <p className="text-muted-foreground mb-6">Pour les agences et grandes équipes</p>
                 <Button 
                   variant="outline" 
                   className="w-full mb-6"
-                  asChild
+                  disabled
                 >
-                  <Link to="/pricing">Essayer Business</Link>
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     15 comptes sociaux
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Posts illimités
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Tout du plan Pro
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     500 leads/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     10 concurrents analysés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Team collaboration
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     White-label reports
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     API access
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Support dédié
                   </li>
                 </ul>

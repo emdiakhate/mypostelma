@@ -108,43 +108,39 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   return (
     <div className={cn("space-y-4", className)}>
       <h3 className="text-sm font-semibold text-muted-foreground">Plateformes</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {allPlatforms.map((platform) => {
           const isSelected = selectedAccounts.includes(platform.id);
           const Icon = platform.icon;
           const isDisabled = !platform.isConnected;
           
           return (
-            <Card
+            <button
               key={platform.id}
+              type="button"
               className={cn(
-                "cursor-pointer transition-all",
-                isDisabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-md",
-                isSelected && !isDisabled && "ring-2 ring-primary"
+                "transition-all rounded-xl p-0 border-0 outline-none",
+                isDisabled && "opacity-50 cursor-not-allowed",
+                !isDisabled && "cursor-pointer hover:scale-110",
+                isSelected && !isDisabled && "ring-2 ring-primary ring-offset-2"
               )}
               onClick={() => handlePlatformToggle(platform.id, platform.isConnected)}
+              disabled={isDisabled}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  {/* Icône de la plateforme */}
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", 
-                    platform.color,
-                    isDisabled && "grayscale opacity-60"
-                  )}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  
-                  {/* Checkbox caché pour sélection */}
-                  <Checkbox
-                    checked={isSelected}
-                    disabled={isDisabled}
-                    onCheckedChange={() => handlePlatformToggle(platform.id, platform.isConnected)}
-                    className="sr-only"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              <div className={cn(
+                "w-14 h-14 rounded-xl flex items-center justify-center", 
+                platform.color,
+                isDisabled && "grayscale"
+              )}>
+                <Icon className="w-8 h-8 text-white" />
+              </div>
+              <Checkbox
+                checked={isSelected}
+                disabled={isDisabled}
+                onCheckedChange={() => handlePlatformToggle(platform.id, platform.isConnected)}
+                className="sr-only"
+              />
+            </button>
           );
         })}
       </div>

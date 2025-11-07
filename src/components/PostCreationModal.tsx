@@ -348,6 +348,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         
         if (error) {
           console.error('Erreur edge function:', error);
+          
+          // Vérifier si c'est une erreur de quota (429)
+          const errorMessage = error.message || '';
+          if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Quota')) {
+            toast.error('❌ Quota de génération épuisé. Veuillez réessayer plus tard.');
+          } else {
+            toast.error('Erreur lors de la génération');
+          }
           throw error;
         }
         
@@ -358,11 +366,25 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           toast.success('Image générée avec succès !');
         } else {
           console.error('Réponse invalide de FAL.ai:', data);
-          toast.error(data?.error || 'Échec de la génération d\'image');
+          
+          // Vérifier si c'est une erreur de quota dans la réponse
+          const dataError = data?.error || '';
+          if (dataError.includes('Quota') || dataError.includes('quota') || dataError.includes('exceeded')) {
+            toast.error('❌ Quota de génération épuisé. Veuillez réessayer plus tard.');
+          } else {
+            toast.error(dataError || 'Échec de la génération');
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur génération simple IA:', error);
-        toast.error('Erreur lors de la génération d\'image');
+        
+        // Vérifier si c'est une erreur de quota dans l'exception
+        const errorMessage = error?.message || '';
+        if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Quota')) {
+          toast.error('❌ Quota de génération épuisé. Veuillez réessayer plus tard.');
+        } else {
+          toast.error('Erreur lors de la génération');
+        }
       } finally {
         setIsGeneratingImage(false);
       }
