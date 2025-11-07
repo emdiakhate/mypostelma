@@ -45,98 +45,114 @@ const BestTimeSection: React.FC<BestTimeSectionProps> = memo(({
     date.setHours(hours, minutes, 0, 0);
     return date;
   };
+  const [isExpanded, setIsExpanded] = React.useState(false);
 
   return (
     <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-primary/20">
-      <div className="flex items-center gap-2 mb-3">
-        <Lightbulb className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">⏰ Meilleurs Moments</h3>
-        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-          Pour {platform}
-        </Badge>
-      </div>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 mb-3 w-full justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <Lightbulb className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">⏰ Meilleurs Moments</h3>
+          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+            Pour {platform}
+          </Badge>
+        </div>
+        <svg 
+          className={`w-5 h-5 text-primary transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
       
-      <div className="space-y-3">
-        {/* Info jour optimal */}
-        {boost > 0 && (
-          <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
-              <TrendingUp className="w-3 h-3" />
-              <span>
-                📈 Le {bestDayName} génère <strong>+{boost}%</strong> d'engagement sur {platform}
-              </span>
-            </p>
-          </div>
-        )}
+      {isExpanded && (
+        <div className="space-y-3">
+          {/* Info jour optimal */}
+          {boost > 0 && (
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                <TrendingUp className="w-3 h-3" />
+                <span>
+                  📈 Le {bestDayName} génère <strong>+{boost}%</strong> d'engagement sur {platform}
+                </span>
+              </p>
+            </div>
+          )}
 
-        {/* Meilleurs moments */}
-        {postingTimes.length > 0 ? (
-          postingTimes.map((time, index) => {
-            const isBest = bestTime && time.time === bestTime.time;
-            const targetDate = getBestDate(time.time);
-            
-            return (
-              <div 
-                key={index}
-                className={`p-3 bg-background rounded-lg border ${
-                  isBest 
-                    ? 'border-green-400 dark:border-green-600 shadow-sm' 
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className={`w-4 h-4 ${isBest ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`} />
-                      <p className="font-medium text-foreground">
-                        {time.time} - {time.label}
+          {/* Meilleurs moments */}
+          {postingTimes.length > 0 ? (
+            postingTimes.map((time, index) => {
+              const isBest = bestTime && time.time === bestTime.time;
+              const targetDate = getBestDate(time.time);
+              
+              return (
+                <div 
+                  key={index}
+                  className={`p-3 bg-background rounded-lg border ${
+                    isBest 
+                      ? 'border-green-400 dark:border-green-600 shadow-sm' 
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className={`w-4 h-4 ${isBest ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`} />
+                        <p className="font-medium text-foreground">
+                          {time.time} - {time.label}
+                        </p>
+                        {isBest && (
+                          <Badge className="bg-green-500 text-white text-xs">
+                            🔥 Meilleur
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-6">
+                        💡 {time.reason}
                       </p>
-                      {isBest && (
-                        <Badge className="bg-green-500 text-white text-xs">
-                          🔥 Meilleur
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground ml-6">
-                      💡 {time.reason}
-                    </p>
-                    <div className="ml-6 mt-1">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                          <div 
-                            className={`h-full ${isBest ? 'bg-green-500' : 'bg-blue-500'}`}
-                            style={{ width: `${time.engagement}%` }}
-                          />
+                      <div className="ml-6 mt-1">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className={`h-full ${isBest ? 'bg-green-500' : 'bg-blue-500'}`}
+                              style={{ width: `${time.engagement}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            +{time.engagement}%
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          +{time.engagement}%
-                        </span>
                       </div>
                     </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        onUseBestTime(targetDate);
+                        toast.success(`Programmé pour demain à ${time.time}`);
+                      }}
+                      variant={isBest ? "default" : "outline"}
+                      className={isBest ? "bg-green-500 hover:bg-green-600 text-white" : ""}
+                    >
+                      Choisir
+                    </Button>
                   </div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      onUseBestTime(targetDate);
-                      toast.success(`Programmé pour demain à ${time.time}`);
-                    }}
-                    variant={isBest ? "default" : "outline"}
-                    className={isBest ? "bg-green-500 hover:bg-green-600 text-white" : ""}
-                  >
-                    Choisir
-                  </Button>
                 </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="p-3 bg-background rounded-lg border border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-muted-foreground">
-              Aucune recommandation disponible pour ce domaine
-            </p>
-          </div>
-        )}
-      </div>
+              );
+            })
+          ) : (
+            <div className="p-3 bg-background rounded-lg border border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-muted-foreground">
+                Aucune recommandation disponible pour ce domaine
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });

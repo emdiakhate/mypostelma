@@ -126,36 +126,22 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
+                  {/* Icône de la plateforme */}
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", 
+                    platform.color,
+                    isDisabled && "grayscale opacity-60"
+                  )}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  {/* Checkbox caché pour sélection */}
                   <Checkbox
                     checked={isSelected}
                     disabled={isDisabled}
                     onCheckedChange={() => handlePlatformToggle(platform.id, platform.isConnected)}
-                    className="flex-shrink-0"
+                    className="sr-only"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center", 
-                        platform.color,
-                        isDisabled && "grayscale opacity-60"
-                      )}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          "font-medium text-sm truncate",
-                          isDisabled && "text-muted-foreground"
-                        )}>
-                          {platform.name}
-                        </p>
-                        {platform.isConnected ? (
-                          <p className="text-xs text-gray-500 truncate">@{platform.username}</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Non connecté</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

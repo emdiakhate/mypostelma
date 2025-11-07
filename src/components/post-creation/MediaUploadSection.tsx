@@ -511,6 +511,11 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {videoGenerationTypes.map((type) => {
                   const IconComponent = type.icon;
+                  // Sélectionner par défaut "Image + Prompt → Vidéo"
+                  if (videoMode === null && type.id === 'image-to-video' && onVideoModeChange) {
+                    setTimeout(() => onVideoModeChange('image-to-video'), 0);
+                  }
+                  
                   return (
                     <button
                       key={type.id}
