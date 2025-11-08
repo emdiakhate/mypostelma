@@ -24,10 +24,10 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { PLATFORMS } from '@/config/platforms';
 
 const Dashboard = () => {
-  const { connectedAccounts, loading: accountsLoading } = useUploadPost();
+  const { connectedAccounts, loading: accountsLoading, profile } = useUploadPost();
   const platforms = connectedAccounts.map(acc => acc.platform);
   const { data: analyticsData, loading: analyticsLoading } = useAnalytics(
-    connectedAccounts[0]?.username || '',
+    profile?.username || '',
     platforms
   );
 

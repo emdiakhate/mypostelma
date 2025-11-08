@@ -36,6 +36,7 @@ function Analytics() {
 
   // Extraire les plateformes connectées
   const connectedPlatforms = connectedAccounts.map(acc => acc.platform);
+  const { profile } = useUploadPost();
   
   // Initialiser les plateformes sélectionnées
   useEffect(() => {
@@ -44,7 +45,7 @@ function Analytics() {
     }
   }, [connectedPlatforms]);
   
-  const { data, loading, error } = useAnalytics(uploadPostUsername || undefined, connectedPlatforms);
+  const { data, loading, error } = useAnalytics(profile?.username || undefined, connectedPlatforms);
 
   // Calculer les totaux globaux
   const globalStats = data?.analytics ? Object.values(data.analytics).reduce((acc, metrics: any) => ({

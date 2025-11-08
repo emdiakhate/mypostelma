@@ -130,7 +130,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   generatedVideoUrl,
   onUseGeneratedVideo
 }) => {
-  const { canUseQuota, getQuotaErrorMessage, refetchQuotas } = useQuotas();
+  const { canUseQuota, getQuotaErrorMessage, refetch: refetchQuotas } = useQuotas();
 
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
