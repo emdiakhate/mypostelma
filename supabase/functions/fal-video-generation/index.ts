@@ -39,26 +39,6 @@ serve(async (req) => {
 
     console.log('🔐 User authenticated:', user.id);
 
-    // Vérifier et incrémenter le quota vidéo
-    const { data: quotaResult, error: quotaError } = await supabaseClient.rpc(
-      'increment_ai_video_generation',
-      { p_user_id: user.id }
-    );
-
-    if (quotaError || !quotaResult?.success) {
-      console.log('❌ Quota check failed:', quotaResult);
-      return new Response(
-        JSON.stringify({
-          error: quotaResult?.message || 'Quota exceeded',
-          success: false,
-          quota: quotaResult
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ Quota checked:', quotaResult);
-
     const { prompt, image_url, mode = 'text-to-video', duration = 5 } = await req.json();
     console.log('🎥 Video generation request:', { mode, prompt, hasImage: !!image_url, userId: user.id });
 

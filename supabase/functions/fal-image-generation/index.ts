@@ -40,83 +40,11 @@ serve(async (req) => {
 
     console.log('🔐 User authenticated:', user.id);
 
-    // Vérifier et incrémenter le quota
-    const { data: quotaResult, error: quotaError } = await supabaseClient.rpc(
-      'increment_ai_image_generation',
-      { p_user_id: user.id }
-    );
-
-    if (quotaError || !quotaResult?.success) {
-      console.log('❌ Quota check failed:', quotaResult);
-      return new Response(
-        JSON.stringify({
-          error: quotaResult?.message || 'Quota exceeded',
-          success: false,
-          quota: quotaResult
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ Quota checked:', quotaResult);
-
     const { prompt, image_urls, type = 'simple' } = await req.json();
 
     console.log('🎨 Image generation request:', { type, prompt, hasImages: !!image_urls, userId: user.id });
 
-    // ÉTAPE 1: Essayer d'abord avec Gemini (gratuit)
-    if (GEMINI_API_KEY && type === 'simple') {
-      try {
-        console.log('🤖 Tentative avec Gemini Nano Banana...');
-        
-        const geminiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{ text: `Generate a high-quality image: ${prompt}` }]
-              }],
-              generationConfig: {
-                responseMimeType: "image/png"
-              }
-            })
-          }
-        );
-
-        if (geminiResponse.ok) {
-          const geminiData = await geminiResponse.json();
-          
-          // Gemini renvoie l'image en base64 dans le contenu
-          const imageData = geminiData.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-          
-          if (imageData && imageData.data) {
-            const imageUrl = `data:${imageData.mimeType};base64,${imageData.data}`;
-            console.log('✅ Image générée avec Gemini (gratuit)');
-            
-            return new Response(
-              JSON.stringify({ 
-                success: true,
-                imageUrl,
-                provider: 'gemini'
-              }),
-              { 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-              }
-            );
-          }
-        } else {
-          const errorText = await geminiResponse.text();
-          console.log('⚠️ Gemini quota épuisé ou erreur, fallback vers Fal.ai:', errorText);
-        }
-      } catch (geminiError) {
-        console.log('⚠️ Erreur Gemini, fallback vers Fal.ai:', geminiError);
-      }
-    }
-
-    // ÉTAPE 2: Fallback sur Fal.ai (payant)
+    // Utilisation directe de Fal.ai
     console.log('💰 Utilisation de Fal.ai...');
     
     if (!FAL_AI_API_KEY) {
