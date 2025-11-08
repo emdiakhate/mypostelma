@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useQuotas } from '@/hooks/useQuotas';
 
 // Fonction pour générer une miniature vidéo
 const generateVideoThumbnail = (file: File, callback: (thumbnail: string) => void) => {
@@ -129,6 +130,8 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   generatedVideoUrl,
   onUseGeneratedVideo
 }) => {
+  const { canUseQuota, getQuotaErrorMessage, refetchQuotas } = useQuotas();
+
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -187,36 +190,45 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   }, [onVideoImageChange]);
 
   const handleGenerateVideo = useCallback(async () => {
+    // Vérifier les quotas AVANT d'appeler l'Edge Function
+    if (!canUseQuota('ai_videos')) {
+      toast.error(getQuotaErrorMessage('ai_videos'), {
+        description: 'Consultez vos quotas dans la sidebar.',
+        duration: 6000,
+      });
+      return;
+    }
+
     if (isGeneratingVideo) return;
-    
+
     if (onGenerateVideo) {
       onGenerateVideo();
     }
-    
+
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
       let imageUrl = null;
-      
+
       // Si mode image-to-video, uploader l'image vers Supabase Storage
       if (videoMode === 'image-to-video' && videoImage) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Utilisateur non authentifié');
-        
+
         const fileName = `${user.id}/video-source-${Date.now()}.${videoImage.name.split('.').pop()}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('media-archives')
           .upload(fileName, videoImage);
-          
+
         if (uploadError) throw uploadError;
-        
+
         const { data: { publicUrl } } = supabase.storage
           .from('media-archives')
           .getPublicUrl(fileName);
-        
+
         imageUrl = publicUrl;
       }
-      
+
       const { data, error } = await supabase.functions.invoke('fal-video-generation', {
         body: {
           mode: videoMode,
@@ -225,29 +237,52 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
           duration: parseInt(videoMode === 'image-to-video' ? videoDuration || '5' : textVideoDuration || '5')
         }
       });
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        // Vérifier si c'est une erreur 429 (quota dépassé)
+        if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+          toast.error('Quota de vidéos IA dépassé', {
+            description: 'Vous avez atteint votre limite mensuelle. Consultez vos quotas dans la sidebar.',
+            duration: 6000,
+          });
+          await refetchQuotas(); // Rafraîchir les quotas
+          if (onGenerateVideo) {
+            onGenerateVideo();
+          }
+          return;
+        }
+        throw error;
+      }
+
       if (!data.success || !data.videoUrl) {
         throw new Error('Échec de la génération vidéo');
       }
-      
+
       // Arrêter le chargement en appelant onGenerateVideo avec l'URL
       if (onGenerateVideo) {
         onGenerateVideo(data.videoUrl);
       }
-      
+
       toast.success('Vidéo générée avec succès !');
-      
-    } catch (error) {
+      await refetchQuotas(); // Rafraîchir les quotas après succès
+
+    } catch (error: any) {
       console.error('Erreur génération vidéo:', error);
-      toast.error('Erreur lors de la génération de la vidéo');
+      if (error.message?.includes('Quota exceeded')) {
+        toast.error('Quota de vidéos IA dépassé', {
+          description: 'Vous avez atteint votre limite mensuelle.',
+          duration: 6000,
+        });
+        await refetchQuotas();
+      } else {
+        toast.error('Erreur lors de la génération de la vidéo');
+      }
       // Arrêter le chargement en cas d'erreur
       if (onGenerateVideo) {
         onGenerateVideo();
       }
     }
-  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo]);
+  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo, canUseQuota, getQuotaErrorMessage, refetchQuotas]);
 
   const handleAiSourceImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
