@@ -70,7 +70,7 @@ const PreviewSection = memo<PreviewSectionProps>(({
         .single();
 
       if (data) {
-        setProfileName(data.name);
+        setProfileName(data.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Postelma');
         setProfileAvatar(data.avatar);
       }
     };
@@ -81,7 +81,8 @@ const PreviewSection = memo<PreviewSectionProps>(({
   const renderPreview = () => {
     const currentCaption = generatedCaptions?.[activePreview as keyof typeof generatedCaptions];
     const displayContent = currentCaption || content || 'Votre contenu apparaîtra ici...';
-    const profilePicture = profileAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face';
+    // Utiliser l'avatar de l'utilisateur ou un avatar par défaut
+    const profilePicture = profileAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${profileName}`;
     
     const previewProps = {
       content: displayContent,
@@ -396,7 +397,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           await refetchQuotas(); // Rafraîchir les quotas après succès
         } else {
           console.error('Réponse invalide de FAL.ai:', data);
-          toast.error(data?.error || 'Échec de la génération d\'image');
+          
+          // Vérifier si c'est une erreur de quota dans la réponse
+          const dataError = data?.error || '';
+          if (dataError.includes('Quota') || dataError.includes('quota') || dataError.includes('exceeded')) {
+            toast.error('❌ Quota de génération épuisé. Veuillez réessayer plus tard.');
+          } else {
+            toast.error(dataError || 'Échec de la génération');
+          }
         }
       } catch (error: any) {
         console.error('Erreur génération simple IA:', error);
@@ -615,7 +623,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           timeSlot: calculateTimeSlot(scheduledDateTime),
           status: 'scheduled' as const,
           captions: finalCaptions,
-          author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
+          author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
           campaign,
           campaignColor: initialData?.campaignColor
         };
@@ -756,14 +764,14 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
               </Select>
             </div>
             
-            {/* Bouton Générer les captions IA */}
+            {/* Bouton Adapter aux réseaux */}
             <div className="mt-4">
               <Button
                 onClick={generateCaptions}
                 disabled={isGeneratingCaptions}
                 className="w-full bg-blue-500 hover:bg-blue-600"
               >
-                {isGeneratingCaptions ? 'Génération...' : 'Générer les captions IA'}
+                {isGeneratingCaptions ? 'Adaptation...' : 'Adapter aux réseaux'}
               </Button>
             </div>
           </div>

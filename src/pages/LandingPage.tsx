@@ -268,15 +268,6 @@ const LandingPage: React.FC = () => {
                   Demander une démo
                 </Button>
               </motion.div>
-
-              <motion.p 
-                className="text-sm text-green-100/70 mt-4"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              >
-                Aucune carte bancaire requise
-              </motion.p>
             </motion.div>
 
             {/* Right Side - Hero Dashboard Image */}
@@ -348,13 +339,13 @@ const LandingPage: React.FC = () => {
               {/* Premier set de logos */}
               <div className="flex gap-12 items-center shrink-0">
                 {/* Instagram */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <Instagram className="w-8 h-8 text-pink-500" />
                   <span className="text-lg font-semibold text-gray-700">Instagram</span>
                 </div>
 
                 {/* Facebook */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
@@ -362,19 +353,19 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* LinkedIn */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <Linkedin className="w-8 h-8 text-blue-700" />
                   <span className="text-lg font-semibold text-gray-700">LinkedIn</span>
                 </div>
 
                 {/* X/Twitter */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <Twitter className="w-8 h-8 text-black" />
                   <span className="text-lg font-semibold text-gray-700">X</span>
                 </div>
 
                 {/* TikTok */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <svg className="w-8 h-8 text-black" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                   </svg>
@@ -382,7 +373,7 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* YouTube */}
-                <div className="flex items-center gap-3 grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                <div className="flex items-center gap-3 transition-all">
                   <svg className="w-8 h-8 text-red-600" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
@@ -889,7 +880,7 @@ const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Plan Free */}
             <motion.div
-              className="p-8 rounded-2xl border-2 border-gray-200 bg-white shadow-xl"
+              className="p-8 rounded-2xl border-2 border-gray-200 bg-white shadow-xl opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -899,39 +890,39 @@ const LandingPage: React.FC = () => {
               <div className="text-center">
                 <Badge className="bg-gray-100 text-gray-800 mb-4">Gratuit</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">0€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour découvrir la plateforme</p>
+                <p className="text-muted-foreground mb-6">Pour découvrir la plateforme</p>
                 <Button 
                   variant="outline" 
                   className="w-full mb-6"
-                  asChild
+                  disabled
                 >
-                  <Link to="/app/calendar">Commencer gratuitement</Link>
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     1 compte social
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     10 posts/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Génération IA basique
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Analytics de base
                   </li>
-                  <li className="flex items-center text-sm text-gray-400">
+                  <li className="flex items-center text-sm text-muted-foreground">
                     <X className="w-4 h-4 mr-2" />
                     Lead generation
                   </li>
-                  <li className="flex items-center text-sm text-gray-400">
+                  <li className="flex items-center text-sm text-muted-foreground">
                     <X className="w-4 h-4 mr-2" />
                     Competitive intelligence
                   </li>
@@ -941,60 +932,60 @@ const LandingPage: React.FC = () => {
 
             {/* Plan Pro - Populaire */}
             <motion.div
-              className="p-8 rounded-2xl border-4 border-[#1a4d2e] bg-white shadow-xl relative scale-105"
+              className="p-8 rounded-2xl border-4 border-gray-300 bg-white shadow-xl relative scale-105 opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.07 }}
             >
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#1a4d2e] text-white">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white">
                 Le plus populaire
               </Badge>
               <div className="text-center">
-                <Badge className="bg-[#e8f5e9] text-[#1a4d2e] mb-4">Pro</Badge>
+                <Badge className="bg-gray-100 text-gray-600 mb-4">Pro</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">29€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour les entrepreneurs et PME</p>
+                <p className="text-muted-foreground mb-6">Pour les entrepreneurs et PME</p>
                 <Button 
-                  className="w-full bg-[#1a4d2e] hover:bg-[#2d5f4a] text-white shadow-lg mb-6"
-                  asChild
+                  className="w-full bg-gray-300 text-gray-500 shadow-lg mb-6 cursor-not-allowed"
+                  disabled
                 >
-                  <Link to="/pricing">Essayer Pro</Link>
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     5 comptes sociaux
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     100 posts/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Génération IA illimitée
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Analytics avancés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     50 leads/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     3 concurrents analysés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Best time to post
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Support prioritaire
                   </li>
                 </ul>
@@ -1003,7 +994,7 @@ const LandingPage: React.FC = () => {
 
             {/* Plan Business */}
             <motion.div
-              className="p-8 rounded-2xl border-2 border-gray-300 bg-white shadow-xl"
+              className="p-8 rounded-2xl border-2 border-gray-300 bg-white shadow-xl opacity-60"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -1011,54 +1002,54 @@ const LandingPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
             >
               <div className="text-center">
-                <Badge className="bg-[#e8f5e9] text-[#1a4d2e] mb-4">Business</Badge>
+                <Badge className="bg-gray-100 text-gray-600 mb-4">Business</Badge>
                 <div className="mb-4">
-                  <span className="text-5xl font-bold text-gray-900">79€</span>
-                  <span className="text-gray-600">/mois</span>
+                  <span className="text-5xl font-bold text-muted-foreground">0 FCFA</span>
+                  <span className="text-muted-foreground">/mois</span>
                 </div>
-                <p className="text-gray-600 mb-6">Pour les agences et grandes équipes</p>
+                <p className="text-muted-foreground mb-6">Pour les agences et grandes équipes</p>
                 <Button 
                   variant="outline" 
                   className="w-full mb-6"
-                  asChild
+                  disabled
                 >
-                  <Link to="/pricing">Essayer Business</Link>
+                  Bientôt disponible
                 </Button>
                 <ul className="space-y-3 text-left">
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     15 comptes sociaux
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Posts illimités
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Tout du plan Pro
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     500 leads/mois
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     10 concurrents analysés
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Team collaboration
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     White-label reports
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     API access
                   </li>
-                  <li className="flex items-center text-sm">
-                    <CheckCircle className="w-4 h-4 text-[#1a4d2e] mr-2" />
+                  <li className="flex items-center text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground mr-2" />
                     Support dédié
                   </li>
                 </ul>

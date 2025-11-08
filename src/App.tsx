@@ -17,7 +17,6 @@ import Analytics from "./pages/Analytics";
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
 import AuthPage from "./pages/AuthPage";
-import LogoutPage from "./pages/LogoutPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
 import PublicationsPage from "./pages/PublicationsPage";
@@ -73,9 +72,6 @@ const ProtectedRoutes = () => {
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
-      
-      {/* Route de déconnexion - SANS Layout */}
-      <Route path="/logout" element={<LogoutPage />} />
 
       {/* Routes protégées */}
       <Route

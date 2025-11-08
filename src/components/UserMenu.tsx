@@ -65,7 +65,8 @@ const UserMenu: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    navigate('/logout');
+    await logout();
+    navigate('/');
   };
 
   const handleProfile = () => {
