@@ -115,7 +115,7 @@ serve(async (req) => {
 
     // Poll for completion
     let attempts = 0;
-    const maxAttempts = 24; // 2 minutes max (5s * 24 = 120s)
+    const maxAttempts = 60; // 5 minutes max (5s * 60 = 300s)
     let videoUrl = null;
 
     while (attempts < maxAttempts && !videoUrl) {
