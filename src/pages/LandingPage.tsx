@@ -822,7 +822,7 @@ const LandingPage: React.FC = () => {
           {/* Stats sous les testimonials */}
           <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             <div>
-              <p className="text-4xl font-bold text-[#1a4d2e] mb-2">500+</p>
+              <p className="text-4xl font-bold text-[#1a4d2e] mb-2">50+</p>
               <p className="text-gray-600">Entreprises clientes</p>
             </div>
             <div>
@@ -830,7 +830,7 @@ const LandingPage: React.FC = () => {
               <p className="text-gray-600">Note moyenne</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-[#1a4d2e] mb-2">50K+</p>
+              <p className="text-4xl font-bold text-[#1a4d2e] mb-2">5K+</p>
               <p className="text-gray-600">Posts publiés/mois</p>
             </div>
             <div>
