@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar } from 'lucide-react';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { z } from 'zod';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -24,6 +25,28 @@ export default function AuthPage() {
   // Récupérer l'URL de retour depuis location.state
   const returnUrl = (window.history.state?.usr?.from as string) || '/app/dashboard';
 
+  // Validation schemas
+  const signUpSchema = z.object({
+    name: z.string()
+      .trim()
+      .min(2, 'Le nom doit contenir au moins 2 caractères')
+      .max(100, 'Le nom est trop long'),
+    email: z.string()
+      .trim()
+      .email('Format d\'email invalide')
+      .max(255, 'L\'email est trop long'),
+    password: z.string()
+      .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+      .regex(/[A-Z]/, 'Le mot de passe doit contenir une majuscule')
+      .regex(/[a-z]/, 'Le mot de passe doit contenir une minuscule')
+      .regex(/[0-9]/, 'Le mot de passe doit contenir un chiffre')
+  });
+
+  const signInSchema = z.object({
+    email: z.string().trim().email('Format d\'email invalide'),
+    password: z.string().min(1, 'Le mot de passe est requis')
+  });
+
   // Redirect si déjà connecté
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,33 +58,17 @@ export default function AuthPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password || !name) {
-      toast({
-        title: 'Erreur',
-        description: 'Tous les champs sont requis',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        title: 'Erreur',
-        description: 'Le mot de passe doit contenir au moins 6 caractères',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
+      // Validate inputs
+      const validated = signUpSchema.parse({ name, email, password });
+
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validated.email,
+        password: validated.password,
         options: {
-          data: { name },
+          data: { name: validated.name },
           emailRedirectTo: `${window.location.origin}/app/dashboard`
         }
       });
@@ -85,16 +92,24 @@ export default function AuthPage() {
         // Afficher le modal d'onboarding
         if (data.user) {
           setNewUserId(data.user.id);
-          setNewUserName(name);
+          setNewUserName(validated.name);
           setShowOnboarding(true);
         }
       }
     } catch (error: any) {
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Erreur lors de la création du compte',
-        variant: 'destructive'
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erreur de validation',
+          description: error.errors[0].message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: error.message || 'Erreur lors de la création du compte',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -102,22 +117,15 @@ export default function AuthPage() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email || !password) {
-      toast({
-        title: 'Erreur',
-        description: 'Email et mot de passe requis',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
+      // Validate inputs
+      const validated = signInSchema.parse({ email, password });
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: validated.email,
+        password: validated.password
       });
 
       if (error) {
@@ -134,11 +142,19 @@ export default function AuthPage() {
         navigate(returnUrl);
       }
     } catch (error: any) {
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Erreur lors de la connexion',
-        variant: 'destructive'
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erreur de validation',
+          description: error.errors[0].message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: error.message || 'Erreur lors de la connexion',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -250,7 +266,7 @@ export default function AuthPage() {
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Minimum 6 caractères
+                    8+ caractères, avec majuscule, minuscule et chiffre
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
