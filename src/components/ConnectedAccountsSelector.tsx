@@ -47,13 +47,12 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   // Mapper toutes les plateformes disponibles avec leur statut de connexion
   const allPlatforms = useMemo(() => {
     const platformMap = {
-      instagram: { name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', restriction: '📸 Images uniquement', videoOnly: false, icon: Instagram },
-      facebook: { name: 'Facebook', color: 'bg-blue-600', restriction: '📸 Images uniquement', videoOnly: false, icon: Facebook },
-      twitter: { name: 'X (Twitter)', color: 'bg-black', restriction: '📸 Images uniquement', videoOnly: false, icon: Twitter },
-      x: { name: 'X', color: 'bg-black', restriction: '📸 Images uniquement', videoOnly: false, icon: Twitter },
-      linkedin: { name: 'LinkedIn', color: 'bg-blue-700', restriction: '📸 Images uniquement', videoOnly: false, icon: Linkedin },
-      youtube: { name: 'YouTube', color: 'bg-red-600', restriction: '🎥 Vidéo uniquement', videoOnly: true, icon: Youtube },
-      tiktok: { name: 'TikTok', color: 'bg-black', restriction: '🎥 Vidéo uniquement', videoOnly: true, icon: Music },
+      instagram: { name: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500', videoOnly: false, icon: Instagram },
+      facebook: { name: 'Facebook', color: 'bg-blue-600', videoOnly: false, icon: Facebook },
+      x: { name: 'X', color: 'bg-black', videoOnly: false, icon: Twitter },
+      linkedin: { name: 'LinkedIn', color: 'bg-blue-700', videoOnly: false, icon: Linkedin },
+      youtube: { name: 'YouTube', color: 'bg-red-600', videoOnly: true, icon: Youtube },
+      tiktok: { name: 'TikTok', color: 'bg-black', videoOnly: true, icon: Music },
     };
 
     // Créer une map des comptes connectés
@@ -66,11 +65,9 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       const connectedAccount = connectedMap.get(platformId as any);
       const isConnected = !!connectedAccount;
       
-      // Filtrer par type de média
+      // Filtrer par type de média : les images ne sont pas supportées sur TikTok et YouTube
       let shouldShow = true;
-      if (isVideo && !config.videoOnly) {
-        shouldShow = false;
-      } else if (isImage && config.videoOnly) {
+      if (isImage && config.videoOnly) {
         shouldShow = false;
       }
 
@@ -158,14 +155,11 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       )}
 
       {/* Message d'information sur le type de média */}
-      {(isVideo || isImage) && (
+      {isImage && (
         <div className="flex items-start space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-blue-700">
-            {isVideo 
-              ? 'Seules les plateformes supportant les vidéos sont disponibles (TikTok, YouTube)'
-              : 'Seules les plateformes supportant les images sont disponibles'
-            }
+            TikTok et YouTube acceptent uniquement les vidéos
           </p>
         </div>
       )}

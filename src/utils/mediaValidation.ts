@@ -2,10 +2,10 @@ import { toast } from 'sonner';
 
 export type Platform = 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'threads' | 'tiktok' | 'youtube';
 
-// TikTok et YouTube n'acceptent PAS les images
-const NO_IMAGE_PLATFORMS: Platform[] = ['tiktok', 'youtube'];
-// Toutes les autres plateformes peuvent utiliser des images ET des vidéos
-const ALL_MEDIA_PLATFORMS: Platform[] = ['instagram', 'facebook', 'linkedin', 'twitter', 'threads'];
+// TikTok et YouTube n'acceptent PAS les images (uniquement les vidéos)
+const VIDEO_ONLY_PLATFORMS: Platform[] = ['tiktok', 'youtube'];
+// Toutes les plateformes acceptent les vidéos
+const ALL_PLATFORMS: Platform[] = ['instagram', 'facebook', 'linkedin', 'twitter', 'threads', 'tiktok', 'youtube'];
 
 export interface MediaValidationResult {
   isValid: boolean;
@@ -39,16 +39,16 @@ export const validateMediaForPlatforms = (
 
   // Si c'est une image - TikTok et YouTube n'acceptent PAS les images
   if (isImage) {
-    const hasNoImagePlat = selectedPlatforms.some(p => NO_IMAGE_PLATFORMS.includes(p));
+    const hasVideoOnlyPlat = selectedPlatforms.some(p => VIDEO_ONLY_PLATFORMS.includes(p));
     
-    if (hasNoImagePlat) {
+    if (hasVideoOnlyPlat) {
       const invalidPlatforms = selectedPlatforms
-        .filter(p => NO_IMAGE_PLATFORMS.includes(p))
+        .filter(p => VIDEO_ONLY_PLATFORMS.includes(p))
         .join(', ');
       
       return {
         isValid: false,
-        errorMessage: `❌ Les images ne sont pas acceptées sur TikTok et YouTube. Plateformes incompatibles : ${invalidPlatforms}`,
+        errorMessage: `❌ Les images ne sont pas acceptées sur ${invalidPlatforms}. Ces plateformes acceptent uniquement les vidéos.`,
       };
     }
 
@@ -73,7 +73,7 @@ export const showPlatformCompatibilityToast = (
 };
 
 export const getPlatformMediaRestrictions = (platform: Platform): string => {
-  if (NO_IMAGE_PLATFORMS.includes(platform)) {
+  if (VIDEO_ONLY_PLATFORMS.includes(platform)) {
     return '🎥 Vidéo uniquement';
   }
   
@@ -82,16 +82,16 @@ export const getPlatformMediaRestrictions = (platform: Platform): string => {
 
 export const getAvailablePlatforms = (file: File | null): Platform[] => {
   if (!file) {
-    return ['instagram', 'facebook', 'linkedin', 'twitter', 'threads', 'tiktok', 'youtube'];
+    return ALL_PLATFORMS;
   }
 
   const isVideo = isVideoFile(file);
   
   // Les vidéos sont acceptées sur toutes les plateformes
   if (isVideo) {
-    return ['instagram', 'facebook', 'linkedin', 'twitter', 'threads', 'tiktok', 'youtube'];
+    return ALL_PLATFORMS;
   }
   
   // Les images sont acceptées partout sauf TikTok et YouTube
-  return ALL_MEDIA_PLATFORMS;
+  return ALL_PLATFORMS.filter(p => !VIDEO_ONLY_PLATFORMS.includes(p));
 };
