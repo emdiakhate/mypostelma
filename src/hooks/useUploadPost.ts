@@ -41,7 +41,7 @@ export function useUploadPost(): UseUploadPostReturn {
       // Récupérer le username Upload-Post depuis le profil Supabase
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('upload_post_username')
+        .select('upload_post_username, name')
         .eq('id', user.id)
         .single();
       
@@ -50,42 +50,90 @@ export function useUploadPost(): UseUploadPostReturn {
         throw profileError;
       }
       
-      const uploadPostUsername = profileData?.upload_post_username;
+      let uploadPostUsername = profileData?.upload_post_username;
       
+      // Si pas de username, créer le profil Upload-Post automatiquement
       if (!uploadPostUsername) {
-        console.log('[useUploadPost] No Upload-Post username found in profile');
-        setProfile(null);
-        setConnectedAccounts([]);
-        return;
+        console.log('[useUploadPost] No upload_post_username found, creating Upload-Post profile automatically');
+        
+        // Générer le username depuis le nom de l'utilisateur
+        const baseName = (profileData?.name || 'user')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_@-]/g, '_');
+        const userId = user.id.substring(0, 8);
+        uploadPostUsername = `${baseName}_${userId}`;
+        
+        try {
+          // Créer le profil dans Upload-Post
+          await UploadPostService.createUserProfile(uploadPostUsername);
+          console.log('[useUploadPost] Upload-Post profile created automatically:', uploadPostUsername);
+          
+          // Sauvegarder le username dans le profil Supabase
+          await supabase
+            .from('profiles')
+            .update({ upload_post_username: uploadPostUsername })
+            .eq('id', user.id);
+        } catch (createError) {
+          console.error('[useUploadPost] Error creating Upload-Post profile:', createError);
+          setProfile(null);
+          setConnectedAccounts([]);
+          return;
+        }
       }
       
       console.log('[useUploadPost] Fetching Upload-Post profile for:', uploadPostUsername);
-      const data = await UploadPostService.getUserProfile(uploadPostUsername);
       
-      // L'API retourne un double nesting: data.profile.profile
-      const actualProfile = (data.profile as any)?.profile || data.profile;
-      setProfile(actualProfile);
-      
-      // Extraire les comptes connectés
-      if (actualProfile?.social_accounts) {
-        const accounts: ConnectedAccount[] = Object.entries(actualProfile.social_accounts)
-          .filter(([_, value]) => value && typeof value === 'object')
-          .map(([platform, details]) => ({
-            platform: platform as ConnectedAccount['platform'],
-            display_name: (details as SocialAccountDetails).display_name || '',
-            social_images: (details as SocialAccountDetails).social_images,
-            username: (details as SocialAccountDetails).username
-          }));
+      try {
+        const data = await UploadPostService.getUserProfile(uploadPostUsername);
         
-        console.log('[useUploadPost] Connected accounts:', accounts);
-        setConnectedAccounts(accounts);
-      } else {
-        setConnectedAccounts([]);
+        // L'API retourne un double nesting: data.profile.profile
+        const actualProfile = (data.profile as any)?.profile || data.profile;
+        setProfile(actualProfile);
+        
+        // Extraire les comptes connectés
+        if (actualProfile?.social_accounts) {
+          const accounts: ConnectedAccount[] = Object.entries(actualProfile.social_accounts)
+            .filter(([_, value]) => value && typeof value === 'object')
+            .map(([platform, details]) => ({
+              platform: platform as ConnectedAccount['platform'],
+              display_name: (details as SocialAccountDetails).display_name || '',
+              social_images: (details as SocialAccountDetails).social_images,
+              username: (details as SocialAccountDetails).username
+            }));
+          
+          console.log('[useUploadPost] Connected accounts:', accounts);
+          setConnectedAccounts(accounts);
+        } else {
+          setConnectedAccounts([]);
+        }
+      } catch (fetchError) {
+        // Si le profil n'existe pas dans Upload-Post, le créer
+        if (fetchError instanceof Error && fetchError.message.includes('Profile not found')) {
+          console.log('[useUploadPost] Profile not found in Upload-Post, creating it');
+          
+          try {
+            await UploadPostService.createUserProfile(uploadPostUsername);
+            console.log('[useUploadPost] Upload-Post profile created after fetch error:', uploadPostUsername);
+            
+            // Réessayer de récupérer le profil
+            const data = await UploadPostService.getUserProfile(uploadPostUsername);
+            const actualProfile = (data.profile as any)?.profile || data.profile;
+            setProfile(actualProfile);
+            setConnectedAccounts([]);
+          } catch (retryError) {
+            console.error('[useUploadPost] Error after retry:', retryError);
+            setProfile(null);
+            setConnectedAccounts([]);
+          }
+        } else {
+          throw fetchError;
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile';
       setError(errorMessage);
-      console.error('Error fetching Upload-Post profile:', err);
+      console.error('[useUploadPost] Error fetching Upload-Post profile:', err);
     } finally {
       setLoading(false);
     }
