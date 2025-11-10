@@ -123,30 +123,19 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
               onClick={() => handlePlatformToggle(platform.id, platform.isConnected)}
               disabled={isDisabled}
             >
-              {/* Container avec avatar */}
+              {/* Container avec icône */}
               <div className={cn(
                 "relative w-16 h-16 rounded-full transition-all",
                 isSelected && !isDisabled && "ring-4 ring-primary ring-offset-2",
                 !isDisabled && !isSelected && "hover:scale-105"
               )}>
-                {platform.image ? (
-                  <img 
-                    src={platform.image} 
-                    alt={platform.displayName}
-                    className={cn(
-                      "w-full h-full rounded-full object-cover",
-                      isDisabled && "grayscale"
-                    )}
-                  />
-                ) : (
-                  <div className={cn(
-                    "w-full h-full rounded-full flex items-center justify-center", 
-                    platform.color,
-                    isDisabled && "grayscale"
-                  )}>
-                    <Icon className="w-8 h-8 text-white" />
-                  </div>
-                )}
+                <div className={cn(
+                  "w-full h-full rounded-full flex items-center justify-center", 
+                  platform.color,
+                  isDisabled && "opacity-40 grayscale"
+                )}>
+                  <Icon className="w-8 h-8 text-white" />
+                </div>
                 
                 {/* Badge de sélection */}
                 {isSelected && !isDisabled && (
