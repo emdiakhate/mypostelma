@@ -132,7 +132,6 @@ export const useAuth = (): UseAuthReturn => {
       calendar: { manager: true },
       publications: { manager: true },
       analytics: { manager: true },
-      queue: { manager: true },
       'social-accounts': { manager: true },
       settings: { manager: true },
     };

@@ -32,6 +32,7 @@ const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
     facebook: '📘',
     instagram: '📷',
     twitter: '🐦',
+    x: '🐦',
     linkedin: '💼',
     tiktok: '🎵',
     youtube: '📺'

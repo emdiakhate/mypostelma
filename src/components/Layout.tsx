@@ -37,7 +37,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/dashboard') return 'dashboard';
     if (path === '/app/calendar') return 'calendar';
     if (path === '/app/analytics') return 'analytics';
-    if (path === '/app/queue') return 'queue';
     if (path === '/app/archives') return 'archives';
     if (path === '/app/competitors') return 'competitors';
     
@@ -62,9 +61,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         break;
       case 'analytics':
         navigate('/app/analytics');
-        break;
-      case 'queue':
-        navigate('/app/queue');
         break;
       case 'archives':
         navigate('/app/archives');
@@ -111,7 +107,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
       { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
-      { id: 'queue', label: 'File d\'attente', icon: Clock, count: 12, active: activePage === 'queue' },
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
@@ -156,7 +151,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'creation': return '/app/creation';
                     case 'logout': return '/logout';
                     case 'settings': return '/app/settings';
-                    case 'queue': return '/app/queue';
                     case 'archives': return '/app/archives';
                     case 'competitors': return '/app/competitors';
                     case 'users': return '/app/users';
@@ -183,14 +177,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     <item.icon className="w-4 h-4 flex-shrink-0" />
                     {!sidebarCollapsed && (
-                      <>
-                        <span className="flex-1 text-left">{item.label}</span>
-                        {item.count && (
-                          <span className="bg-gray-600 text-xs px-2 py-1 rounded-full">
-                            {item.count}
-                          </span>
-                        )}
-                      </>
+                      <span className="flex-1 text-left">{item.label}</span>
                     )}
                   </Link>
                 );
@@ -255,7 +242,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'dashboard' && 'Dashboard'}
                 {activePage === 'calendar' && 'Calendrier'}
                 {activePage === 'analytics' && 'Analytics'}
-                {activePage === 'queue' && 'File d\'attente'}
                 {activePage === 'archives' && 'Archives'}
                 {activePage === 'competitors' && 'Concurrents'}
                 {activePage === 'accounts' && 'Comptes Sociaux'}

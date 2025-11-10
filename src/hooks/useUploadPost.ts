@@ -89,6 +89,7 @@ export function useUploadPost(): UseUploadPostReturn {
         
         // L'API retourne un double nesting: data.profile.profile
         const actualProfile = (data.profile as any)?.profile || data.profile;
+        console.log('[useUploadPost] Profile fetched successfully:', actualProfile);
         setProfile(actualProfile);
         
         // Extraire les comptes connectés
@@ -119,6 +120,7 @@ export function useUploadPost(): UseUploadPostReturn {
             // Réessayer de récupérer le profil
             const data = await UploadPostService.getUserProfile(uploadPostUsername);
             const actualProfile = (data.profile as any)?.profile || data.profile;
+            console.log('[useUploadPost] Profile fetched after creation:', actualProfile);
             setProfile(actualProfile);
             setConnectedAccounts([]);
           } catch (retryError) {
@@ -127,7 +129,9 @@ export function useUploadPost(): UseUploadPostReturn {
             setConnectedAccounts([]);
           }
         } else {
-          throw fetchError;
+          console.error('[useUploadPost] Unexpected error fetching profile:', fetchError);
+          setProfile(null);
+          setConnectedAccounts([]);
         }
       }
     } catch (err) {

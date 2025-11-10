@@ -89,6 +89,9 @@ function Analytics() {
     facebook: '#1877F2',
     linkedin: '#0A66C2',
     x: '#000000',
+    tiktok: '#000000',
+    youtube: '#FF0000',
+    threads: '#000000',
   };
 
   // Afficher un état de chargement
