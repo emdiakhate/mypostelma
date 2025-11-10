@@ -10,7 +10,6 @@ import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
 import PostDetailPage from "./pages/PostDetailPage";
 import Analytics from "./pages/Analytics";
 
