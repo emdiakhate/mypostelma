@@ -2,6 +2,7 @@ import React, { useState, memo, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -102,8 +103,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     onPageChange: (page: string) => void;
     onToggleCollapse: () => void;
   }>(({ sidebarCollapsed, activePage, onPageChange, onToggleCollapse }) => {
-    // Items de sidebar - tous visibles pour le rôle manager
-    const sidebarItems = [
+    const { user } = useAuth();
+    const [isBetaUser, setIsBetaUser] = React.useState(false);
+
+    // Charger le statut beta_user
+    React.useEffect(() => {
+      const loadBetaStatus = async () => {
+        if (!user) return;
+        
+        const { data } = await supabase
+          .from('profiles')
+          .select('beta_user')
+          .eq('id', user.id)
+          .single();
+        
+        setIsBetaUser(data?.beta_user || false);
+      };
+      
+      loadBetaStatus();
+    }, [user]);
+
+    // Items de sidebar - Administration visible uniquement pour beta users
+    const allSidebarItems = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
       { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
@@ -114,9 +135,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
-      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin' },
+      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin', betaOnly: true },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
     ];
+
+    // Filtrer les items selon le statut beta
+    const sidebarItems = allSidebarItems.filter(item => !item.betaOnly || isBetaUser);
 
 
     return (

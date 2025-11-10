@@ -292,8 +292,8 @@ export class HashtagAnalyticsService {
         '#linkedin', '#career', '#business', '#networking', '#professional',
         '#leadership', '#innovation', '#success', '#motivation', '#entrepreneur'
       ],
-      twitter: [
-        '#twitter', '#trending', '#news', '#viral', '#tech',
+      x: [
+        '#x', '#trending', '#news', '#viral', '#tech',
         '#politics', '#sports', '#entertainment', '#lifestyle', '#innovation'
       ],
       tiktok: [

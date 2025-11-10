@@ -195,7 +195,7 @@ export class TimeAnalyticsService {
           { dayOfWeek: 'Jeudi', hour: 9, avgEngagement: 3.1, postCount: 0, confidence: 0.8 }
         ]
       },
-      twitter: {
+      x: {
         recommended: { dayOfWeek: 'Mardi', hour: 9, avgEngagement: 2.8, postCount: 0, confidence: 0.8 },
         alternatives: [
           { dayOfWeek: 'Jeudi', hour: 15, avgEngagement: 2.6, postCount: 0, confidence: 0.7 },

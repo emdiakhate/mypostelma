@@ -15,8 +15,8 @@ export const useLeadGeneration = () => {
   const { user } = useAuth();
   const [data, setData] = useState<LeadGenerationData>({
     count: 0,
-    limit: 5,
-    remaining: 5,
+    limit: 3,
+    remaining: 3,
     canGenerate: true,
     isLoading: true,
   });
@@ -34,7 +34,7 @@ export const useLeadGeneration = () => {
       if (error) throw error;
 
       const count = profile?.lead_generation_count || 0;
-      const limit = profile?.lead_generation_limit || 5;
+      const limit = profile?.lead_generation_limit || 3;
       const remaining = Math.max(0, limit - count);
       const canGenerate = remaining > 0;
 
@@ -88,8 +88,8 @@ export const useLeadGeneration = () => {
 
       // Alertes selon le nombre restant
       if (typedResult.remaining === 0) {
-        toast.error('Vous avez atteint la limite de génération de leads (5/5)');
-      } else if (typedResult.remaining <= 2) {
+        toast.error('Vous avez atteint la limite de génération de leads (3/3)');
+      } else if (typedResult.remaining <= 1) {
         toast.warning(`Plus que ${typedResult.remaining} génération${typedResult.remaining > 1 ? 's' : ''} de leads restante${typedResult.remaining > 1 ? 's' : ''}`);
       } else {
         toast.success(`Lead généré avec succès (${typedResult.count}/${typedResult.limit})`);
