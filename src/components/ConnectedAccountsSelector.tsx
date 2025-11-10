@@ -105,7 +105,7 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   return (
     <div className={cn("space-y-4", className)}>
       <h3 className="text-sm font-semibold text-muted-foreground">Plateformes</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-wrap gap-3">
         {allPlatforms.map((platform) => {
           const isSelected = selectedAccounts.includes(platform.id);
           const Icon = platform.icon;
@@ -116,52 +116,52 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
               key={platform.id}
               type="button"
               className={cn(
-                "relative flex items-center gap-3 p-3 rounded-2xl border-2 transition-all",
-                isDisabled && "opacity-50 cursor-not-allowed border-border bg-muted/20",
-                !isDisabled && "cursor-pointer hover:scale-[1.02] border-border hover:border-primary/50",
-                isSelected && !isDisabled && "border-primary bg-primary/5"
+                "relative group",
+                isDisabled && "opacity-40 cursor-not-allowed",
+                !isDisabled && "cursor-pointer"
               )}
               onClick={() => handlePlatformToggle(platform.id, platform.isConnected)}
               disabled={isDisabled}
             >
-              {/* Avatar ou icône du réseau */}
-              {platform.image ? (
-                <img 
-                  src={platform.image} 
-                  alt={platform.displayName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", 
-                  platform.color,
-                  isDisabled && "grayscale"
-                )}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-              )}
-              
-              {/* Nom du compte */}
-              <div className="flex-1 min-w-0 text-left">
-                <p className="font-medium text-sm truncate">{platform.displayName}</p>
-                {platform.username && (
-                  <p className="text-xs text-muted-foreground truncate">@{platform.username}</p>
+              {/* Container avec avatar */}
+              <div className={cn(
+                "relative w-16 h-16 rounded-full transition-all",
+                isSelected && !isDisabled && "ring-4 ring-primary ring-offset-2",
+                !isDisabled && !isSelected && "hover:scale-105"
+              )}>
+                {platform.image ? (
+                  <img 
+                    src={platform.image} 
+                    alt={platform.displayName}
+                    className={cn(
+                      "w-full h-full rounded-full object-cover",
+                      isDisabled && "grayscale"
+                    )}
+                  />
+                ) : (
+                  <div className={cn(
+                    "w-full h-full rounded-full flex items-center justify-center", 
+                    platform.color,
+                    isDisabled && "grayscale"
+                  )}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                )}
+                
+                {/* Badge de sélection */}
+                {isSelected && !isDisabled && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
                 )}
               </div>
               
-              {/* Bouton X pour retirer (visible uniquement si sélectionné) */}
-              {isSelected && !isDisabled && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlatformToggle(platform.id, platform.isConnected);
-                  }}
-                  className="flex-shrink-0 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-colors"
-                >
-                  <span className="text-xs font-bold">✕</span>
-                </button>
-              )}
+              {/* Nom du compte (optionnel) */}
+              <div className="mt-2 text-center">
+                <p className="text-xs font-medium truncate max-w-[64px]">
+                  {platform.displayName}
+                </p>
+              </div>
             </button>
           );
         })}

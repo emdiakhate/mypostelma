@@ -123,7 +123,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       loadBetaStatus();
     }, [user]);
 
-    // Items de sidebar - Administration visible uniquement pour beta users
+    // Items de sidebar - Administration visible uniquement pour les administrateurs (NON beta users)
     const allSidebarItems = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
       { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
@@ -135,12 +135,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
-      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin', betaOnly: true },
+      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin', adminOnly: true },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
     ];
 
-    // Filtrer les items selon le statut beta
-    const sidebarItems = allSidebarItems.filter(item => !item.betaOnly || isBetaUser);
+    // Filtrer les items : masquer Administration pour les beta users
+    const sidebarItems = allSidebarItems.filter(item => !item.adminOnly || !isBetaUser);
 
 
     return (
