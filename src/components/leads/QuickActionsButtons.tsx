@@ -1,4 +1,4 @@
-import { Eye, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Eye, Phone, Mail, MessageCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -6,12 +6,14 @@ interface QuickActionsButtonsProps {
   lead: any;
   onViewDetails: () => void;
   onOpenMessageModal: (channel: 'whatsapp' | 'email') => void;
+  onMarkAsCompetitor?: () => void;
 }
 
-export function QuickActionsButtons({ 
-  lead, 
+export function QuickActionsButtons({
+  lead,
   onViewDetails,
-  onOpenMessageModal 
+  onOpenMessageModal,
+  onMarkAsCompetitor
 }: QuickActionsButtonsProps) {
   
   const handleCall = () => {
@@ -77,6 +79,18 @@ export function QuickActionsButtons({
       >
         <Mail className="w-4 h-4" />
       </Button>
+
+      {onMarkAsCompetitor && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMarkAsCompetitor}
+          title="Marquer comme concurrent"
+          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+        >
+          <Users className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 }

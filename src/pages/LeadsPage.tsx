@@ -75,6 +75,7 @@ import { N8NLeadData } from '@/components/LeadCard';
 import { QuickActionsButtons } from '@/components/leads/QuickActionsButtons';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
 import { QuotaDisplay } from '@/components/QuotaDisplay';
+import { createCompetitor } from '@/services/competitorAnalytics';
 
 const LEADS_PER_PAGE = 10;
 
@@ -242,6 +243,27 @@ const LeadsPage: React.FC = () => {
     setSelectedLead(lead);
     setMessageChannel(channel);
     setMessageModalOpen(true);
+  };
+
+  // Fonction pour marquer un lead comme concurrent
+  const handleMarkAsCompetitor = async (lead: Lead) => {
+    try {
+      await createCompetitor({
+        name: lead.name,
+        industry: lead.category,
+        description: lead.description,
+        website_url: lead.website,
+        instagram_url: lead.socialMedia?.instagram,
+        facebook_url: lead.socialMedia?.facebook,
+        linkedin_url: lead.socialMedia?.linkedin,
+        twitter_url: lead.socialMedia?.twitter,
+      } as any);
+
+      toast.success(`${lead.name} ajouté comme concurrent`);
+    } catch (error: any) {
+      console.error('Error marking lead as competitor:', error);
+      toast.error(error.message || 'Erreur lors de l\'ajout du concurrent');
+    }
   };
 
   const getStatusVariant = (status: LeadStatus) => {
@@ -834,6 +856,7 @@ const LeadsPage: React.FC = () => {
                         lead={lead}
                         onViewDetails={() => handleViewLead(lead)}
                         onOpenMessageModal={(channel) => handleOpenMessageModal(lead, channel)}
+                        onMarkAsCompetitor={() => handleMarkAsCompetitor(lead)}
                       />
                     </TableCell>
                   </TableRow>
