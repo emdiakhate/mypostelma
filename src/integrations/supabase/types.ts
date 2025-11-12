@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      competitors: {
+        Row: {
+          added_at: string
+          address: string
+          category: string
+          city: string
+          created_at: string
+          email: string | null
+          id: string
+          metrics: Json | null
+          name: string
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          social_media: Json | null
+          source: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          added_at?: string
+          address: string
+          category: string
+          city: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          metrics?: Json | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          social_media?: Json | null
+          source?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          added_at?: string
+          address?: string
+          category?: string
+          city?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          metrics?: Json | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          social_media?: Json | null
+          source?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           added_at: string
