@@ -64,6 +64,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLeads, useLeadStatus } from '@/hooks/useLeads';
+import { useCompetitors } from '@/hooks/useCompetitors';
 import { Lead, LeadStatus } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -80,6 +81,7 @@ const LEADS_PER_PAGE = 10;
 
 const LeadsPage: React.FC = () => {
   const { leads, loading, error, loadLeads, addLead, updateLead, deleteLead } = useLeads();
+  const { addCompetitor } = useCompetitors();
   const { getStatusColor, getStatusLabel } = useLeadStatus();
   
   // États de recherche
@@ -158,6 +160,33 @@ const LeadsPage: React.FC = () => {
     } catch (error) {
       console.error('Erreur ajout lead:', error);
       toast.error('Erreur lors de l\'ajout du lead');
+    }
+  };
+
+  // Fonction pour ajouter un lead comme concurrent
+  const handleAddToCompetitors = async (n8nLead: N8NLeadData) => {
+    try {
+      await addCompetitor({
+        name: n8nLead.Titre,
+        category: n8nLead.Categorie,
+        address: n8nLead.Addresse,
+        city: n8nLead.Addresse.split(',').pop()?.trim() || '',
+        phone: n8nLead.Telephone !== 'undefined' ? n8nLead.Telephone : undefined,
+        website: n8nLead.Lien,
+        social_media: {
+          instagram: n8nLead.instagrams !== '[]' ? JSON.parse(n8nLead.instagrams)[0] : undefined,
+          facebook: n8nLead.facebooks !== '[]' ? JSON.parse(n8nLead.facebooks)[0] : undefined,
+          linkedin: n8nLead.LinkedIns !== '[]' ? JSON.parse(n8nLead.LinkedIns)[0] : undefined,
+          twitter: n8nLead.twitters !== '[]' ? JSON.parse(n8nLead.twitters)[0] : undefined,
+        },
+        notes: `Ajouté depuis la recherche - Horaires: ${n8nLead.Horaires}`,
+        tags: ['recherche', 'concurrent'],
+        source: 'search'
+      });
+      toast.success('Concurrent ajouté avec succès !');
+    } catch (error) {
+      console.error('Erreur ajout concurrent:', error);
+      toast.error('Erreur lors de l\'ajout du concurrent');
     }
   };
 
@@ -666,6 +695,7 @@ const LeadsPage: React.FC = () => {
               loading={false}
               error={searchError}
               onAddToLeads={handleAddToLeads}
+              onAddToCompetitors={handleAddToCompetitors}
               onRetry={() => setShowSearchForm(true)}
             />
           </CardContent>
