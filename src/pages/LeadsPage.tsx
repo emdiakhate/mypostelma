@@ -277,7 +277,7 @@ const LeadsPage: React.FC = () => {
       await createCompetitor({
         name: lead.name,
         industry: lead.category,
-        description: lead.description,
+        description: lead.notes || '',
         website_url: lead.website,
         instagram_url: lead.socialMedia?.instagram,
         facebook_url: lead.socialMedia?.facebook,
