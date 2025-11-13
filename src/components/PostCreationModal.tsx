@@ -55,7 +55,7 @@ const PreviewSection = memo<PreviewSectionProps>(({
   generatedCaptions 
 }) => {
   const { currentUser } = useAuth();
-  const [profileName, setProfileName] = useState('Postelma');
+  const [profileName, setProfileName] = useState(currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur');
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
 
   // Charger les données du profil

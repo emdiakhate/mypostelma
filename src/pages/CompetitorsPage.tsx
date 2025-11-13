@@ -468,7 +468,7 @@ export default function CompetitorsPage() {
               opportunities, and strategic recommendations.
             </p>
             <p className="text-xs">
-              Cost: ~€0.0013 per analysis • Duration: 40-60 seconds
+              Cost: ~€0.0013 per analysis • Duration: 15-30 seconds (powered by Jina.ai + OpenAI)
             </p>
           </CardContent>
         </Card>
