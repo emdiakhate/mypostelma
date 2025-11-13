@@ -108,23 +108,31 @@ export function useUploadPost(): UseUploadPostReturn {
         } else {
           setConnectedAccounts([]);
         }
-      } catch (fetchError) {
-        // Si le profil n'existe pas dans Upload-Post, le créer
-        if (fetchError instanceof Error && fetchError.message.includes('Profile not found')) {
-          console.log('[useUploadPost] Profile not found in Upload-Post, creating it');
+      } catch (fetchError: any) {
+        console.error('[useUploadPost] Error fetching Upload-Post profile:', fetchError);
+        
+        // Vérifier si c'est une erreur 404 / Profile not found
+        const isProfileNotFound = 
+          fetchError?.message?.includes('Profile not found') ||
+          fetchError?.message?.includes('404') ||
+          String(fetchError).includes('Profile not found');
+        
+        if (isProfileNotFound) {
+          console.log('[useUploadPost] Profile not found in Upload-Post (404), creating it now');
           
           try {
+            // Créer le profil
             await UploadPostService.createUserProfile(uploadPostUsername);
-            console.log('[useUploadPost] Upload-Post profile created after fetch error:', uploadPostUsername);
+            console.log('[useUploadPost] Upload-Post profile created successfully:', uploadPostUsername);
             
-            // Réessayer de récupérer le profil
-            const data = await UploadPostService.getUserProfile(uploadPostUsername);
-            const actualProfile = (data.profile as any)?.profile || data.profile;
-            console.log('[useUploadPost] Profile fetched after creation:', actualProfile);
-            setProfile(actualProfile);
+            // Réessayer de récupérer le profil après création
+            const retryData = await UploadPostService.getUserProfile(uploadPostUsername);
+            const retryProfile = (retryData.profile as any)?.profile || retryData.profile;
+            console.log('[useUploadPost] Profile fetched after creation:', retryProfile);
+            setProfile(retryProfile);
             setConnectedAccounts([]);
           } catch (retryError) {
-            console.error('[useUploadPost] Error after retry:', retryError);
+            console.error('[useUploadPost] Error creating/fetching profile after 404:', retryError);
             setProfile(null);
             setConnectedAccounts([]);
           }
