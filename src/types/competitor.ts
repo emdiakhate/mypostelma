@@ -2,28 +2,19 @@ export interface Competitor {
   id: string;
   user_id: string;
   name: string;
-  category: string;
-  address: string;
-  city: string;
-  postal_code?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  social_media?: {
-    instagram?: string;
-    facebook?: string;
-    linkedin?: string;
-    twitter?: string;
-  };
-  notes: string;
-  tags: string[];
-  metrics?: {
-    followers?: number;
-    engagement_rate?: number;
-    posting_frequency?: number;
-  };
+  industry?: string;
+  description?: string;
+  website_url?: string;
+  instagram_url?: string;
+  instagram_followers?: string;
+  facebook_url?: string;
+  facebook_likes?: string;
+  linkedin_url?: string;
+  linkedin_followers?: string;
+  twitter_url?: string;
+  tiktok_url?: string;
+  youtube_url?: string;
   added_at: Date;
-  created_at: Date;
-  updated_at: Date;
-  source: string;
+  last_analyzed_at?: Date;
+  analysis_count: number;
 }

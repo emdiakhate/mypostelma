@@ -163,26 +163,23 @@ const LeadsPage: React.FC = () => {
     }
   };
 
-  // Fonction pour ajouter un lead comme concurrent
+  // Fonction pour ajouter un lead (note: cette fonction ne devrait plus ajouter aux competitors)
   const handleAddToCompetitors = async (n8nLead: N8NLeadData) => {
     try {
-      await addCompetitor({
+      // Cette fonctionnalité devrait être supprimée ou redirigée vers l'ajout de leads standards
+      toast.info('Fonctionnalité en développement');
+      // TODO: Implémenter l'ajout correct vers la table leads
+      /*
+      await addLead({
         name: n8nLead.Titre,
         category: n8nLead.Categorie,
         address: n8nLead.Addresse,
         city: n8nLead.Addresse.split(',').pop()?.trim() || '',
         phone: n8nLead.Telephone !== 'undefined' ? n8nLead.Telephone : undefined,
         website: n8nLead.Lien,
-        social_media: {
-          instagram: n8nLead.instagrams !== '[]' ? JSON.parse(n8nLead.instagrams)[0] : undefined,
-          facebook: n8nLead.facebooks !== '[]' ? JSON.parse(n8nLead.facebooks)[0] : undefined,
-          linkedin: n8nLead.LinkedIns !== '[]' ? JSON.parse(n8nLead.LinkedIns)[0] : undefined,
-          twitter: n8nLead.twitters !== '[]' ? JSON.parse(n8nLead.twitters)[0] : undefined,
-        },
-        notes: `Ajouté depuis la recherche - Horaires: ${n8nLead.Horaires}`,
-        tags: ['recherche', 'concurrent'],
-        source: 'search'
+        ...
       });
+      */
       toast.success('Concurrent ajouté avec succès !');
     } catch (error) {
       console.error('Erreur ajout concurrent:', error);

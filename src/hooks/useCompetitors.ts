@@ -22,17 +22,14 @@ export const useCompetitors = () => {
         .from('competitors')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('added_at', { ascending: false });
 
       if (error) throw error;
 
       const transformedData: Competitor[] = (data || []).map(item => ({
         ...item,
         added_at: new Date(item.added_at),
-        created_at: new Date(item.created_at),
-        updated_at: new Date(item.updated_at),
-        social_media: item.social_media as Competitor['social_media'],
-        metrics: item.metrics as Competitor['metrics']
+        last_analyzed_at: item.last_analyzed_at ? new Date(item.last_analyzed_at) : undefined
       }));
 
       setCompetitors(transformedData);
@@ -44,7 +41,7 @@ export const useCompetitors = () => {
     }
   }, [user]);
 
-  const addCompetitor = async (competitor: Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'created_at' | 'updated_at'>) => {
+  const addCompetitor = async (competitor: Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'last_analyzed_at' | 'analysis_count'>) => {
     if (!user) {
       toast.error('Vous devez être connecté');
       return;
@@ -55,18 +52,18 @@ export const useCompetitors = () => {
         .from('competitors')
         .insert([{ 
           name: competitor.name,
-          category: competitor.category,
-          address: competitor.address,
-          city: competitor.city,
-          postal_code: competitor.postal_code,
-          phone: competitor.phone,
-          email: competitor.email,
-          website: competitor.website,
-          social_media: competitor.social_media || {},
-          notes: competitor.notes,
-          tags: competitor.tags,
-          metrics: competitor.metrics || {},
-          source: competitor.source,
+          industry: competitor.industry,
+          description: competitor.description,
+          website_url: competitor.website_url,
+          instagram_url: competitor.instagram_url,
+          instagram_followers: competitor.instagram_followers,
+          facebook_url: competitor.facebook_url,
+          facebook_likes: competitor.facebook_likes,
+          linkedin_url: competitor.linkedin_url,
+          linkedin_followers: competitor.linkedin_followers,
+          twitter_url: competitor.twitter_url,
+          tiktok_url: competitor.tiktok_url,
+          youtube_url: competitor.youtube_url,
           user_id: user.id
         }])
         .select()
@@ -77,10 +74,7 @@ export const useCompetitors = () => {
       const transformedData: Competitor = {
         ...data,
         added_at: new Date(data.added_at),
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        social_media: data.social_media as Competitor['social_media'],
-        metrics: data.metrics as Competitor['metrics']
+        last_analyzed_at: data.last_analyzed_at ? new Date(data.last_analyzed_at) : undefined
       };
 
       setCompetitors(prev => [transformedData, ...prev]);
@@ -93,24 +87,24 @@ export const useCompetitors = () => {
     }
   };
 
-  const updateCompetitor = async (id: string, updates: Partial<Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'created_at' | 'updated_at'>>) => {
+  const updateCompetitor = async (id: string, updates: Partial<Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'last_analyzed_at' | 'analysis_count'>>) => {
     try {
       const { data, error } = await supabase
         .from('competitors')
         .update({
           ...(updates.name && { name: updates.name }),
-          ...(updates.category && { category: updates.category }),
-          ...(updates.address && { address: updates.address }),
-          ...(updates.city && { city: updates.city }),
-          ...(updates.postal_code !== undefined && { postal_code: updates.postal_code }),
-          ...(updates.phone !== undefined && { phone: updates.phone }),
-          ...(updates.email !== undefined && { email: updates.email }),
-          ...(updates.website !== undefined && { website: updates.website }),
-          ...(updates.social_media && { social_media: updates.social_media }),
-          ...(updates.notes !== undefined && { notes: updates.notes }),
-          ...(updates.tags && { tags: updates.tags }),
-          ...(updates.metrics && { metrics: updates.metrics }),
-          ...(updates.source && { source: updates.source })
+          ...(updates.industry && { industry: updates.industry }),
+          ...(updates.description !== undefined && { description: updates.description }),
+          ...(updates.website_url !== undefined && { website_url: updates.website_url }),
+          ...(updates.instagram_url !== undefined && { instagram_url: updates.instagram_url }),
+          ...(updates.instagram_followers !== undefined && { instagram_followers: updates.instagram_followers }),
+          ...(updates.facebook_url !== undefined && { facebook_url: updates.facebook_url }),
+          ...(updates.facebook_likes !== undefined && { facebook_likes: updates.facebook_likes }),
+          ...(updates.linkedin_url !== undefined && { linkedin_url: updates.linkedin_url }),
+          ...(updates.linkedin_followers !== undefined && { linkedin_followers: updates.linkedin_followers }),
+          ...(updates.twitter_url !== undefined && { twitter_url: updates.twitter_url }),
+          ...(updates.tiktok_url !== undefined && { tiktok_url: updates.tiktok_url }),
+          ...(updates.youtube_url !== undefined && { youtube_url: updates.youtube_url })
         })
         .eq('id', id)
         .select()
@@ -121,10 +115,7 @@ export const useCompetitors = () => {
       const transformedData: Competitor = {
         ...data,
         added_at: new Date(data.added_at),
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        social_media: data.social_media as Competitor['social_media'],
-        metrics: data.metrics as Competitor['metrics']
+        last_analyzed_at: data.last_analyzed_at ? new Date(data.last_analyzed_at) : undefined
       };
 
       setCompetitors(prev => prev.map(c => c.id === id ? transformedData : c));
@@ -163,9 +154,9 @@ export const useCompetitors = () => {
     competitors,
     loading,
     error,
-    loadCompetitors,
     addCompetitor,
     updateCompetitor,
     deleteCompetitor,
+    refreshCompetitors: loadCompetitors
   };
 };
