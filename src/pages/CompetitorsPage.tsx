@@ -30,7 +30,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -135,8 +134,10 @@ export default function CompetitorsPage() {
           <Plus className="h-4 w-4 mr-2" />
           Add Competitor
         </Button>
+      </div>
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      {/* Add Competitor Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Competitor</DialogTitle>
@@ -271,7 +272,6 @@ export default function CompetitorsPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
