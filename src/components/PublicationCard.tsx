@@ -47,36 +47,62 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
   const getStatusConfig = () => {
     const now = new Date();
     const scheduledTime = new Date(post.scheduledTime);
-    
-    // Si le post est dans le futur -> "En cours"
-    if (scheduledTime > now) {
-      return {
-        label: 'En cours',
-        className: 'bg-yellow-100 text-yellow-800',
-        dot: 'bg-yellow-500'
-      };
-    }
-    
-    // Sinon, utiliser le statut du post
-    const statusConfig = {
-      published: { 
-        label: 'Publié', 
+
+    const statusConfigs = {
+      published: {
+        label: 'Publié',
         className: 'bg-green-100 text-green-800',
         dot: 'bg-green-500'
       },
-      draft: { 
-        label: 'Brouillon', 
+      scheduled: {
+        label: 'En cours',
+        className: 'bg-yellow-100 text-yellow-800',
+        dot: 'bg-yellow-500'
+      },
+      pending: {
+        label: 'En cours',
+        className: 'bg-yellow-100 text-yellow-800',
+        dot: 'bg-yellow-500'
+      },
+      draft: {
+        label: 'Brouillon',
         className: 'bg-gray-100 text-gray-800',
         dot: 'bg-gray-400'
       },
-      failed: { 
-        label: 'Échec', 
+      failed: {
+        label: 'Échec',
         className: 'bg-red-100 text-red-800',
         dot: 'bg-red-500'
       }
     };
-    
-    return statusConfig[post.status] || statusConfig.draft;
+
+    // Si le statut est explicitement "failed"
+    if (post.status === 'failed') {
+      return statusConfigs.failed;
+    }
+
+    // Si le statut est explicitement "published"
+    if (post.status === 'published') {
+      return statusConfigs.published;
+    }
+
+    // Si le statut est "draft"
+    if (post.status === 'draft') {
+      return statusConfigs.draft;
+    }
+
+    // Si le post est programmé (scheduled/pending) et la date est dans le futur -> "En cours"
+    if ((post.status === 'scheduled' || post.status === 'pending') && scheduledTime > now) {
+      return statusConfigs.scheduled;
+    }
+
+    // Si le post est programmé (scheduled/pending) mais la date est passée -> "Publié"
+    if ((post.status === 'scheduled' || post.status === 'pending') && scheduledTime <= now) {
+      return statusConfigs.published;
+    }
+
+    // Par défaut, si la date est dans le futur -> "En cours", sinon "Publié"
+    return scheduledTime > now ? statusConfigs.scheduled : statusConfigs.published;
   };
 
   const config = getStatusConfig();
