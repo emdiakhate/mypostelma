@@ -87,7 +87,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
 
       toast({
         title: 'Analysis Started',
-        description: `Analyzing ${competitor.name}... This will take 40-60 seconds.`,
+        description: `Analyzing ${competitor.name}... This will take 15-30 seconds.`,
       });
 
       // Wait a bit then fetch the new analysis
@@ -105,7 +105,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
         } finally {
           setIsAnalyzing(false);
         }
-      }, 60000); // Wait 60 seconds
+      }, 30000); // Wait 30 seconds
     } catch (error) {
       console.error('Error analyzing competitor:', error);
       toast({

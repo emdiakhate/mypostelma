@@ -1,13 +1,11 @@
 /**
  * Competitor Analytics Service
  *
- * Integrates with N8N workflow for competitor strategy analysis via web scraping and AI.
- * Cost: ~0.0013€ per analysis using GPT-4o-mini
+ * Integrates with Jina.ai + OpenAI for competitor strategy analysis via web scraping and AI.
+ * Cost: ~0.0013€ per analysis using GPT-4o-mini (calculated automatically)
  */
 
 import { supabase } from '@/integrations/supabase/client';
-
-const N8N_WEBHOOK_URL = 'https://srv837294.hstgr.cloud/webhook/analyze-competitor';
 
 export interface Competitor {
   id: string;
@@ -190,34 +188,33 @@ export const getCompetitorAnalysisHistory = async (competitorId: string): Promis
 };
 
 /**
- * Trigger N8N workflow to analyze competitor strategy
- * This initiates web scraping and AI analysis
+ * Trigger Jina.ai + OpenAI analysis for competitor strategy
+ * This initiates web scraping via Jina.ai and AI analysis via OpenAI
+ * Typically takes 15-30 seconds to complete
  */
 export const analyzeCompetitorStrategy = async (competitor: Competitor): Promise<any> => {
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('analyze-competitor-jina', {
+      body: {
         competitor_id: competitor.id,
         name: competitor.name,
         industry: competitor.industry,
         instagram_url: competitor.instagram_url,
         facebook_url: competitor.facebook_url,
         linkedin_url: competitor.linkedin_url,
-        twitter_url: competitor.twitter_url,
         website_url: competitor.website_url,
-      }),
+      },
     });
 
-    if (!response.ok) {
-      throw new Error(`N8N webhook failed: ${response.statusText}`);
+    if (error) {
+      throw new Error(`Analysis failed: ${error.message}`);
     }
 
-    const result = await response.json();
-    return result;
+    if (!data?.success) {
+      throw new Error(data?.error || 'Analysis failed');
+    }
+
+    return data;
   } catch (error) {
     console.error('Error analyzing competitor:', error);
     throw error;

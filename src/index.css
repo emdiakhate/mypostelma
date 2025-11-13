@@ -92,10 +92,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 210 11% 15%;
 
-    /* Primary brand colors - Blue accent */
-    --primary: 214 100% 59%;
+    /* Primary brand colors - Green accent (Postelma brand) */
+    --primary: 142 76% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 214 100% 54%;
+    --primary-hover: 142 76% 40%;
 
     /* Secondary surfaces */
     --secondary: 210 17% 95%;
@@ -106,8 +106,8 @@ All colors MUST be HSL.
     --muted-foreground: 210 11% 46%;
 
     /* Accent colors */
-    --accent: 214 100% 97%;
-    --accent-foreground: 214 100% 47%;
+    --accent: 142 76% 97%;
+    --accent-foreground: 142 76% 40%;
 
     /* Destructive actions */
     --destructive: 0 84% 60%;
@@ -116,7 +116,7 @@ All colors MUST be HSL.
     /* Borders and inputs */
     --border: 210 20% 90%;
     --input: 210 20% 90%;
-    --ring: 214 100% 59%;
+    --ring: 142 76% 45%;
 
     --radius: 0.5rem;
 
@@ -125,7 +125,7 @@ All colors MUST be HSL.
     --sidebar-foreground: 0 0% 90%;
     --sidebar-muted: 210 20% 25%;
     --sidebar-border: 210 20% 20%;
-    --sidebar-accent: 214 100% 59%;
+    --sidebar-accent: 142 76% 45%;
     --sidebar-accent-foreground: 0 0% 100%;
 
     /* Social platform colors */
@@ -137,9 +137,9 @@ All colors MUST be HSL.
     --tiktok: 348 83% 47%;
 
     /* Campaign and status colors */
-    --campaign-primary: 214 100% 59%;
+    --campaign-primary: 142 76% 45%;
     --campaign-secondary: 142 76% 36%;
-    --status-scheduled: 214 100% 59%;
+    --status-scheduled: 142 76% 45%;
     --status-published: 142 76% 36%;
     --status-draft: 45 93% 47%;
     --status-failed: 0 84% 60%;
