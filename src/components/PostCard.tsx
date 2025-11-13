@@ -109,33 +109,55 @@ const PostCard: React.FC<PostCardProps> = memo(({
   const getStatusBadge = () => {
     const now = new Date();
     const scheduledTime = new Date(post.scheduledTime);
-    
-    // Si le post est programmé et dans le futur -> "En cours"
-    if (scheduledTime > now) {
-      return {
-        text: 'En cours',
-        className: 'bg-yellow-500 text-white'
-      };
-    }
-    
-    // Si le post a été publié avec succès
-    if (post.status === 'published') {
-      return {
-        text: 'Publié',
-        className: 'bg-green-500 text-white'
-      };
-    }
-    
-    // Si la publication a échoué
+
+    // Si le statut est explicitement "failed"
     if (post.status === 'failed') {
       return {
         text: 'Échec',
         className: 'bg-red-500 text-white'
       };
     }
-    
-    // Statut par défaut (draft, etc.)
-    return null;
+
+    // Si le statut est explicitement "published"
+    if (post.status === 'published') {
+      return {
+        text: 'Publié',
+        className: 'bg-green-500 text-white'
+      };
+    }
+
+    // Si le statut est "draft"
+    if (post.status === 'draft') {
+      return {
+        text: 'Brouillon',
+        className: 'bg-gray-500 text-white'
+      };
+    }
+
+    // Si le post est programmé (scheduled/pending) et la date est dans le futur -> "En cours"
+    if ((post.status === 'scheduled' || post.status === 'pending') && scheduledTime > now) {
+      return {
+        text: 'En cours',
+        className: 'bg-yellow-500 text-white'
+      };
+    }
+
+    // Si le post est programmé (scheduled/pending) mais la date est passée -> "Publié"
+    if ((post.status === 'scheduled' || post.status === 'pending') && scheduledTime <= now) {
+      return {
+        text: 'Publié',
+        className: 'bg-green-500 text-white'
+      };
+    }
+
+    // Par défaut, si la date est dans le futur -> "En cours", sinon "Publié"
+    return scheduledTime > now ? {
+      text: 'En cours',
+      className: 'bg-yellow-500 text-white'
+    } : {
+      text: 'Publié',
+      className: 'bg-green-500 text-white'
+    };
   };
 
   const statusBadge = getStatusBadge();
@@ -205,17 +227,15 @@ const PostCard: React.FC<PostCardProps> = memo(({
           </Tooltip>
         </div>
 
-        {/* Badge de statut */}
-        {statusBadge && (
-          <div className="mb-2">
-            <div className={cn(
-              "inline-block px-1 py-0.5 text-[8px] font-medium rounded-full",
-              statusBadge.className
-            )}>
-              {statusBadge.text}
-            </div>
+        {/* Badge de statut - Toujours affiché */}
+        <div className="mb-2">
+          <div className={cn(
+            "inline-block px-1 py-0.5 text-[8px] font-medium rounded-full",
+            statusBadge.className
+          )}>
+            {statusBadge.text}
           </div>
-        )}
+        </div>
 
         {/* Content - exactly 2 lines */}
         <p className="text-xs text-foreground mb-3 line-clamp-2 leading-tight flex-shrink-0">

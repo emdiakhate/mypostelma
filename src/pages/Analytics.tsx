@@ -45,7 +45,7 @@ function Analytics() {
     }
   }, [connectedPlatforms]);
   
-  const { data, loading, error } = useAnalytics(profile?.username || undefined, connectedPlatforms);
+  const { data, loading, error } = useAnalytics(uploadPostUsername || profile?.username || undefined, connectedPlatforms);
 
   // Calculer les totaux globaux
   const globalStats = data?.analytics ? Object.values(data.analytics).reduce((acc, metrics: any) => ({
@@ -159,7 +159,7 @@ function Analytics() {
   const analytics = data.analytics;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6 max-w-[1920px] mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Analytics</h1>
