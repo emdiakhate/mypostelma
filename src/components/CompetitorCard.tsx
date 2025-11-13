@@ -87,25 +87,44 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
 
       toast({
         title: 'Analysis Started',
-        description: `Analyzing ${competitor.name}... This will take 15-30 seconds.`,
+        description: `Analyzing ${competitor.name}... This will take 1-5 minutes (powered by Apify + OpenAI).`,
       });
 
-      // Wait a bit then fetch the new analysis
-      setTimeout(async () => {
+      // Poll for analysis completion (check every 15s for up to 5 minutes)
+      const pollInterval = 15000; // 15 seconds
+      const maxAttempts = 20; // 20 attempts = 5 minutes
+      let attempts = 0;
+
+      const pollForAnalysis = setInterval(async () => {
+        attempts++;
         try {
           const latestAnalysis = await getLatestAnalysis(competitor.id);
-          setAnalysis(latestAnalysis);
-          toast({
-            title: 'Analysis Complete',
-            description: `${competitor.name} has been analyzed successfully.`,
-          });
-          onUpdate?.();
+
+          // Check if this is a new analysis (within last 2 minutes)
+          if (latestAnalysis && new Date(latestAnalysis.analyzed_at).getTime() > Date.now() - 120000) {
+            clearInterval(pollForAnalysis);
+            setAnalysis(latestAnalysis);
+            toast({
+              title: 'Analysis Complete',
+              description: `${competitor.name} has been analyzed successfully.`,
+            });
+            onUpdate?.();
+            setIsAnalyzing(false);
+          } else if (attempts >= maxAttempts) {
+            // Timeout after 5 minutes
+            clearInterval(pollForAnalysis);
+            toast({
+              title: 'Analysis Taking Longer',
+              description: 'The analysis is taking longer than expected. Please check back in a few minutes.',
+              variant: 'destructive',
+            });
+            setIsAnalyzing(false);
+          }
         } catch (error) {
-          console.error('Error fetching analysis:', error);
-        } finally {
-          setIsAnalyzing(false);
+          console.error('Error polling for analysis:', error);
         }
-      }, 30000); // Wait 30 seconds
+      }, pollInterval);
+
     } catch (error) {
       console.error('Error analyzing competitor:', error);
       toast({
