@@ -117,10 +117,12 @@ export default function CompetitorsPage() {
     }
   };
 
+  console.log('CompetitorsPage render, isAddDialogOpen:', isAddDialogOpen);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Users className="h-8 w-8" />
@@ -131,10 +133,12 @@ export default function CompetitorsPage() {
           </p>
         </div>
         <Button 
-          onClick={() => {
-            console.log('Button clicked!');
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Button clicked!', isAddDialogOpen);
             setIsAddDialogOpen(true);
           }}
+          className="relative z-50"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Competitor
