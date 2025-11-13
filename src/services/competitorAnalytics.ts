@@ -1,8 +1,8 @@
 /**
  * Competitor Analytics Service
  *
- * Integrates with Jina.ai + OpenAI for competitor strategy analysis via web scraping and AI.
- * Cost: ~0.0013€ per analysis using GPT-4o-mini (calculated automatically)
+ * Integrates with Apify (Instagram/Facebook/Twitter/TikTok) + Jina.ai (websites) + OpenAI for competitor strategy analysis.
+ * Cost: ~0.0013€ per analysis using GPT-4o-mini (calculated automatically) + Apify credits
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +46,8 @@ export interface CompetitorAnalysis {
   instagram_data?: any;
   facebook_data?: any;
   linkedin_data?: any;
+  twitter_data?: any;
+  tiktok_data?: any;
   website_data?: any;
   analyzed_at: string;
   tokens_used?: number;
@@ -188,13 +190,13 @@ export const getCompetitorAnalysisHistory = async (competitorId: string): Promis
 };
 
 /**
- * Trigger Jina.ai + OpenAI analysis for competitor strategy
- * This initiates web scraping via Jina.ai and AI analysis via OpenAI
- * Typically takes 15-30 seconds to complete
+ * Trigger Apify + Jina.ai + OpenAI analysis for competitor strategy
+ * This initiates web scraping via Apify (social media) and Jina.ai (websites), then AI analysis via OpenAI
+ * Typically takes 1-5 minutes to complete (depending on Apify actor execution time)
  */
 export const analyzeCompetitorStrategy = async (competitor: Competitor): Promise<any> => {
   try {
-    const { data, error } = await supabase.functions.invoke('analyze-competitor-jina', {
+    const { data, error } = await supabase.functions.invoke('analyze-competitor-apify', {
       body: {
         competitor_id: competitor.id,
         name: competitor.name,
@@ -202,6 +204,8 @@ export const analyzeCompetitorStrategy = async (competitor: Competitor): Promise
         instagram_url: competitor.instagram_url,
         facebook_url: competitor.facebook_url,
         linkedin_url: competitor.linkedin_url,
+        twitter_url: competitor.twitter_url,
+        tiktok_url: competitor.tiktok_url,
         website_url: competitor.website_url,
       },
     });
