@@ -33,7 +33,7 @@ export const PLATFORMS: PlatformConfig[] = [
     textClass: 'text-white'
   },
   {
-    id: 'twitter',
+    id: 'x',
     name: 'X (Twitter)',
     colorClass: 'text-social-twitter',
     bgClass: 'bg-social-twitter',

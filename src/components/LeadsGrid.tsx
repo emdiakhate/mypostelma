@@ -39,6 +39,7 @@ interface LeadsGridProps {
   loading?: boolean;
   error?: string;
   onAddToLeads?: (lead: N8NLeadData) => void;
+  onAddToCompetitors?: (lead: N8NLeadData) => void;
   onRetry?: () => void;
   className?: string;
 }
@@ -48,6 +49,7 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
   loading = false,
   error,
   onAddToLeads,
+  onAddToCompetitors,
   onRetry,
   className
 }) => {
@@ -226,6 +228,7 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
               key={`${lead.Titre}-${index}`}
               lead={lead}
               onAddToLeads={onAddToLeads}
+              onAddToCompetitors={onAddToCompetitors}
             />
           ))}
         </div>
@@ -273,12 +276,14 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
 interface LeadCardProps {
   lead: N8NLeadData;
   onAddToLeads?: (lead: N8NLeadData) => void;
+  onAddToCompetitors?: (lead: N8NLeadData) => void;
   className?: string;
 }
 
 const LeadCard: React.FC<LeadCardProps> = ({ 
   lead, 
   onAddToLeads,
+  onAddToCompetitors,
   className 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -476,24 +481,37 @@ const LeadCard: React.FC<LeadCardProps> = ({
       </div>
 
       {/* Footer avec actions */}
-      <div className="p-4 bg-muted/30 flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex-1"
-          onClick={() => window.open(lead.Lien, '_blank')}
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Voir sur Maps
-        </Button>
-        <Button 
-          size="sm" 
-          className="flex-1"
-          onClick={handleAddToLeads}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter
-        </Button>
+      <div className="p-4 bg-muted/30 flex flex-col gap-2">
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => window.open(lead.Lien, '_blank')}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Voir sur Maps
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            className="flex-1"
+            onClick={handleAddToLeads}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter comme Lead
+          </Button>
+          <Button 
+            size="sm" 
+            variant="secondary"
+            className="flex-1"
+            onClick={() => onAddToCompetitors?.(lead)}
+          >
+            <Building className="w-4 h-4 mr-2" />
+            Concurrent
+          </Button>
+        </div>
       </div>
     </Card>
   );

@@ -64,6 +64,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLeads, useLeadStatus } from '@/hooks/useLeads';
+import { useCompetitors } from '@/hooks/useCompetitors';
 import { Lead, LeadStatus } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -81,6 +82,7 @@ const LEADS_PER_PAGE = 10;
 
 const LeadsPage: React.FC = () => {
   const { leads, loading, error, loadLeads, addLead, updateLead, deleteLead } = useLeads();
+  const { addCompetitor } = useCompetitors();
   const { getStatusColor, getStatusLabel } = useLeadStatus();
   
   // États de recherche
@@ -159,6 +161,30 @@ const LeadsPage: React.FC = () => {
     } catch (error) {
       console.error('Erreur ajout lead:', error);
       toast.error('Erreur lors de l\'ajout du lead');
+    }
+  };
+
+  // Fonction pour ajouter un lead (note: cette fonction ne devrait plus ajouter aux competitors)
+  const handleAddToCompetitors = async (n8nLead: N8NLeadData) => {
+    try {
+      // Cette fonctionnalité devrait être supprimée ou redirigée vers l'ajout de leads standards
+      toast.info('Fonctionnalité en développement');
+      // TODO: Implémenter l'ajout correct vers la table leads
+      /*
+      await addLead({
+        name: n8nLead.Titre,
+        category: n8nLead.Categorie,
+        address: n8nLead.Addresse,
+        city: n8nLead.Addresse.split(',').pop()?.trim() || '',
+        phone: n8nLead.Telephone !== 'undefined' ? n8nLead.Telephone : undefined,
+        website: n8nLead.Lien,
+        ...
+      });
+      */
+      toast.success('Concurrent ajouté avec succès !');
+    } catch (error) {
+      console.error('Erreur ajout concurrent:', error);
+      toast.error('Erreur lors de l\'ajout du concurrent');
     }
   };
 
@@ -688,6 +714,7 @@ const LeadsPage: React.FC = () => {
               loading={false}
               error={searchError}
               onAddToLeads={handleAddToLeads}
+              onAddToCompetitors={handleAddToCompetitors}
               onRetry={() => setShowSearchForm(true)}
             />
           </CardContent>

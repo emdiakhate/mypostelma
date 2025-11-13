@@ -174,12 +174,12 @@ export default function AuthPage() {
         />
       )}
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-[hsl(142,76%,96%)] p-4">
         <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <Calendar className="w-8 h-8 text-primary" />
+            <div className="p-3 rounded-full bg-[hsl(142,76%,36%)]/10">
+              <Calendar className="w-8 h-8 text-[hsl(142,76%,36%)]" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">PostElma</CardTitle>

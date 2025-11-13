@@ -105,7 +105,7 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   return (
     <div className={cn("space-y-4", className)}>
       <h3 className="text-sm font-semibold text-muted-foreground">Plateformes</h3>
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-wrap gap-3">
         {allPlatforms.map((platform) => {
           const isSelected = selectedAccounts.includes(platform.id);
           const Icon = platform.icon;
@@ -116,27 +116,41 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
               key={platform.id}
               type="button"
               className={cn(
-                "transition-all rounded-xl p-0 border-0 outline-none",
-                isDisabled && "opacity-50 cursor-not-allowed",
-                !isDisabled && "cursor-pointer hover:scale-110",
-                isSelected && !isDisabled && "ring-2 ring-primary ring-offset-2"
+                "relative group",
+                isDisabled && "opacity-40 cursor-not-allowed",
+                !isDisabled && "cursor-pointer"
               )}
               onClick={() => handlePlatformToggle(platform.id, platform.isConnected)}
               disabled={isDisabled}
             >
+              {/* Container avec icône */}
               <div className={cn(
-                "w-14 h-14 rounded-xl flex items-center justify-center", 
-                platform.color,
-                isDisabled && "grayscale"
+                "relative w-16 h-16 rounded-full transition-all",
+                isSelected && !isDisabled && "ring-4 ring-primary ring-offset-2",
+                !isDisabled && !isSelected && "hover:scale-105"
               )}>
-                <Icon className="w-8 h-8 text-white" />
+                <div className={cn(
+                  "w-full h-full rounded-full flex items-center justify-center", 
+                  platform.color,
+                  isDisabled && "opacity-40 grayscale"
+                )}>
+                  <Icon className="w-8 h-8 text-white" />
+                </div>
+                
+                {/* Badge de sélection */}
+                {isSelected && !isDisabled && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                )}
               </div>
-              <Checkbox
-                checked={isSelected}
-                disabled={isDisabled}
-                onCheckedChange={() => handlePlatformToggle(platform.id, platform.isConnected)}
-                className="sr-only"
-              />
+              
+              {/* Nom du compte (optionnel) */}
+              <div className="mt-2 text-center">
+                <p className="text-xs font-medium truncate max-w-[64px]">
+                  {platform.displayName}
+                </p>
+              </div>
             </button>
           );
         })}

@@ -2,6 +2,7 @@ import React, { useState, memo, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -37,7 +38,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/dashboard') return 'dashboard';
     if (path === '/app/calendar') return 'calendar';
     if (path === '/app/analytics') return 'analytics';
-    if (path === '/app/queue') return 'queue';
     if (path === '/app/archives') return 'archives';
     if (path === '/app/competitors') return 'competitors';
     
@@ -62,9 +62,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         break;
       case 'analytics':
         navigate('/app/analytics');
-        break;
-      case 'queue':
-        navigate('/app/queue');
         break;
       case 'archives':
         navigate('/app/archives');
@@ -106,12 +103,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     onPageChange: (page: string) => void;
     onToggleCollapse: () => void;
   }>(({ sidebarCollapsed, activePage, onPageChange, onToggleCollapse }) => {
-    // Items de sidebar - tous visibles pour le rôle manager
-    const sidebarItems = [
+    const { user } = useAuth();
+    const [isBetaUser, setIsBetaUser] = React.useState(false);
+
+    // Charger le statut beta_user
+    React.useEffect(() => {
+      const loadBetaStatus = async () => {
+        if (!user) return;
+        
+        const { data } = await supabase
+          .from('profiles')
+          .select('beta_user')
+          .eq('id', user.id)
+          .single();
+        
+        setIsBetaUser(data?.beta_user || false);
+      };
+      
+      loadBetaStatus();
+    }, [user]);
+
+    // Items de sidebar - Administration visible uniquement pour les administrateurs (NON beta users)
+    const allSidebarItems = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
       { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
-      { id: 'queue', label: 'File d\'attente', icon: Clock, count: 12, active: activePage === 'queue' },
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
@@ -119,9 +135,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
-      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin' },
+      { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin', adminOnly: true },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
     ];
+
+    // Filtrer les items : masquer Administration pour les beta users
+    const sidebarItems = allSidebarItems.filter(item => !item.adminOnly || !isBetaUser);
 
 
     return (
@@ -156,7 +175,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'creation': return '/app/creation';
                     case 'logout': return '/logout';
                     case 'settings': return '/app/settings';
-                    case 'queue': return '/app/queue';
                     case 'archives': return '/app/archives';
                     case 'competitors': return '/app/competitors';
                     case 'users': return '/app/users';
@@ -183,14 +201,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     <item.icon className="w-4 h-4 flex-shrink-0" />
                     {!sidebarCollapsed && (
-                      <>
-                        <span className="flex-1 text-left">{item.label}</span>
-                        {item.count && (
-                          <span className="bg-gray-600 text-xs px-2 py-1 rounded-full">
-                            {item.count}
-                          </span>
-                        )}
-                      </>
+                      <span className="flex-1 text-left">{item.label}</span>
                     )}
                   </Link>
                 );
@@ -255,7 +266,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'dashboard' && 'Dashboard'}
                 {activePage === 'calendar' && 'Calendrier'}
                 {activePage === 'analytics' && 'Analytics'}
-                {activePage === 'queue' && 'File d\'attente'}
                 {activePage === 'archives' && 'Archives'}
                 {activePage === 'competitors' && 'Concurrents'}
                 {activePage === 'accounts' && 'Comptes Sociaux'}

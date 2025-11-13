@@ -36,7 +36,7 @@ const PostDetailPage: React.FC = () => {
           author: 'Postelma Team',
           image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=500&h=300&fit=crop',
           scheduledTime: new Date('2024-01-15T14:30:00'),
-          platforms: ['facebook', 'twitter', 'instagram'],
+          platforms: ['facebook', 'x', 'instagram'],
           status: 'scheduled',
           dayColumn: 'lundi',
           timeSlot: 14

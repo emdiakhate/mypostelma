@@ -14,6 +14,318 @@ export type Database = {
   }
   public: {
     Tables: {
+      competitor_analysis: {
+        Row: {
+          analysis_cost: number | null
+          analyzed_at: string | null
+          competitor_id: string | null
+          content_strategy: string | null
+          estimated_budget: string | null
+          facebook_data: Json | null
+          id: string
+          instagram_data: Json | null
+          key_differentiators: string[] | null
+          linkedin_data: Json | null
+          opportunities_for_us: string[] | null
+          positioning: string | null
+          recommendations: string | null
+          social_media_presence: string | null
+          strengths: string[] | null
+          summary: string | null
+          target_audience: string | null
+          tokens_used: number | null
+          tone: string | null
+          version: number | null
+          weaknesses: string[] | null
+          website_data: Json | null
+        }
+        Insert: {
+          analysis_cost?: number | null
+          analyzed_at?: string | null
+          competitor_id?: string | null
+          content_strategy?: string | null
+          estimated_budget?: string | null
+          facebook_data?: Json | null
+          id?: string
+          instagram_data?: Json | null
+          key_differentiators?: string[] | null
+          linkedin_data?: Json | null
+          opportunities_for_us?: string[] | null
+          positioning?: string | null
+          recommendations?: string | null
+          social_media_presence?: string | null
+          strengths?: string[] | null
+          summary?: string | null
+          target_audience?: string | null
+          tokens_used?: number | null
+          tone?: string | null
+          version?: number | null
+          weaknesses?: string[] | null
+          website_data?: Json | null
+        }
+        Update: {
+          analysis_cost?: number | null
+          analyzed_at?: string | null
+          competitor_id?: string | null
+          content_strategy?: string | null
+          estimated_budget?: string | null
+          facebook_data?: Json | null
+          id?: string
+          instagram_data?: Json | null
+          key_differentiators?: string[] | null
+          linkedin_data?: Json | null
+          opportunities_for_us?: string[] | null
+          positioning?: string | null
+          recommendations?: string | null
+          social_media_presence?: string | null
+          strengths?: string[] | null
+          summary?: string | null
+          target_audience?: string | null
+          tokens_used?: number | null
+          tone?: string | null
+          version?: number | null
+          weaknesses?: string[] | null
+          website_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_analysis_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_comparison"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_analysis_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_latest_analysis"
+            referencedColumns: ["competitor_id"]
+          },
+          {
+            foreignKeyName: "competitor_analysis_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitor_metrics_history: {
+        Row: {
+          avg_comments: number | null
+          avg_engagement_rate: number | null
+          avg_likes: number | null
+          competitor_id: string | null
+          facebook_likes: number | null
+          id: string
+          instagram_followers: number | null
+          instagram_following: number | null
+          instagram_posts_count: number | null
+          linkedin_employees: number | null
+          linkedin_followers: number | null
+          posts_last_30_days: number | null
+          posts_last_7_days: number | null
+          recorded_at: string | null
+        }
+        Insert: {
+          avg_comments?: number | null
+          avg_engagement_rate?: number | null
+          avg_likes?: number | null
+          competitor_id?: string | null
+          facebook_likes?: number | null
+          id?: string
+          instagram_followers?: number | null
+          instagram_following?: number | null
+          instagram_posts_count?: number | null
+          linkedin_employees?: number | null
+          linkedin_followers?: number | null
+          posts_last_30_days?: number | null
+          posts_last_7_days?: number | null
+          recorded_at?: string | null
+        }
+        Update: {
+          avg_comments?: number | null
+          avg_engagement_rate?: number | null
+          avg_likes?: number | null
+          competitor_id?: string | null
+          facebook_likes?: number | null
+          id?: string
+          instagram_followers?: number | null
+          instagram_following?: number | null
+          instagram_posts_count?: number | null
+          linkedin_employees?: number | null
+          linkedin_followers?: number | null
+          posts_last_30_days?: number | null
+          posts_last_7_days?: number | null
+          recorded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_metrics_history_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_comparison"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_metrics_history_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_latest_analysis"
+            referencedColumns: ["competitor_id"]
+          },
+          {
+            foreignKeyName: "competitor_metrics_history_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitor_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: string | null
+          content_type: string | null
+          detected_tone: string | null
+          engagement_rate: number | null
+          hashtags: string[] | null
+          id: string
+          likes: number | null
+          media_urls: string[] | null
+          platform: string
+          post_text: string | null
+          post_url: string | null
+          posted_at: string | null
+          scraped_at: string | null
+          shares: number | null
+          views: number | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id?: string | null
+          content_type?: string | null
+          detected_tone?: string | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          likes?: number | null
+          media_urls?: string[] | null
+          platform: string
+          post_text?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          scraped_at?: string | null
+          shares?: number | null
+          views?: number | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: string | null
+          content_type?: string | null
+          detected_tone?: string | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          likes?: number | null
+          media_urls?: string[] | null
+          platform?: string
+          post_text?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          scraped_at?: string | null
+          shares?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_comparison"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_latest_analysis"
+            referencedColumns: ["competitor_id"]
+          },
+          {
+            foreignKeyName: "competitor_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitors: {
+        Row: {
+          added_at: string | null
+          analysis_count: number | null
+          description: string | null
+          facebook_likes: string | null
+          facebook_url: string | null
+          id: string
+          industry: string | null
+          instagram_followers: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_followers: string | null
+          linkedin_url: string | null
+          name: string
+          tiktok_url: string | null
+          twitter_url: string | null
+          user_id: string | null
+          website_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          analysis_count?: number | null
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          name: string
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          user_id?: string | null
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          analysis_count?: number | null
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          name?: string
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          user_id?: string | null
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           added_at: string
@@ -408,7 +720,55 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      competitor_comparison: {
+        Row: {
+          avg_engagement_rate: number | null
+          facebook_likes: number | null
+          id: string | null
+          industry: string | null
+          instagram_followers: number | null
+          last_analyzed_at: string | null
+          linkedin_followers: number | null
+          name: string | null
+          total_posts_tracked: number | null
+        }
+        Relationships: []
+      }
+      competitor_latest_analysis: {
+        Row: {
+          analysis_cost: number | null
+          competitor_id: string | null
+          content_strategy: string | null
+          facebook_url: string | null
+          industry: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_url: string | null
+          name: string | null
+          opportunities_for_us: string[] | null
+          positioning: string | null
+          social_media_presence: string | null
+          strengths: string[] | null
+          summary: string | null
+          tone: string | null
+          weaknesses: string[] | null
+          website_url: string | null
+        }
+        Relationships: []
+      }
+      competitor_recent_activity: {
+        Row: {
+          comments: number | null
+          competitor_name: string | null
+          engagement_rate: number | null
+          likes: number | null
+          platform: string | null
+          post_text: string | null
+          post_url: string | null
+          posted_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_quotas: { Args: { p_user_id: string }; Returns: Json }

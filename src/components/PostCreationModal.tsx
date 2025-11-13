@@ -70,8 +70,14 @@ const PreviewSection = memo<PreviewSectionProps>(({
         .single();
 
       if (data) {
-        setProfileName(data.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Postelma');
+        // Priorité : nom du profil > nom du user metadata > email
+        const userName = data.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur';
+        setProfileName(userName);
         setProfileAvatar(data.avatar);
+      } else {
+        // Fallback si pas de profil trouvé
+        const userName = currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur';
+        setProfileName(userName);
       }
     };
 

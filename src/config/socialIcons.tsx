@@ -51,12 +51,13 @@ export const TikTokIcon: React.FC<IconProps> = ({ className = "w-4 h-4" }) => (
  * Map des icônes par plateforme
  */
 export const SOCIAL_ICONS: Record<SocialPlatform, React.FC<IconProps>> = {
-  twitter: TwitterIcon,
+  x: TwitterIcon,
   instagram: InstagramIcon,
   facebook: FacebookIcon,
   linkedin: LinkedInIcon,
   youtube: YouTubeIcon,
-  tiktok: TikTokIcon
+  tiktok: TikTokIcon,
+  threads: TwitterIcon
 };
 
 /**
