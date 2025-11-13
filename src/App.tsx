@@ -41,8 +41,8 @@ function MainLayout() {
         <Route path="/analytics" element={<Analytics />} />
         
         <Route path="/archives" element={<ArchivesPage />} />
-        <Route path="/competitive-intelligence" element={<CompetitiveIntelligence />} />
-        <Route path="/competitors" element={<CompetitorsPage />} />
+        <Route path="/competitors" element={<CompetitiveIntelligence />} />
+        <Route path="/competitor-analysis" element={<CompetitorsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />

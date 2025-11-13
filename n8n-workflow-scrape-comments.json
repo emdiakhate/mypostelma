@@ -1,0 +1,417 @@
+{
+  "name": "Postelma - Scrape Comments & Sentiment Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scrape-comments",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract data from webhook\nconst postId = $input.item.json.body.post_id;\nconst platform = $input.item.json.body.platform; // 'facebook', 'instagram', 'linkedin', 'twitter'\nconst postUrl = $input.item.json.body.post_url;\nconst userId = $input.item.json.body.user_id;\n\n// Validate input\nif (!postId || !platform || !postUrl) {\n  throw new Error('Missing required fields: post_id, platform, post_url');\n}\n\nreturn {\n  json: {\n    post_id: postId,\n    platform: platform.toLowerCase(),\n    post_url: postUrl,\n    user_id: userId,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "validate-input",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.platform}}",
+              "operation": "equals",
+              "value2": "facebook"
+            }
+          ]
+        }
+      },
+      "id": "is-facebook",
+      "name": "Is Facebook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.platform}}",
+              "operation": "equals",
+              "value2": "instagram"
+            }
+          ]
+        }
+      },
+      "id": "is-instagram",
+      "name": "Is Instagram?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.platform}}",
+              "operation": "equals",
+              "value2": "linkedin"
+            }
+          ]
+        }
+      },
+      "id": "is-linkedin",
+      "name": "Is LinkedIn?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Facebook Comments Scraper with Puppeteer\nconst puppeteer = require('puppeteer');\n\nconst postUrl = $input.item.json.post_url;\nconst postId = $input.item.json.post_id;\n\nlet browser;\ntry {\n  // Launch browser\n  browser = await puppeteer.launch({\n    headless: true,\n    args: [\n      '--no-sandbox',\n      '--disable-setuid-sandbox',\n      '--disable-dev-shm-usage',\n      '--disable-accelerated-2d-canvas',\n      '--disable-gpu'\n    ]\n  });\n\n  const page = await browser.newPage();\n  \n  // Set viewport\n  await page.setViewport({ width: 1280, height: 800 });\n  \n  // Go to post\n  await page.goto(postUrl, { waitUntil: 'networkidle2', timeout: 30000 });\n  \n  // Wait for comments to load\n  await page.waitForTimeout(3000);\n  \n  // Try to click \"See more comments\" button multiple times\n  for (let i = 0; i < 3; i++) {\n    try {\n      const seeMoreButton = await page.$('[aria-label=\"See more comments\"]');\n      if (seeMoreButton) {\n        await seeMoreButton.click();\n        await page.waitForTimeout(2000);\n      }\n    } catch (e) {\n      // No more \"see more\" button\n      break;\n    }\n  }\n  \n  // Extract comments\n  const comments = await page.evaluate(() => {\n    const commentElements = document.querySelectorAll('[role=\"article\"]');\n    const results = [];\n    \n    commentElements.forEach((element, index) => {\n      try {\n        const authorElement = element.querySelector('a[role=\"link\"] span');\n        const textElement = element.querySelector('[dir=\"auto\"]');\n        const timeElement = element.querySelector('a[role=\"link\"] span');\n        \n        if (authorElement && textElement) {\n          results.push({\n            id: `fb_${Date.now()}_${index}`,\n            author: authorElement.textContent.trim(),\n            text: textElement.textContent.trim(),\n            timestamp: timeElement ? timeElement.textContent : 'Unknown',\n            platform: 'facebook'\n          });\n        }\n      } catch (e) {\n        // Skip malformed comment\n      }\n    });\n    \n    return results;\n  });\n  \n  await browser.close();\n  \n  return {\n    json: {\n      post_id: postId,\n      platform: 'facebook',\n      comments: comments,\n      total_comments: comments.length,\n      scraped_at: new Date().toISOString()\n    }\n  };\n  \n} catch (error) {\n  if (browser) await browser.close();\n  throw new Error(`Facebook scraping failed: ${error.message}`);\n}"
+      },
+      "id": "scrape-facebook",
+      "name": "Scrape Facebook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Instagram Comments Scraper with Puppeteer\nconst puppeteer = require('puppeteer');\n\nconst postUrl = $input.item.json.post_url;\nconst postId = $input.item.json.post_id;\n\nlet browser;\ntry {\n  browser = await puppeteer.launch({\n    headless: true,\n    args: [\n      '--no-sandbox',\n      '--disable-setuid-sandbox',\n      '--disable-dev-shm-usage'\n    ]\n  });\n\n  const page = await browser.newPage();\n  await page.setViewport({ width: 1280, height: 800 });\n  \n  // Go to post\n  await page.goto(postUrl, { waitUntil: 'networkidle2', timeout: 30000 });\n  await page.waitForTimeout(3000);\n  \n  // Try to load more comments\n  for (let i = 0; i < 3; i++) {\n    try {\n      const loadMoreButton = await page.$('button:has-text(\"Load more comments\")');\n      if (loadMoreButton) {\n        await loadMoreButton.click();\n        await page.waitForTimeout(2000);\n      }\n    } catch (e) {\n      break;\n    }\n  }\n  \n  // Extract comments\n  const comments = await page.evaluate(() => {\n    const commentElements = document.querySelectorAll('ul ul li');\n    const results = [];\n    \n    commentElements.forEach((element, index) => {\n      try {\n        const authorElement = element.querySelector('h3 a, h2 a');\n        const textElement = element.querySelector('span');\n        \n        if (authorElement && textElement) {\n          const text = textElement.textContent.trim();\n          // Skip if it's a timestamp or reaction\n          if (text && !text.match(/^\\d+[smhd]$/) && !text.match(/^(Like|Reply)$/)) {\n            results.push({\n              id: `ig_${Date.now()}_${index}`,\n              author: authorElement.textContent.trim(),\n              text: text,\n              platform: 'instagram'\n            });\n          }\n        }\n      } catch (e) {\n        // Skip malformed comment\n      }\n    });\n    \n    return results;\n  });\n  \n  await browser.close();\n  \n  return {\n    json: {\n      post_id: postId,\n      platform: 'instagram',\n      comments: comments,\n      total_comments: comments.length,\n      scraped_at: new Date().toISOString()\n    }\n  };\n  \n} catch (error) {\n  if (browser) await browser.close();\n  throw new Error(`Instagram scraping failed: ${error.message}`);\n}"
+      },
+      "id": "scrape-instagram",
+      "name": "Scrape Instagram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// LinkedIn Comments Scraper with Puppeteer\nconst puppeteer = require('puppeteer');\n\nconst postUrl = $input.item.json.post_url;\nconst postId = $input.item.json.post_id;\n\nlet browser;\ntry {\n  browser = await puppeteer.launch({\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox']\n  });\n\n  const page = await browser.newPage();\n  await page.setViewport({ width: 1280, height: 800 });\n  \n  await page.goto(postUrl, { waitUntil: 'networkidle2', timeout: 30000 });\n  await page.waitForTimeout(3000);\n  \n  // Extract comments\n  const comments = await page.evaluate(() => {\n    const commentElements = document.querySelectorAll('.comments-comment-item');\n    const results = [];\n    \n    commentElements.forEach((element, index) => {\n      try {\n        const authorElement = element.querySelector('.comments-post-meta__name-text');\n        const textElement = element.querySelector('.comments-comment-item__main-content');\n        \n        if (authorElement && textElement) {\n          results.push({\n            id: `li_${Date.now()}_${index}`,\n            author: authorElement.textContent.trim(),\n            text: textElement.textContent.trim(),\n            platform: 'linkedin'\n          });\n        }\n      } catch (e) {\n        // Skip\n      }\n    });\n    \n    return results;\n  });\n  \n  await browser.close();\n  \n  return {\n    json: {\n      post_id: postId,\n      platform: 'linkedin',\n      comments: comments,\n      total_comments: comments.length,\n      scraped_at: new Date().toISOString()\n    }\n  };\n  \n} catch (error) {\n  if (browser) await browser.close();\n  throw new Error(`LinkedIn scraping failed: ${error.message}`);\n}"
+      },
+      "id": "scrape-linkedin",
+      "name": "Scrape LinkedIn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Merge all scraped comments from different platforms\nconst data = $input.all();\n\nif (!data || data.length === 0) {\n  return {\n    json: {\n      post_id: $('Validate Input').item.json.post_id,\n      platform: $('Validate Input').item.json.platform,\n      comments: [],\n      total_comments: 0,\n      error: 'No comments found'\n    }\n  };\n}\n\nreturn data[0];"
+      },
+      "id": "merge-comments",
+      "name": "Merge Comments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Split comments array into individual items for sentiment analysis\nconst comments = $input.item.json.comments || [];\nconst postId = $input.item.json.post_id;\nconst platform = $input.item.json.platform;\n\nif (comments.length === 0) {\n  return [];\n}\n\nreturn comments.map(comment => ({\n  json: {\n    ...comment,\n    post_id: postId,\n    platform: platform\n  }\n}));"
+      },
+      "id": "split-comments",
+      "name": "Split Comments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "model": "gpt-3.5-turbo",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a sentiment analysis expert. Analyze the sentiment of social media comments and respond ONLY with a JSON object in this exact format: {\"sentiment\": \"positive|negative|neutral\", \"confidence\": 0.95, \"emotion\": \"joy|anger|sadness|fear|surprise\", \"keywords\": [\"word1\", \"word2\"]}"
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this comment: \"{{$json.text}}\""
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 150
+        }
+      },
+      "id": "openai-sentiment",
+      "name": "OpenAI Sentiment Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse OpenAI response and combine with comment data\nconst comment = $input.item.json;\nconst openaiResponse = $('OpenAI Sentiment Analysis').item.json.message.content;\n\nlet sentimentData;\ntry {\n  // Try to parse JSON from OpenAI response\n  sentimentData = JSON.parse(openaiResponse);\n} catch (e) {\n  // Fallback if OpenAI didn't return proper JSON\n  sentimentData = {\n    sentiment: 'neutral',\n    confidence: 0.5,\n    emotion: 'unknown',\n    keywords: []\n  };\n}\n\nreturn {\n  json: {\n    id: comment.id,\n    post_id: comment.post_id,\n    platform: comment.platform,\n    author: comment.author,\n    text: comment.text,\n    timestamp: comment.timestamp || new Date().toISOString(),\n    sentiment: sentimentData.sentiment,\n    sentiment_confidence: sentimentData.confidence,\n    emotion: sentimentData.emotion,\n    keywords: sentimentData.keywords,\n    analyzed_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "parse-sentiment",
+      "name": "Parse Sentiment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "post_comments",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{$json.id}}",
+            "post_id": "={{$json.post_id}}",
+            "platform": "={{$json.platform}}",
+            "author": "={{$json.author}}",
+            "text": "={{$json.text}}",
+            "timestamp": "={{$json.timestamp}}",
+            "sentiment": "={{$json.sentiment}}",
+            "sentiment_confidence": "={{$json.sentiment_confidence}}",
+            "emotion": "={{$json.emotion}}",
+            "keywords": "={{JSON.stringify($json.keywords)}}",
+            "analyzed_at": "={{$json.analyzed_at}}"
+          }
+        },
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Insert to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1850, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Aggregate results for response\nconst allComments = $input.all();\n\nconst sentimentCounts = {\n  positive: 0,\n  negative: 0,\n  neutral: 0\n};\n\nconst emotions = {};\n\nallComments.forEach(item => {\n  const data = item.json;\n  \n  // Count sentiments\n  if (sentimentCounts[data.sentiment] !== undefined) {\n    sentimentCounts[data.sentiment]++;\n  }\n  \n  // Count emotions\n  if (data.emotion) {\n    emotions[data.emotion] = (emotions[data.emotion] || 0) + 1;\n  }\n});\n\nconst totalComments = allComments.length;\nconst sentimentScore = (\n  (sentimentCounts.positive * 1) + \n  (sentimentCounts.neutral * 0) + \n  (sentimentCounts.negative * -1)\n) / totalComments;\n\nreturn {\n  json: {\n    success: true,\n    total_comments: totalComments,\n    sentiment_breakdown: sentimentCounts,\n    emotions: emotions,\n    sentiment_score: sentimentScore.toFixed(2),\n    timestamp: new Date().toISOString(),\n    message: `Successfully analyzed ${totalComments} comments`\n  }\n};"
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2050, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify($json)}}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Error handler\nconst error = $input.item.json.error || 'Unknown error';\n\nreturn {\n  json: {\n    success: false,\n    error: error,\n    message: 'Failed to scrape and analyze comments',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Is Facebook?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Instagram?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is LinkedIn?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Facebook?": {
+      "main": [
+        [
+          {
+            "node": "Scrape Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Instagram?": {
+      "main": [
+        [
+          {
+            "node": "Scrape Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is LinkedIn?": {
+      "main": [
+        [
+          {
+            "node": "Scrape LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Facebook": {
+      "main": [
+        [
+          {
+            "node": "Merge Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Instagram": {
+      "main": [
+        [
+          {
+            "node": "Merge Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Merge Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Comments": {
+      "main": [
+        [
+          {
+            "node": "Split Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Comments": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse Sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Sentiment": {
+      "main": [
+        [
+          {
+            "node": "Insert to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-10T10:00:00.000Z",
+  "versionId": "1"
+}
