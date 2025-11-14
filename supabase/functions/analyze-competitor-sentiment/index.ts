@@ -163,16 +163,14 @@ async function scrapeFacebookPostsApify(
   console.log(`[Facebook] Scraping posts for ${pageUrl}...`);
 
   try {
-    const actorUrl = 'https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs';
+    // Utiliser l'actor facebook-comments-scraper pour récupérer les commentaires
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~facebook-comments-scraper/runs';
     
     const requestBody = {
       startUrls: [{ url: pageUrl }],
       maxPosts: CONFIG.posts_limit,
-      scrapeComments: true,
       maxComments: CONFIG.comments_per_post,
       commentsMode: 'RANKED_THREADED',
-      scrapeReactions: false,
-      scrapeAbout: false,
     };
     
     console.log('[Facebook] Apify request:', JSON.stringify(requestBody, null, 2));
