@@ -541,6 +541,21 @@ serve(async (req) => {
       throw new Error('Competitor not found');
     }
 
+    // Check if competitor has any social media URLs
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+    if (!hasUrls) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook ou Twitter) pour pouvoir analyser le sentiment.' 
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Scrape posts with comments from all platforms
     const allPosts: Post[] = [];
 
@@ -548,30 +563,51 @@ serve(async (req) => {
     if (competitor.instagram_url) {
       const username = competitor.instagram_url.split('/').filter(Boolean).pop();
       if (username) {
-        const instagramPosts = await scrapeInstagramPostsApify(username, apifyToken);
-        allPosts.push(...instagramPosts);
+        try {
+          const instagramPosts = await scrapeInstagramPostsApify(username, apifyToken);
+          allPosts.push(...instagramPosts);
+        } catch (error) {
+          console.error(`[Instagram] Failed to scrape posts for @${username}:`, error);
+        }
       }
     }
 
     // Facebook
     if (competitor.facebook_url) {
-      const facebookPosts = await scrapeFacebookPostsApify(competitor.facebook_url, apifyToken);
-      allPosts.push(...facebookPosts);
+      try {
+        const facebookPosts = await scrapeFacebookPostsApify(competitor.facebook_url, apifyToken);
+        allPosts.push(...facebookPosts);
+      } catch (error) {
+        console.error(`[Facebook] Failed to scrape posts:`, error);
+      }
     }
 
     // Twitter
     if (competitor.twitter_url) {
       const username = competitor.twitter_url.split('/').filter(Boolean).pop();
       if (username) {
-        const twitterPosts = await scrapeTwitterPostsApify(username, apifyToken);
-        allPosts.push(...twitterPosts);
+        try {
+          const twitterPosts = await scrapeTwitterPostsApify(username, apifyToken);
+          allPosts.push(...twitterPosts);
+        } catch (error) {
+          console.error(`[Twitter] Failed to scrape posts for @${username}:`, error);
+        }
       }
     }
 
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
 
     if (allPosts.length === 0) {
-      throw new Error('No posts found to analyze');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Aucun post n\'a pu être récupéré pour ce concurrent. Vérifiez que les URLs des réseaux sociaux sont correctes et que les comptes sont publics.' 
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Insert posts and analyze comments
@@ -585,7 +621,12 @@ serve(async (req) => {
         : 0;
 
       // Analyze post sentiment (from caption)
-      let postSentiment = { sentiment_score: 0, sentiment_label: 'neutral' as const };
+      let postSentiment: SentimentResult = { 
+        sentiment_score: 0, 
+        sentiment_label: 'neutral',
+        explanation: '',
+        keywords: []
+      };
       if (post.caption && post.caption.length >= CONFIG.min_comment_length) {
         const captionSentiments = await analyzeSentimentBatch(
           [{ author_username: '', text: post.caption, likes: 0, posted_at: post.posted_at }],
@@ -702,10 +743,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('[Error]', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: errorMessage,
       }),
       {
         status: 500,
