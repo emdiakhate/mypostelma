@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   TrendingUp, 
   Users, 
@@ -72,6 +75,12 @@ const CompetitiveIntelligence: React.FC = () => {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>('1');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<CompetitorPost | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    platform: 'instagram',
+    handle: '',
+    bio: '',
+  });
 
   const competitor = useMemo(() => 
     mockCompetitors.find(c => c.id === selectedCompetitor),
@@ -81,6 +90,14 @@ const CompetitiveIntelligence: React.FC = () => {
   const handleAdaptStrategy = (post: CompetitorPost) => {
     setSelectedPost(post);
     setShowCreateModal(true);
+  };
+
+  const handleAddCompetitor = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Nouveau concurrent:', formData);
+    // Ici on ajouterait la logique pour sauvegarder le concurrent
+    setShowCreateModal(false);
+    setFormData({ name: '', platform: 'instagram', handle: '', bio: '' });
   };
 
   const getToneColor = (tone: string) => {
@@ -139,11 +156,7 @@ const CompetitiveIntelligence: React.FC = () => {
                 Commencez à analyser vos concurrents pour améliorer votre stratégie
               </p>
               <button
-                onClick={() => {
-                  alert('Ajouter concurrent cliqué!');
-                  console.log('Ajouter concurrent cliqué!');
-                  setShowCreateModal(true);
-                }}
+                onClick={() => setShowCreateModal(true)}
                 style={{
                   padding: '10px 20px',
                   background: 'hsl(var(--primary))',
@@ -434,6 +447,85 @@ const CompetitiveIntelligence: React.FC = () => {
               </div>
             </TabsContent>
           </Tabs>
+        </div>
+      )}
+
+
+      {/* Modal d'ajout de concurrent */}
+      {showCreateModal && !selectedPost && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div 
+            className="bg-background rounded-lg shadow-lg max-w-md w-full m-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold mb-4">Ajouter un concurrent</h2>
+            
+            <form onSubmit={handleAddCompetitor} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nom du concurrent *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nike, Adidas..."
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="platform">Plateforme</Label>
+                <select
+                  id="platform"
+                  value={formData.platform}
+                  onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                  className="w-full p-2 border rounded-md bg-background"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="twitter">Twitter</option>
+                  <option value="linkedin">LinkedIn</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="handle">Nom d'utilisateur</Label>
+                <Input
+                  id="handle"
+                  value={formData.handle}
+                  onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
+                  placeholder="@username"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="bio">Description</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Description du concurrent..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Annuler
+                </Button>
+                <Button type="submit">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
