@@ -2,7 +2,7 @@
  * Competitors Page
  *
  * Manage competitor tracking and AI-powered strategic analysis.
- * Integrates with N8N workflow for web scraping and OpenAI analysis.
+ * Integrates with Apify + Jina.ai workflow for web scraping and OpenAI analysis.
  */
 
 import { useState } from 'react';
@@ -129,15 +129,15 @@ export default function CompetitorsPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Users className="h-8 w-8" />
-            Competitor Analysis
+            Analyse Concurrentielle
           </h1>
           <p className="text-muted-foreground mt-1">
-            Track and analyze your competitors with AI-powered insights
+            Suivez et analysez vos concurrents avec des insights IA
           </p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Competitor
+          Nouveau concurrent
         </Button>
       </div>
 
@@ -145,33 +145,33 @@ export default function CompetitorsPage() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Competitor</DialogTitle>
+              <DialogTitle>Ajouter un concurrent</DialogTitle>
               <DialogDescription>
-                Enter competitor information. Social media URLs and website are used for AI analysis.
+                Entrez les informations du concurrent. Les URLs des réseaux sociaux et du site web sont utilisées pour l'analyse IA.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddCompetitor}>
               <div className="space-y-4 py-4">
                 {/* Basic Info */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Company Name *</Label>
+                  <Label htmlFor="name">Nom de l'entreprise *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Acme Corp"
+                    placeholder="Nom du concurrent"
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="industry">Industry</Label>
+                    <Label htmlFor="industry">Secteur d'activité</Label>
                     <Input
                       id="industry"
                       value={formData.industry}
                       onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      placeholder="Technology, Fashion, etc."
+                      placeholder="Technologie, Mode, etc."
                     />
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function CompetitorsPage() {
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of the competitor..."
+                    placeholder="Brève description du concurrent..."
                     rows={3}
                   />
                 </div>
@@ -191,7 +191,7 @@ export default function CompetitorsPage() {
                 <div className="space-y-4 pt-4">
                   <h4 className="font-semibold flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    Social Media & Website (for AI Analysis)
+                    Réseaux Sociaux & Site Web (pour l'analyse IA)
                   </h4>
 
                   <div className="space-y-2">
@@ -290,18 +290,18 @@ export default function CompetitorsPage() {
                   variant="outline"
                   onClick={() => setIsAddDialogOpen(false)}
                 >
-                  Cancel
+                  Annuler
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Adding...
+                      Ajout en cours...
                     </>
                   ) : (
                     <>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Competitor
+                      Ajouter le concurrent
                     </>
                   )}
                 </Button>
@@ -314,7 +314,7 @@ export default function CompetitorsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Competitors</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Concurrents</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -323,7 +323,7 @@ export default function CompetitorsPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Analyzed</CardTitle>
+            <CardTitle className="text-sm font-medium">Analysés</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.analyzed}</div>
@@ -332,7 +332,7 @@ export default function CompetitorsPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Pending Analysis</CardTitle>
+            <CardTitle className="text-sm font-medium">En attente d'analyse</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
@@ -343,7 +343,7 @@ export default function CompetitorsPage() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filter Competitors</CardTitle>
+          <CardTitle className="text-lg">Filtrer les concurrents</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
@@ -351,7 +351,7 @@ export default function CompetitorsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or industry..."
+                  placeholder="Rechercher par nom ou secteur..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -361,10 +361,10 @@ export default function CompetitorsPage() {
 
             <Select value={filterIndustry} onValueChange={setFilterIndustry}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by industry" />
+                <SelectValue placeholder="Filtrer par secteur" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Industries</SelectItem>
+                <SelectItem value="all">Tous les secteurs</SelectItem>
                 {industries.map((industry) => (
                   <SelectItem key={industry} value={industry || ''}>
                     {industry}
@@ -381,7 +381,7 @@ export default function CompetitorsPage() {
                   setFilterIndustry('all');
                 }}
               >
-                Clear Filters
+                Effacer les filtres
               </Button>
             )}
           </div>
@@ -391,7 +391,7 @@ export default function CompetitorsPage() {
       {/* Competitors List */}
       <div>
         <h2 className="text-xl font-semibold mb-4">
-          Competitors ({filteredCompetitors.length})
+          Concurrents ({filteredCompetitors.length})
         </h2>
 
         {loading ? (
@@ -415,17 +415,17 @@ export default function CompetitorsPage() {
             <CardContent className="py-12 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {competitors.length === 0 ? 'No Competitors Yet' : 'No Competitors Found'}
+                {competitors.length === 0 ? 'Aucun concurrent pour le moment' : 'Aucun concurrent trouvé'}
               </h3>
               <p className="text-muted-foreground mb-6">
                 {competitors.length === 0
-                  ? 'Add your first competitor to start tracking and analyzing their strategy.'
-                  : 'Try adjusting your filters or search query.'}
+                  ? 'Ajoutez votre premier concurrent pour commencer à suivre et analyser leur stratégie.'
+                  : 'Essayez d\'ajuster vos filtres ou votre recherche.'}
               </p>
               {competitors.length === 0 && (
                 <Button onClick={() => setIsAddDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Competitor
+                  Ajouter votre premier concurrent
                 </Button>
               )}
             </CardContent>

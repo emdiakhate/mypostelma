@@ -40,8 +40,11 @@ import {
   RefreshCw,
   ChevronDown,
   ExternalLink,
+  Download,
+  FileText,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import type { Competitor } from '@/types/competitor';
 import type { CompetitorAnalysis } from '@/services/competitorAnalytics';
 import {
@@ -50,6 +53,8 @@ import {
   getLatestAnalysis,
 } from '@/services/competitorAnalytics';
 import { useToast } from '@/hooks/use-toast';
+import { CompetitorMetricsChart } from './CompetitorMetricsChart';
+import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
 
 interface CompetitorCardProps {
   competitor: Competitor;
