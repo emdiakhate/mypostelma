@@ -127,7 +127,8 @@ async function runApifyActor(
 
     throw new Error('Actor run timeout after 5 minutes');
   } catch (error) {
-    logStep(`Error running Apify actor ${actorId}`, { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep(`Error running Apify actor ${actorId}`, { error: errorMessage });
     throw error;
   }
 }
@@ -179,8 +180,9 @@ async function scrapeInstagram(url: string, apifyToken: string): Promise<any> {
       raw: profile, // Full data for audit
     };
   } catch (error) {
-    logStep('Error scraping Instagram', { error: error.message });
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error scraping Instagram', { error: errorMessage });
+    return { error: errorMessage };
   }
 }
 
@@ -272,8 +274,9 @@ async function scrapeTwitter(url: string, apifyToken: string, twitterBearerToken
       raw: profile,
     };
   } catch (error) {
-    logStep('Error scraping Twitter', { error: error.message });
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error scraping Twitter', { error: errorMessage });
+    return { error: errorMessage };
   }
 }
 
@@ -316,8 +319,9 @@ async function scrapeFacebook(url: string, apifyToken: string): Promise<any> {
       raw: page,
     };
   } catch (error) {
-    logStep('Error scraping Facebook', { error: error.message });
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error scraping Facebook', { error: errorMessage });
+    return { error: errorMessage };
   }
 }
 
@@ -362,8 +366,9 @@ async function scrapeTikTok(url: string, apifyToken: string): Promise<any> {
       raw: profile,
     };
   } catch (error) {
-    logStep('Error scraping TikTok', { error: error.message });
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error scraping TikTok', { error: errorMessage });
+    return { error: errorMessage };
   }
 }
 
@@ -387,8 +392,9 @@ async function scrapeWebsite(url: string): Promise<string> {
     logStep(`Scraped website ${url} - ${text.length} characters`);
     return text;
   } catch (error) {
-    logStep(`Error scraping website ${url}`, { error: error.message });
-    return `Error scraping ${url}: ${error.message}`;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep(`Error scraping website ${url}`, { error: errorMessage });
+    return `Error scraping ${url}: ${errorMessage}`;
   }
 }
 
@@ -523,7 +529,8 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       analysis_cost: (data.usage.total_tokens / 1000000) * 0.15, // GPT-4o-mini pricing
     };
   } catch (error) {
-    logStep('Error in OpenAI analysis', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error in OpenAI analysis', { error: errorMessage });
     throw error;
   }
 }
@@ -658,8 +665,6 @@ serve(async (req) => {
         instagram_data: scrapedData.instagram || null,
         facebook_data: scrapedData.facebook || null,
         linkedin_data: scrapedData.linkedin || null,
-        twitter_data: scrapedData.twitter || null,
-        tiktok_data: scrapedData.tiktok || null,
         website_data: scrapedData.website ? { raw: scrapedData.website.substring(0, 1000) } : null,
         tokens_used: analysis.tokens_used,
         analysis_cost: analysis.analysis_cost,
