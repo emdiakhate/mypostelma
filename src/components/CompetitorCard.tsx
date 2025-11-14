@@ -91,8 +91,8 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
       });
 
       toast({
-        title: 'Analysis Started',
-        description: `Analyzing ${competitor.name}... This will take 1-5 minutes (powered by Apify + OpenAI).`,
+        title: 'Analyse lancée',
+        description: `Analyse de ${competitor.name} en cours... Cela prendra 1-5 minutes (Apify + OpenAI).`,
       });
 
       // Poll for analysis completion (check every 15s for up to 5 minutes)
@@ -110,8 +110,8 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
             clearInterval(pollForAnalysis);
             setAnalysis(latestAnalysis);
             toast({
-              title: 'Analysis Complete',
-              description: `${competitor.name} has been analyzed successfully.`,
+              title: 'Analyse terminée',
+              description: `${competitor.name} a été analysé avec succès.`,
             });
             onUpdate?.();
             setIsAnalyzing(false);
