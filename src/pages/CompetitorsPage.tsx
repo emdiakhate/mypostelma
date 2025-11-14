@@ -124,33 +124,13 @@ export default function CompetitorsPage() {
             Analyse Concurrentielle
           </h1>
           <p className="text-muted-foreground mt-1">
-            Track and analyze your competitors with AI-powered insights
+            Suivez et analysez vos concurrents avec des insights IA
           </p>
         </div>
-        <button
-          onClick={(e) => {
-            alert('BOUTON CLIQUÉ!');
-            console.log('BOUTON CLIQUÉ!');
-            e.preventDefault();
-            e.stopPropagation();
-            setIsAddDialogOpen(true);
-          }}
-          style={{
-            padding: '8px 16px',
-            background: 'hsl(var(--primary))',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          TEST
-        </button>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau concurrent
+        </Button>
       </div>
 
       {/* Add Competitor Dialog - Simple Version for Testing */}
@@ -164,9 +144,9 @@ export default function CompetitorsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4">
-              <h2 className="text-lg font-semibold">Add New Competitor</h2>
+              <h2 className="text-lg font-semibold">Ajouter un concurrent</h2>
               <p className="text-sm text-muted-foreground">
-                Enter competitor information. Social media URLs and website are used for AI analysis.
+                Entrez les informations du concurrent. Les URLs des réseaux sociaux et du site web sont utilisées pour l'analyse IA.
               </p>
             </div>
             
