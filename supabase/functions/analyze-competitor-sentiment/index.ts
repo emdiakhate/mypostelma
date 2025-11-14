@@ -619,6 +619,7 @@ serve(async (req) => {
     }
 
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
+    console.log(`[Scraping] Platform results:`, JSON.stringify(platformResults, null, 2));
 
     if (allPosts.length === 0) {
       // Provide detailed error message about which platforms failed
@@ -644,10 +645,14 @@ serve(async (req) => {
         `- Pour Facebook: utilisez l'URL complète (ex: facebook.com/nomdelepage)\n` +
         `- Essayez d'ajouter d'autres réseaux sociaux (Instagram recommandé)`;
 
+      const errorMessage = `Aucun post n'a pu être récupéré pour ce concurrent.${errorDetails}${suggestions}`;
+      
+      console.error('[Error] No posts scraped:', errorMessage);
+
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Aucun post n'a pu être récupéré pour ce concurrent.${errorDetails}${suggestions}` 
+          error: errorMessage
         }),
         {
           status: 400,
