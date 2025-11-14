@@ -56,6 +56,7 @@ import {
   getLatestAnalysis,
 } from '@/services/competitorAnalytics';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { CompetitorMetricsChart } from './CompetitorMetricsChart';
 import { SentimentAnalysisView } from './SentimentAnalysisView';
 import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
@@ -68,6 +69,7 @@ interface CompetitorCardProps {
 export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
   const [analysis, setAnalysis] = useState<CompetitorAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSentimentAnalyzing, setIsSentimentAnalyzing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -431,6 +433,44 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                         <SentimentAnalysisView
                           analysisId={analysis.id}
                           competitorName={competitor.name}
+                          competitorId={competitor.id}
+                          onTriggerAnalysis={async () => {
+                            setIsSentimentAnalyzing(true);
+                            try {
+                              const { data, error } = await supabase.functions.invoke(
+                                'analyze-competitor-sentiment',
+                                {
+                                  body: {
+                                    competitor_id: competitor.id,
+                                    analysis_id: analysis.id,
+                                  },
+                                }
+                              );
+
+                              if (error) throw error;
+
+                              toast({
+                                title: 'Analyse de sentiment lancée',
+                                description: 'L\'analyse prendra 2-3 minutes. La page se mettra à jour automatiquement.',
+                              });
+
+                              // Refresh analysis after delay to show new sentiment data
+                              setTimeout(async () => {
+                                const latestAnalysis = await getLatestAnalysis(competitor.id);
+                                setAnalysis(latestAnalysis);
+                              }, 180000); // 3 minutes
+                            } catch (error: any) {
+                              console.error('Sentiment analysis error:', error);
+                              toast({
+                                title: 'Erreur',
+                                description: error.message || 'Impossible de lancer l\'analyse de sentiment',
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setIsSentimentAnalyzing(false);
+                            }
+                          }}
+                          isAnalyzing={isSentimentAnalyzing}
                         />
                       </TabsContent>
 

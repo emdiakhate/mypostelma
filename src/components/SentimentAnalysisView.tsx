@@ -32,6 +32,9 @@ import { fr } from 'date-fns/locale';
 interface SentimentAnalysisViewProps {
   analysisId: string;
   competitorName: string;
+  competitorId: string;
+  onTriggerAnalysis: () => Promise<void>;
+  isAnalyzing: boolean;
 }
 
 interface Post {
@@ -69,7 +72,13 @@ interface Statistics {
   avg_engagement_rate: number;
 }
 
-export function SentimentAnalysisView({ analysisId, competitorName }: SentimentAnalysisViewProps) {
+export function SentimentAnalysisView({ 
+  analysisId, 
+  competitorName, 
+  competitorId,
+  onTriggerAnalysis,
+  isAnalyzing 
+}: SentimentAnalysisViewProps) {
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -172,8 +181,32 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
   if (!statistics) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">Aucune analyse de sentiment disponible pour ce concurrent.</p>
+        <CardContent className="p-6 text-center">
+          <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Analyse de sentiment non disponible</h3>
+          <p className="text-muted-foreground mb-6">
+            Lancez une analyse de sentiment pour voir les commentaires et réactions du public.
+          </p>
+          <Button 
+            onClick={onTriggerAnalysis}
+            disabled={isAnalyzing}
+            size="lg"
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Analyse en cours (2-3 min)...
+              </>
+            ) : (
+              <>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Lancer l'analyse de sentiment
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-4">
+            L'analyse scrape les posts et commentaires récents et analyse leur sentiment.
+          </p>
         </CardContent>
       </Card>
     );
