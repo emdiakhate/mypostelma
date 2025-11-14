@@ -168,8 +168,11 @@ async function scrapeFacebookPostsApify(
     const requestBody = {
       startUrls: [{ url: pageUrl }],
       maxPosts: CONFIG.posts_limit,
+      scrapeComments: true,
       maxComments: CONFIG.comments_per_post,
       commentsMode: 'RANKED_THREADED',
+      scrapeReactions: false,
+      scrapeAbout: false,
     };
     
     console.log('[Facebook] Apify request:', JSON.stringify(requestBody, null, 2));
