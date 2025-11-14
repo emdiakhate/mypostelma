@@ -435,6 +435,17 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                           competitorName={competitor.name}
                           competitorId={competitor.id}
                           onTriggerAnalysis={async () => {
+                            // Check if competitor has social media URLs before starting
+                            const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+                            if (!hasUrls) {
+                              toast({
+                                title: 'URLs manquantes',
+                                description: 'Ce concurrent n\'a aucun compte de réseau social configuré. Ajoutez au moins une URL (Instagram, Facebook ou Twitter).',
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+
                             setIsSentimentAnalyzing(true);
                             try {
                               const { data, error } = await supabase.functions.invoke(
@@ -448,6 +459,11 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                               );
 
                               if (error) throw error;
+
+                              // Check if the response indicates an error
+                              if (data && !data.success) {
+                                throw new Error(data.error || 'Erreur lors de l\'analyse');
+                              }
 
                               toast({
                                 title: 'Analyse de sentiment lancée',
