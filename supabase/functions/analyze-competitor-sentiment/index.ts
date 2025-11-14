@@ -117,7 +117,7 @@ async function scrapeInstagramPostsApify(
 
     // Get results
     const resultsResponse = await fetch(
-      `https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs/${runId}/dataset/items`,
+      `https://api.apify.com/v2/actor-runs/${runId}/dataset/items`,
       {
         headers: { Authorization: `Bearer ${apifyToken}` },
       }
@@ -331,8 +331,9 @@ async function scrapeTwitterPostsApify(
     if (!finished) throw new Error('Apify run timed out');
 
     // Get results
+    console.log(`[Twitter] Fetching results from run ${runId}...`);
     const resultsResponse = await fetch(
-      `https://api.apify.com/v2/acts/apify~twitter-scraper/runs/${runId}/dataset/items`,
+      `https://api.apify.com/v2/actor-runs/${runId}/dataset/items`,
       { headers: { Authorization: `Bearer ${apifyToken}` } }
     );
 
