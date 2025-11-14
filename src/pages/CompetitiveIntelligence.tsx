@@ -25,6 +25,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useCompetitors } from '@/hooks/useCompetitors';
 
 // Types pour les données des concurrents
 interface CompetitorPost {
@@ -72,14 +73,21 @@ interface Competitor {
 const mockCompetitors: Competitor[] = [];
 
 const CompetitiveIntelligence: React.FC = () => {
+  const { addCompetitor } = useCompetitors();
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>('1');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<CompetitorPost | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    platform: 'instagram',
-    handle: '',
-    bio: '',
+    industry: '',
+    description: '',
+    instagram_url: '',
+    facebook_url: '',
+    linkedin_url: '',
+    twitter_url: '',
+    tiktok_url: '',
+    website_url: '',
   });
 
   const competitor = useMemo(() => 
@@ -92,12 +100,42 @@ const CompetitiveIntelligence: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  const handleAddCompetitor = (e: React.FormEvent) => {
+  const handleAddCompetitor = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Nouveau concurrent:', formData);
-    // Ici on ajouterait la logique pour sauvegarder le concurrent
-    setShowCreateModal(false);
-    setFormData({ name: '', platform: 'instagram', handle: '', bio: '' });
+    setIsSubmitting(true);
+
+    try {
+      await addCompetitor({
+        name: formData.name,
+        industry: formData.industry || undefined,
+        description: formData.description || undefined,
+        instagram_url: formData.instagram_url || undefined,
+        facebook_url: formData.facebook_url || undefined,
+        linkedin_url: formData.linkedin_url || undefined,
+        twitter_url: formData.twitter_url || undefined,
+        tiktok_url: formData.tiktok_url || undefined,
+        website_url: formData.website_url || undefined,
+      });
+
+      // Reset form
+      setFormData({
+        name: '',
+        industry: '',
+        description: '',
+        instagram_url: '',
+        facebook_url: '',
+        linkedin_url: '',
+        twitter_url: '',
+        tiktok_url: '',
+        website_url: '',
+      });
+
+      setShowCreateModal(false);
+    } catch (error: any) {
+      console.error('Error adding competitor:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getToneColor = (tone: string) => {
@@ -476,38 +514,63 @@ const CompetitiveIntelligence: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="platform">Plateforme</Label>
-                <select
-                  id="platform"
-                  value={formData.platform}
-                  onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                  className="w-full p-2 border rounded-md bg-background"
-                >
-                  <option value="instagram">Instagram</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="twitter">Twitter</option>
-                  <option value="linkedin">LinkedIn</option>
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="handle">Nom d'utilisateur</Label>
+                <Label htmlFor="industry">Industrie</Label>
                 <Input
-                  id="handle"
-                  value={formData.handle}
-                  onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
-                  placeholder="@username"
+                  id="industry"
+                  value={formData.industry}
+                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  placeholder="E-commerce, SaaS..."
                 />
               </div>
 
               <div>
-                <Label htmlFor="bio">Description</Label>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Description du concurrent..."
                   rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="instagram_url">URL Instagram</Label>
+                <Input
+                  id="instagram_url"
+                  value={formData.instagram_url}
+                  onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
+                  placeholder="https://instagram.com/..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="facebook_url">URL Facebook</Label>
+                <Input
+                  id="facebook_url"
+                  value={formData.facebook_url}
+                  onChange={(e) => setFormData({ ...formData, facebook_url: e.target.value })}
+                  placeholder="https://facebook.com/..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="linkedin_url">URL LinkedIn</Label>
+                <Input
+                  id="linkedin_url"
+                  value={formData.linkedin_url}
+                  onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                  placeholder="https://linkedin.com/..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="website_url">Site web</Label>
+                <Input
+                  id="website_url"
+                  value={formData.website_url}
+                  onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                  placeholder="https://example.com"
                 />
               </div>
 
@@ -516,12 +579,15 @@ const CompetitiveIntelligence: React.FC = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setShowCreateModal(false)}
+                  disabled={isSubmitting}
                 >
                   Annuler
                 </Button>
-                <Button type="submit">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Ajout...' : 'Ajouter'}
                 </Button>
               </div>
             </form>
