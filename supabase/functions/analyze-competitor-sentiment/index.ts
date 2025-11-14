@@ -760,6 +760,7 @@ serve(async (req) => {
     const { error: statsError } = await supabase
       .from('sentiment_statistics')
       .insert({
+        competitor_id,
         analysis_id,
         ...statistics,
       });
