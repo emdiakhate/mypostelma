@@ -138,10 +138,30 @@ const CompetitiveIntelligence: React.FC = () => {
               <p className="text-gray-600 mb-6">
                 Commencez à analyser vos concurrents pour améliorer votre stratégie
               </p>
-              <Button onClick={() => setShowCreateModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+              <button
+                onClick={() => {
+                  alert('Ajouter concurrent cliqué!');
+                  console.log('Ajouter concurrent cliqué!');
+                  setShowCreateModal(true);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  background: 'hsl(var(--primary))',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  margin: '0 auto',
+                }}
+              >
+                <Plus className="w-4 h-4" />
                 Ajouter un concurrent
-              </Button>
+              </button>
             </div>
           </CardContent>
         </Card>
