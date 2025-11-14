@@ -42,7 +42,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import type { Competitor, CompetitorAnalysis } from '@/services/competitorAnalytics';
+import type { Competitor } from '@/types/competitor';
+import type { CompetitorAnalysis } from '@/services/competitorAnalytics';
 import {
   analyzeCompetitorStrategy,
   deleteCompetitor,
@@ -83,7 +84,11 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
-      await analyzeCompetitorStrategy(competitor);
+      await analyzeCompetitorStrategy({
+        ...competitor,
+        added_at: competitor.added_at.toISOString(),
+        last_analyzed_at: competitor.last_analyzed_at?.toISOString(),
+      });
 
       toast({
         title: 'Analysis Started',

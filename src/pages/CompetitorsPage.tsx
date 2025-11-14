@@ -5,14 +5,12 @@
  * Integrates with N8N workflow for web scraping and OpenAI analysis.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Users,
   Plus,
   Search,
-  Filter,
   TrendingUp,
-  Eye,
   BarChart3,
   Instagram,
   Facebook,
@@ -20,12 +18,11 @@ import {
   Globe,
   RefreshCw,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -33,7 +30,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -43,22 +39,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { CompetitorCard } from '@/components/CompetitorCard';
-import {
-  getCompetitors,
-  createCompetitor,
-  type Competitor,
-} from '@/services/competitorAnalytics';
+import { useCompetitors } from '@/hooks/useCompetitors';
 
 export default function CompetitorsPage() {
-  const [competitors, setCompetitors] = useState<Competitor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { competitors, loading, addCompetitor, refreshCompetitors } = useCompetitors();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -73,27 +62,6 @@ export default function CompetitorsPage() {
     website_url: '',
   });
 
-  // Load competitors
-  const loadCompetitors = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getCompetitors();
-      setCompetitors(data);
-    } catch (error) {
-      console.error('Error loading competitors:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load competitors. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCompetitors();
-  }, []);
 
   // Filter competitors
   const filteredCompetitors = competitors.filter((competitor) => {
@@ -119,7 +87,7 @@ export default function CompetitorsPage() {
     setIsSubmitting(true);
 
     try {
-      await createCompetitor({
+      await addCompetitor({
         name: formData.name,
         industry: formData.industry || undefined,
         description: formData.description || undefined,
@@ -129,11 +97,6 @@ export default function CompetitorsPage() {
         twitter_url: formData.twitter_url || undefined,
         tiktok_url: formData.tiktok_url || undefined,
         website_url: formData.website_url || undefined,
-      } as any);
-
-      toast({
-        title: 'Competitor Added',
-        description: `${formData.name} has been added to your competitors list.`,
       });
 
       // Reset form
@@ -150,23 +113,19 @@ export default function CompetitorsPage() {
       });
 
       setIsAddDialogOpen(false);
-      loadCompetitors();
     } catch (error: any) {
       console.error('Error adding competitor:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to add competitor. Please try again.',
-        variant: 'destructive',
-      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  console.log('CompetitorsPage render, isAddDialogOpen:', isAddDialogOpen);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Users className="h-8 w-8" />
@@ -435,7 +394,7 @@ export default function CompetitorsPage() {
           Competitors ({filteredCompetitors.length})
         </h2>
 
-        {isLoading ? (
+        {loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
@@ -477,7 +436,7 @@ export default function CompetitorsPage() {
               <CompetitorCard
                 key={competitor.id}
                 competitor={competitor}
-                onUpdate={loadCompetitors}
+                onUpdate={refreshCompetitors}
               />
             ))}
           </div>

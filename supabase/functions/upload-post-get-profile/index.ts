@@ -90,6 +90,59 @@ serve(async (req) => {
     const data = await response.json();
     logStep('Upload-Post API response', { status: response.status, ok: response.ok });
 
+    // Si le profil n'existe pas (404), le créer automatiquement
+    if (!response.ok && response.status === 404) {
+      logStep('Profile not found, creating it automatically', { username });
+      
+      const createResponse = await fetch(
+        `${UPLOAD_POST_BASE_URL}/api/uploadposts/users`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `ApiKey ${UPLOAD_POST_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username })
+        }
+      );
+
+      const createData = await createResponse.json();
+      logStep('Profile creation response', { status: createResponse.status });
+
+      if (!createResponse.ok) {
+        logStep('Failed to create profile', { data: createData });
+        throw new Error(createData.detail || createData.message || 'Failed to create profile');
+      }
+
+      logStep('Profile created successfully, fetching it', { username });
+
+      // Récupérer le profil nouvellement créé
+      const retryResponse = await fetch(
+        `${UPLOAD_POST_BASE_URL}/api/uploadposts/users/${username}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `ApiKey ${UPLOAD_POST_API_KEY}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      const retryData = await retryResponse.json();
+      
+      if (!retryResponse.ok) {
+        throw new Error('Failed to fetch profile after creation');
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        profile: retryData 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
     if (!response.ok) {
       logStep('Upload-Post API error', { data });
       throw new Error(data.detail || data.message || 'Failed to get profile');
