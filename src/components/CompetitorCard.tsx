@@ -460,7 +460,12 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
 
                               if (error) {
                                 console.error('Edge function error:', error);
-                                throw new Error('Erreur lors de l\'appel à la fonction');
+                                // Try to extract the error message from the error context
+                                const errorContext = (error as any).context;
+                                if (errorContext?.error) {
+                                  throw new Error(errorContext.error);
+                                }
+                                throw error;
                               }
 
                               // Check if the response indicates an error
