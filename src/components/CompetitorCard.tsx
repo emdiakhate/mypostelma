@@ -40,8 +40,11 @@ import {
   RefreshCw,
   ChevronDown,
   ExternalLink,
+  Download,
+  FileText,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import type { Competitor } from '@/types/competitor';
 import type { CompetitorAnalysis } from '@/services/competitorAnalytics';
 import {
@@ -50,6 +53,8 @@ import {
   getLatestAnalysis,
 } from '@/services/competitorAnalytics';
 import { useToast } from '@/hooks/use-toast';
+import { CompetitorMetricsChart } from './CompetitorMetricsChart';
+import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
 
 interface CompetitorCardProps {
   competitor: Competitor;
@@ -245,11 +250,11 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
           {/* Analysis Stats */}
           {competitor.analysis_count > 0 && (
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Analyzed {competitor.analysis_count} time{competitor.analysis_count > 1 ? 's' : ''}</span>
+              <span>Analysé {competitor.analysis_count} fois</span>
               {competitor.last_analyzed_at && (
-                <span>
-                  Last: {formatDistanceToNow(new Date(competitor.last_analyzed_at), { addSuffix: true })}
-                </span>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Dernière analyse : {formatDistanceToNow(competitor.last_analyzed_at, { addSuffix: true, locale: fr })}
+                </p>
               )}
             </div>
           )}
@@ -258,7 +263,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
           {competitor.analysis_count === 0 && (
             <Alert>
               <AlertDescription>
-                No analysis yet. Click "Analyze" to start competitor intelligence gathering.
+                Aucune analyse disponible. Cliquez sur "Analyser" pour commencer la collecte d'informations concurrentielles.
               </AlertDescription>
             </Alert>
           )}
@@ -268,7 +273,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
             <Collapsible open={isExpanded} onOpenChange={handleExpand}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between">
-                  <span>View Latest Analysis</span>
+                  <span>Voir la dernière analyse</span>
                   <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
@@ -284,7 +289,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                     {/* Summary */}
                     {analysis.summary && (
                       <div>
-                        <h4 className="font-semibold mb-2">Executive Summary</h4>
+                        <h4 className="font-semibold mb-2">Résumé exécutif</h4>
                         <p className="text-sm text-muted-foreground">{analysis.summary}</p>
                       </div>
                     )}
@@ -294,14 +299,14 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                     {/* Positioning & Strategy */}
                     {analysis.positioning && (
                       <div>
-                        <h4 className="font-semibold mb-2">Positioning</h4>
+                        <h4 className="font-semibold mb-2">Positionnement</h4>
                         <p className="text-sm text-muted-foreground">{analysis.positioning}</p>
                       </div>
                     )}
 
                     {analysis.content_strategy && (
                       <div>
-                        <h4 className="font-semibold mb-2">Content Strategy</h4>
+                        <h4 className="font-semibold mb-2">Stratégie de contenu</h4>
                         <p className="text-sm text-muted-foreground">{analysis.content_strategy}</p>
                       </div>
                     )}
@@ -311,7 +316,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
                           <TrendingUp className="h-4 w-4 text-green-500" />
-                          Strengths
+                          Forces
                         </h4>
                         <ul className="list-disc list-inside space-y-1">
                           {analysis.strengths.map((strength, idx) => (
@@ -326,7 +331,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
                           <TrendingDown className="h-4 w-4 text-red-500" />
-                          Weaknesses
+                          Faiblesses
                         </h4>
                         <ul className="list-disc list-inside space-y-1">
                           {analysis.weaknesses.map((weakness, idx) => (
@@ -341,7 +346,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
                           <Lightbulb className="h-4 w-4 text-yellow-500" />
-                          Opportunities for You
+                          Opportunités pour vous
                         </h4>
                         <ul className="list-disc list-inside space-y-1">
                           {analysis.opportunities_for_us.map((opportunity, idx) => (
@@ -357,13 +362,13 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                     <div className="grid grid-cols-2 gap-4">
                       {analysis.tone && (
                         <div>
-                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Tone</h5>
+                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Ton</h5>
                           <Badge variant="secondary">{analysis.tone}</Badge>
                         </div>
                       )}
                       {analysis.estimated_budget && (
                         <div>
-                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Est. Budget</h5>
+                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Budget estimé</h5>
                           <Badge variant="secondary">{analysis.estimated_budget}</Badge>
                         </div>
                       )}
@@ -372,7 +377,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                     {/* Recommendations */}
                     {analysis.recommendations && (
                       <div>
-                        <h4 className="font-semibold mb-2">Strategic Recommendations</h4>
+                        <h4 className="font-semibold mb-2">Recommandations stratégiques</h4>
                         <p className="text-sm text-muted-foreground">{analysis.recommendations}</p>
                       </div>
                     )}
@@ -380,14 +385,20 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                     {/* Cost Info */}
                     {analysis.analysis_cost && (
                       <div className="text-xs text-muted-foreground text-right">
-                        Analysis cost: €{analysis.analysis_cost.toFixed(4)}
+                        Coût de l'analyse : €{analysis.analysis_cost.toFixed(4)}
                       </div>
                     )}
+                    
+                    {/* Metrics Charts */}
+                    <CompetitorMetricsChart 
+                      competitor={competitor} 
+                      analysis={undefined}
+                    />
                   </>
                 ) : (
                   <Alert>
                     <AlertDescription>
-                      Failed to load analysis. Please try re-analyzing.
+                      Échec du chargement de l'analyse. Veuillez essayer de ré-analyser.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -401,15 +412,15 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Competitor</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer le concurrent</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {competitor.name}? This will also delete all associated analyses and cannot be undone.
+              Êtes-vous sûr de vouloir supprimer {competitor.name} ? Cela supprimera également toutes les analyses associées et ne peut pas être annulé.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Delete
+              Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
