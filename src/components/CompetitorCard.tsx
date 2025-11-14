@@ -153,7 +153,8 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
   };
 
   const handleSentimentAnalysis = async () => {
-    if (!analysis) {
+    // Check if competitor has been analyzed at least once
+    if (!competitor.last_analyzed_at && competitor.analysis_count === 0) {
       toast({
         title: 'Erreur',
         description: 'Veuillez d\'abord lancer une analyse standard',
@@ -175,10 +176,21 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
 
     setIsSentimentAnalyzing(true);
     try {
+      // Get latest analysis if not already loaded
+      let analysisId = analysis?.id;
+      if (!analysisId) {
+        const latestAnalysis = await getLatestAnalysis(competitor.id);
+        if (!latestAnalysis) {
+          throw new Error('Aucune analyse trouvée pour ce concurrent');
+        }
+        analysisId = latestAnalysis.id;
+        setAnalysis(latestAnalysis);
+      }
+
       const { data, error } = await supabase.functions.invoke('analyze-competitor-sentiment', {
         body: {
           competitor_id: competitor.id,
-          analysis_id: analysis.id,
+          analysis_id: analysisId,
         },
       });
 
@@ -272,7 +284,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleSentimentAnalysis}
-                disabled={isSentimentAnalyzing || !analysis}
+                disabled={isSentimentAnalyzing || (!competitor.last_analyzed_at && competitor.analysis_count === 0)}
               >
                 {isSentimentAnalyzing ? (
                   <>
