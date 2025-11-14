@@ -40,8 +40,9 @@ async function scrapeWithJina(url: string): Promise<string> {
     logStep(`Scraped ${url} - ${text.length} characters`);
     return text;
   } catch (error) {
-    logStep(`Error scraping ${url}`, { error: error.message });
-    return `Error scraping ${url}: ${error.message}`;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep(`Error scraping ${url}`, { error: errorMessage });
+    return `Error scraping ${url}: ${errorMessage}`;
   }
 }
 
@@ -121,7 +122,8 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       analysis_cost: (data.usage.total_tokens / 1000000) * 0.15, // GPT-4o-mini pricing
     };
   } catch (error) {
-    logStep('Error in OpenAI analysis', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logStep('Error in OpenAI analysis', { error: errorMessage });
     throw error;
   }
 }
