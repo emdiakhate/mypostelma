@@ -242,39 +242,43 @@ async function scrapeFacebookPostsApify(
     }
     
     console.log('[Facebook] Sample post data:', JSON.stringify(results[0], null, 2));
-    console.log('[Facebook] Available comment fields:', {
-      comments_data: Array.isArray(results[0]?.comments_data),
-      postComments: Array.isArray(results[0]?.postComments),
-      latestComments: Array.isArray(results[0]?.latestComments),
-      comments_count: results[0]?.comments
-    });
-
-    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => {
-      // Extract comments from various possible fields in Apify response
-      const rawComments = item.comments_data || item.postComments || item.latestComments || [];
+    console.log('[Facebook] Sample comment data:', JSON.stringify(results[0], null, 2));
+    
+    // facebook-comments-scraper retourne des commentaires individuels
+    // Il faut les regrouper par post (facebookId)
+    const postMap = new Map<string, Post>();
+    
+    results.forEach((item: any) => {
+      const postId = item.facebookId || item.postId || 'unknown';
       
-      const processedComments = Array.isArray(rawComments)
-        ? rawComments
-            .filter((c: any) => c?.text && c.text.length >= CONFIG.min_comment_length)
-            .slice(0, CONFIG.comments_per_post)
-            .map((c: any) => ({
-              author_username: c.profileName || c.authorName || c.ownerUsername || 'unknown',
-              text: c.text,
-              likes: c.likesCount || c.likes || 0,
-              posted_at: c.date || c.timestamp || item.time,
-            }))
-        : [];
-
-      return {
-        platform: 'facebook',
-        post_url: item.url || '',
-        caption: item.text || '',
-        likes: item.likes || 0,
-        comments_count: item.comments || 0,
-        posted_at: item.time || new Date().toISOString(),
-        comments: processedComments,
-      };
+      if (!postMap.has(postId)) {
+        // Créer un nouveau post
+        postMap.set(postId, {
+          platform: 'facebook',
+          post_url: item.inputUrl || item.facebookUrl || '',
+          caption: item.postTitle || '',
+          likes: 0, // Les likes du post ne sont pas fournis par le comment scraper
+          comments_count: 0,
+          posted_at: new Date().toISOString(),
+          comments: [],
+        });
+      }
+      
+      const post = postMap.get(postId)!;
+      
+      // Ajouter le commentaire au post (seulement si c'est un commentaire de niveau 0)
+      if (item.threadingDepth === 0 && item.text && item.text.length >= CONFIG.min_comment_length) {
+        post.comments.push({
+          author_username: item.profileName || 'Unknown',
+          text: item.text,
+          likes: parseInt(item.likesCount || '0'),
+          posted_at: item.date || new Date().toISOString(),
+        });
+        post.comments_count = post.comments.length;
+      }
     });
+    
+    const posts: Post[] = Array.from(postMap.values()).slice(0, CONFIG.posts_limit);
     
     console.log(`[Facebook] Transformed ${posts.length} posts successfully`);
     console.log('[Facebook] Sample transformed post:', JSON.stringify(posts[0], null, 2));
