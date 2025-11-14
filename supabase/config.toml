@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.create-beta-subscription]
 verify_jwt = true
+
+[functions.analyze-competitor-sentiment]
+verify_jwt = true
