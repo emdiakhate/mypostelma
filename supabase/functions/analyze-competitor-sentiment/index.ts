@@ -220,7 +220,7 @@ async function scrapeFacebookPostsApify(
     // Get results
     console.log(`[Facebook] Fetching results from run ${runId}...`);
     const resultsResponse = await fetch(
-      `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs/${runId}/dataset/items`,
+      `https://api.apify.com/v2/actor-runs/${runId}/dataset/items`,
       { headers: { Authorization: `Bearer ${apifyToken}` } }
     );
 
