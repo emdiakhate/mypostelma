@@ -127,22 +127,31 @@ export default function CompetitorsPage() {
             Track and analyze your competitors with AI-powered insights
           </p>
         </div>
-        <div className="relative z-50">
-          <Button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              alert('BUTTON CLICKED! isAddDialogOpen avant: ' + isAddDialogOpen);
-              setIsAddDialogOpen(true);
-              alert('BUTTON CLICKED! isAddDialogOpen après: ' + true);
-            }}
-            className="pointer-events-auto"
-            style={{ position: 'relative', zIndex: 9999 }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Competitor
-          </Button>
-        </div>
+        <button
+          onClick={(e) => {
+            alert('BOUTON CLIQUÉ!');
+            console.log('BOUTON CLIQUÉ!');
+            e.preventDefault();
+            e.stopPropagation();
+            setIsAddDialogOpen(true);
+          }}
+          style={{
+            padding: '8px 16px',
+            background: 'hsl(var(--primary))',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          Add Competitor
+        </button>
       </div>
 
       {/* Add Competitor Dialog - Simple Version for Testing */}
