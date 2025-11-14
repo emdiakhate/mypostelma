@@ -704,7 +704,8 @@ serve(async (req) => {
         }
       }
 
-      // Insert post
+      // Try to insert post or get existing one
+      let postId: string | null = null;
       const { data: insertedPost, error: postError } = await supabase
         .from('competitor_posts')
         .insert({
@@ -725,48 +726,78 @@ serve(async (req) => {
         .single();
 
       if (postError) {
-        console.error('[DB] Error inserting post:', postError);
-        continue;
+        // If post already exists (unique constraint violation), get its ID
+        if (postError.code === '23505') {
+          console.log('[DB] Post already exists, fetching existing post:', post.post_url);
+          const { data: existingPost } = await supabase
+            .from('competitor_posts')
+            .select('id')
+            .eq('post_url', post.post_url)
+            .single();
+          
+          if (existingPost) {
+            postId = existingPost.id;
+            console.log('[DB] Using existing post ID:', postId);
+            
+            // Delete existing comments for this post to avoid duplicates
+            await supabase
+              .from('post_comments')
+              .delete()
+              .eq('post_id', postId);
+          } else {
+            console.error('[DB] Could not find existing post');
+            continue;
+          }
+        } else {
+          console.error('[DB] Error inserting post:', postError);
+          continue;
+        }
+      } else {
+        postId = insertedPost.id;
       }
 
-      insertedPostIds.push(insertedPost.id);
+      if (postId) {
+        insertedPostIds.push(postId);
 
-      // Analyze comments in batches of 20 (to avoid token limits)
-      if (post.comments.length > 0) {
-        const batchSize = 20;
-        for (let i = 0; i < post.comments.length; i += batchSize) {
-          const batch = post.comments.slice(i, i + batchSize);
-          const sentiments = await analyzeSentimentBatch(batch, openaiApiKey);
+        // Analyze comments in batches of 20 (to avoid token limits)
+        if (post.comments.length > 0) {
+          const batchSize = 20;
+          for (let i = 0; i < post.comments.length; i += batchSize) {
+            const batch = post.comments.slice(i, i + batchSize);
+            const sentiments = await analyzeSentimentBatch(batch, openaiApiKey);
 
-          // Insert comments with sentiment
-          for (let j = 0; j < batch.length; j++) {
-            const comment = batch[j];
-            const sentiment = sentiments[j] || {
-              sentiment_score: 0,
-              sentiment_label: 'neutral',
-              explanation: '',
-              keywords: [],
-            };
+            // Insert comments with sentiment
+            for (let j = 0; j < batch.length; j++) {
+              const comment = batch[j];
+              const sentiment = sentiments[j] || {
+                sentiment_score: 0,
+                sentiment_label: 'neutral',
+                explanation: '',
+                keywords: [],
+              };
 
-            const { data: insertedComment, error: commentError } = await supabase
-              .from('post_comments')
-              .insert({
-                post_id: insertedPost.id,
-                author_username: comment.author_username,
-                text: comment.text,
-                likes: comment.likes,
-                posted_at: comment.posted_at,
-                sentiment_score: sentiment.sentiment_score,
-                sentiment_label: sentiment.sentiment_label,
-                sentiment_explanation: sentiment.explanation,
-                keywords: sentiment.keywords,
-                is_response_from_brand: comment.is_response_from_brand || false,
-              })
-              .select()
-              .single();
+              const { data: insertedComment, error: commentError } = await supabase
+                .from('post_comments')
+                .insert({
+                  post_id: postId,
+                  author_username: comment.author_username,
+                  text: comment.text,
+                  likes: comment.likes,
+                  posted_at: comment.posted_at,
+                  sentiment_score: sentiment.sentiment_score,
+                  sentiment_label: sentiment.sentiment_label,
+                  sentiment_explanation: sentiment.explanation,
+                  keywords: sentiment.keywords,
+                  is_response_from_brand: comment.is_response_from_brand || false,
+                })
+                .select()
+                .single();
 
-            if (!commentError && insertedComment) {
-              allComments.push(insertedComment);
+              if (!commentError && insertedComment) {
+                allComments.push(insertedComment);
+              } else if (commentError) {
+                console.error('[DB] Error inserting comment:', commentError);
+              }
             }
           }
         }
