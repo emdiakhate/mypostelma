@@ -73,7 +73,7 @@ interface Competitor {
 const mockCompetitors: Competitor[] = [];
 
 const CompetitiveIntelligence: React.FC = () => {
-  const { addCompetitor } = useCompetitors();
+  const { competitors, addCompetitor, loading } = useCompetitors();
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>('1');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<CompetitorPost | null>(null);
@@ -162,29 +162,20 @@ const CompetitiveIntelligence: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Competitive Intelligence</h1>
           <p className="text-gray-600">Analysez vos concurrents et adaptez leurs meilleures stratégies</p>
         </div>
-        <button
-          onClick={() => {
-            alert('BOUTON CLIQUÉ!');
-            console.log('BOUTON CLIQUÉ!');
-            setShowCreateModal(true);
-          }}
-          style={{
-            padding: '8px 16px',
-            background: 'red',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-          }}
-        >
-          TEST
-        </button>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter un concurrent
+        </Button>
       </div>
 
       {/* Empty state */}
-      {mockCompetitors.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="py-16 text-center">
+            <p className="text-gray-600">Chargement...</p>
+          </CardContent>
+        </Card>
+      ) : competitors.length === 0 ? (
         <Card>
           <CardContent className="py-16">
             <div className="text-center max-w-md mx-auto">
@@ -218,36 +209,45 @@ const CompetitiveIntelligence: React.FC = () => {
         </Card>
       ) : (
         <>
-          {/* Sélecteur de concurrents */}
+          {/* Liste des concurrents */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {mockCompetitors.map((comp) => (
+            {competitors.map((comp) => (
               <Card 
                 key={comp.id} 
-                className={`cursor-pointer transition-all ${
-                  selectedCompetitor === comp.id 
-                    ? 'ring-2 ring-blue-500 bg-blue-50' 
-                    : 'hover:shadow-md'
-                }`}
-                onClick={() => setSelectedCompetitor(comp.id)}
+                className="hover:shadow-md transition-all"
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src={comp.avatar} 
-                      alt={comp.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{comp.name}</h3>
-                      <p className="text-sm text-gray-600">{comp.handle}</p>
-                      <div className="flex items-center mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {comp.platform}
-                        </Badge>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formatNumber(comp.metrics.totalFollowers)} followers
-                        </span>
-                      </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900">{comp.name}</h3>
+                    {comp.industry && (
+                      <Badge variant="secondary" className="text-xs">
+                        {comp.industry}
+                      </Badge>
+                    )}
+                    {comp.description && (
+                      <p className="text-sm text-gray-600">{comp.description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {comp.instagram_url && (
+                        <a href={comp.instagram_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          Instagram
+                        </a>
+                      )}
+                      {comp.facebook_url && (
+                        <a href={comp.facebook_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          Facebook
+                        </a>
+                      )}
+                      {comp.linkedin_url && (
+                        <a href={comp.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          LinkedIn
+                        </a>
+                      )}
+                      {comp.website_url && (
+                        <a href={comp.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          Site web
+                        </a>
+                      )}
                     </div>
                   </div>
                 </CardContent>
