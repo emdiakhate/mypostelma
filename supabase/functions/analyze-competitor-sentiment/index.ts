@@ -567,15 +567,23 @@ serve(async (req) => {
 
     // Scrape posts with comments from all platforms
     const allPosts: Post[] = [];
+    const platformResults = {
+      instagram: { attempted: false, posts: 0, error: null as string | null },
+      facebook: { attempted: false, posts: 0, error: null as string | null },
+      twitter: { attempted: false, posts: 0, error: null as string | null },
+    };
 
     // Instagram
     if (competitor.instagram_url) {
+      platformResults.instagram.attempted = true;
       const username = competitor.instagram_url.split('/').filter(Boolean).pop();
       if (username) {
         try {
           const instagramPosts = await scrapeInstagramPostsApify(username, apifyToken);
+          platformResults.instagram.posts = instagramPosts.length;
           allPosts.push(...instagramPosts);
         } catch (error) {
+          platformResults.instagram.error = error instanceof Error ? error.message : 'Erreur inconnue';
           console.error(`[Instagram] Failed to scrape posts for @${username}:`, error);
         }
       }
@@ -583,22 +591,28 @@ serve(async (req) => {
 
     // Facebook
     if (competitor.facebook_url) {
+      platformResults.facebook.attempted = true;
       try {
         const facebookPosts = await scrapeFacebookPostsApify(competitor.facebook_url, apifyToken);
+        platformResults.facebook.posts = facebookPosts.length;
         allPosts.push(...facebookPosts);
       } catch (error) {
+        platformResults.facebook.error = error instanceof Error ? error.message : 'Erreur inconnue';
         console.error(`[Facebook] Failed to scrape posts:`, error);
       }
     }
 
     // Twitter
     if (competitor.twitter_url) {
+      platformResults.twitter.attempted = true;
       const username = competitor.twitter_url.split('/').filter(Boolean).pop();
       if (username) {
         try {
           const twitterPosts = await scrapeTwitterPostsApify(username, apifyToken);
+          platformResults.twitter.posts = twitterPosts.length;
           allPosts.push(...twitterPosts);
         } catch (error) {
+          platformResults.twitter.error = error instanceof Error ? error.message : 'Erreur inconnue';
           console.error(`[Twitter] Failed to scrape posts for @${username}:`, error);
         }
       }
@@ -607,10 +621,33 @@ serve(async (req) => {
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
 
     if (allPosts.length === 0) {
+      // Provide detailed error message about which platforms failed
+      const platformErrors: string[] = [];
+      
+      if (platformResults.instagram.attempted && platformResults.instagram.posts === 0) {
+        platformErrors.push(`❌ Instagram: ${platformResults.instagram.error || 'Aucun post trouvé ou compte privé'}`);
+      }
+      if (platformResults.facebook.attempted && platformResults.facebook.posts === 0) {
+        platformErrors.push(`❌ Facebook: ${platformResults.facebook.error || 'Aucun post trouvé - vérifiez que l\'URL est complète et que la page est publique'}`);
+      }
+      if (platformResults.twitter.attempted && platformResults.twitter.posts === 0) {
+        platformErrors.push(`❌ Twitter: ${platformResults.twitter.error || 'Aucun post trouvé ou compte privé'}`);
+      }
+
+      const errorDetails = platformErrors.length > 0 
+        ? `\n\nDétails:\n${platformErrors.join('\n')}` 
+        : '';
+
+      const suggestions = `\n\n💡 Suggestions:\n` +
+        `- Vérifiez que les URLs sont correctes et complètes\n` +
+        `- Assurez-vous que les comptes sont publics\n` +
+        `- Pour Facebook: utilisez l'URL complète (ex: facebook.com/nomdelepage)\n` +
+        `- Essayez d'ajouter d'autres réseaux sociaux (Instagram recommandé)`;
+
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Aucun post n\'a pu être récupéré pour ce concurrent. Vérifiez que les URLs des réseaux sociaux sont correctes et que les comptes sont publics.' 
+          error: `Aucun post n'a pu être récupéré pour ce concurrent.${errorDetails}${suggestions}` 
         }),
         {
           status: 400,
