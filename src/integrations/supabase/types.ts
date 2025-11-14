@@ -33,8 +33,10 @@ export type Database = {
           strengths: string[] | null
           summary: string | null
           target_audience: string | null
+          tiktok_data: Json | null
           tokens_used: number | null
           tone: string | null
+          twitter_data: Json | null
           version: number | null
           weaknesses: string[] | null
           website_data: Json | null
@@ -57,8 +59,10 @@ export type Database = {
           strengths?: string[] | null
           summary?: string | null
           target_audience?: string | null
+          tiktok_data?: Json | null
           tokens_used?: number | null
           tone?: string | null
+          twitter_data?: Json | null
           version?: number | null
           weaknesses?: string[] | null
           website_data?: Json | null
@@ -81,8 +85,10 @@ export type Database = {
           strengths?: string[] | null
           summary?: string | null
           target_audience?: string | null
+          tiktok_data?: Json | null
           tokens_used?: number | null
           tone?: string | null
+          twitter_data?: Json | null
           version?: number | null
           weaknesses?: string[] | null
           website_data?: Json | null
@@ -475,6 +481,68 @@ export type Database = {
           },
         ]
       }
+      post_comments: {
+        Row: {
+          author_is_verified: boolean | null
+          author_username: string | null
+          comment_likes: number | null
+          comment_text: string
+          comment_url: string | null
+          created_at: string | null
+          id: string
+          is_competitor_reply: boolean | null
+          keywords: string[] | null
+          post_id: string
+          posted_at: string | null
+          scraped_at: string | null
+          sentiment_explanation: string | null
+          sentiment_label: string | null
+          sentiment_score: number | null
+        }
+        Insert: {
+          author_is_verified?: boolean | null
+          author_username?: string | null
+          comment_likes?: number | null
+          comment_text: string
+          comment_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_competitor_reply?: boolean | null
+          keywords?: string[] | null
+          post_id: string
+          posted_at?: string | null
+          scraped_at?: string | null
+          sentiment_explanation?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+        }
+        Update: {
+          author_is_verified?: boolean | null
+          author_username?: string | null
+          comment_likes?: number | null
+          comment_text?: string
+          comment_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_competitor_reply?: boolean | null
+          keywords?: string[] | null
+          post_id?: string
+          posted_at?: string | null
+          scraped_at?: string | null
+          sentiment_explanation?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           accounts: string[]
@@ -600,6 +668,95 @@ export type Database = {
           upload_post_username?: string | null
         }
         Relationships: []
+      }
+      sentiment_statistics: {
+        Row: {
+          analysis_id: string
+          analyzed_at: string | null
+          avg_engagement_rate: number | null
+          avg_sentiment_score: number | null
+          competitor_id: string
+          created_at: string | null
+          id: string
+          negative_count: number | null
+          negative_percentage: number | null
+          neutral_count: number | null
+          neutral_percentage: number | null
+          positive_count: number | null
+          positive_percentage: number | null
+          response_rate: number | null
+          top_keywords: Json | null
+          total_comments: number
+          total_posts: number
+        }
+        Insert: {
+          analysis_id: string
+          analyzed_at?: string | null
+          avg_engagement_rate?: number | null
+          avg_sentiment_score?: number | null
+          competitor_id: string
+          created_at?: string | null
+          id?: string
+          negative_count?: number | null
+          negative_percentage?: number | null
+          neutral_count?: number | null
+          neutral_percentage?: number | null
+          positive_count?: number | null
+          positive_percentage?: number | null
+          response_rate?: number | null
+          top_keywords?: Json | null
+          total_comments?: number
+          total_posts?: number
+        }
+        Update: {
+          analysis_id?: string
+          analyzed_at?: string | null
+          avg_engagement_rate?: number | null
+          avg_sentiment_score?: number | null
+          competitor_id?: string
+          created_at?: string | null
+          id?: string
+          negative_count?: number | null
+          negative_percentage?: number | null
+          neutral_count?: number | null
+          neutral_percentage?: number | null
+          positive_count?: number | null
+          positive_percentage?: number | null
+          response_rate?: number | null
+          top_keywords?: Json | null
+          total_comments?: number
+          total_posts?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentiment_statistics_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_analysis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sentiment_statistics_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_comparison"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sentiment_statistics_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_latest_analysis"
+            referencedColumns: ["competitor_id"]
+          },
+          {
+            foreignKeyName: "sentiment_statistics_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
