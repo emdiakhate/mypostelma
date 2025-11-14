@@ -117,7 +117,7 @@ export default function CompetitorsPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between relative z-10">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Users className="h-8 w-8" />
@@ -127,16 +127,22 @@ export default function CompetitorsPage() {
             Track and analyze your competitors with AI-powered insights
           </p>
         </div>
-        <Button 
-          onClick={() => {
-            console.log('Add Competitor button clicked');
-            setIsAddDialogOpen(true);
-            console.log('isAddDialogOpen set to:', true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Competitor
-        </Button>
+        <div className="relative z-50">
+          <Button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              alert('BUTTON CLICKED! isAddDialogOpen avant: ' + isAddDialogOpen);
+              setIsAddDialogOpen(true);
+              alert('BUTTON CLICKED! isAddDialogOpen après: ' + true);
+            }}
+            className="pointer-events-auto"
+            style={{ position: 'relative', zIndex: 9999 }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Competitor
+          </Button>
+        </div>
       </div>
 
       {/* Add Competitor Dialog - Simple Version for Testing */}
