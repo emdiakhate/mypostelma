@@ -25,14 +25,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -147,15 +139,23 @@ export default function CompetitorsPage() {
         </Button>
       </div>
 
-      {/* Add Competitor Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Competitor</DialogTitle>
-              <DialogDescription>
+      {/* Add Competitor Dialog - Simple Version for Testing */}
+      {isAddDialogOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setIsAddDialogOpen(false)}
+        >
+          <div 
+            className="bg-background rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Add New Competitor</h2>
+              <p className="text-sm text-muted-foreground">
                 Enter competitor information. Social media URLs and website are used for AI analysis.
-              </DialogDescription>
-            </DialogHeader>
+              </p>
+            </div>
+            
             <form onSubmit={handleAddCompetitor}>
               <div className="space-y-4 py-4">
                 {/* Basic Info */}
@@ -194,107 +194,110 @@ export default function CompetitorsPage() {
                 </div>
 
                 {/* Social Media URLs */}
-                <div className="space-y-4 pt-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    Social Media & Website (for AI Analysis)
-                  </h4>
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Social Media & Web Presence
+                  </h3>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram_url" className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
-                      Instagram URL
-                    </Label>
-                    <Input
-                      id="instagram_url"
-                      type="url"
-                      value={formData.instagram_url}
-                      onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
-                      placeholder="https://instagram.com/company"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="website_url" className="flex items-center gap-2">
+                        <Globe className="h-3 w-3" />
+                        Website URL
+                      </Label>
+                      <Input
+                        id="website_url"
+                        type="url"
+                        value={formData.website_url}
+                        onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                        placeholder="https://example.com"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="facebook_url" className="flex items-center gap-2">
-                      <Facebook className="h-4 w-4" />
-                      Facebook URL
-                    </Label>
-                    <Input
-                      id="facebook_url"
-                      type="url"
-                      value={formData.facebook_url}
-                      onChange={(e) => setFormData({ ...formData, facebook_url: e.target.value })}
-                      placeholder="https://facebook.com/company"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram_url" className="flex items-center gap-2">
+                        <Instagram className="h-3 w-3" />
+                        Instagram URL
+                      </Label>
+                      <Input
+                        id="instagram_url"
+                        type="url"
+                        value={formData.instagram_url}
+                        onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
+                        placeholder="https://instagram.com/username"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter_url" className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      Twitter/X URL
-                    </Label>
-                    <Input
-                      id="twitter_url"
-                      type="url"
-                      value={formData.twitter_url}
-                      onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
-                      placeholder="https://twitter.com/company"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook_url" className="flex items-center gap-2">
+                        <Facebook className="h-3 w-3" />
+                        Facebook URL
+                      </Label>
+                      <Input
+                        id="facebook_url"
+                        type="url"
+                        value={formData.facebook_url}
+                        onChange={(e) => setFormData({ ...formData, facebook_url: e.target.value })}
+                        placeholder="https://facebook.com/page"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin_url" className="flex items-center gap-2">
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn URL
-                    </Label>
-                    <Input
-                      id="linkedin_url"
-                      type="url"
-                      value={formData.linkedin_url}
-                      onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      placeholder="https://linkedin.com/company/company"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin_url" className="flex items-center gap-2">
+                        <Linkedin className="h-3 w-3" />
+                        LinkedIn URL
+                      </Label>
+                      <Input
+                        id="linkedin_url"
+                        type="url"
+                        value={formData.linkedin_url}
+                        onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                        placeholder="https://linkedin.com/company/name"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tiktok_url" className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                      </svg>
-                      TikTok URL
-                    </Label>
-                    <Input
-                      id="tiktok_url"
-                      type="url"
-                      value={formData.tiktok_url}
-                      onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
-                      placeholder="https://tiktok.com/@company"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter_url" className="flex items-center gap-2">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        X (Twitter) URL
+                      </Label>
+                      <Input
+                        id="twitter_url"
+                        type="url"
+                        value={formData.twitter_url}
+                        onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
+                        placeholder="https://x.com/username"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="website_url" className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Website URL
-                    </Label>
-                    <Input
-                      id="website_url"
-                      type="url"
-                      value={formData.website_url}
-                      onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                      placeholder="https://company.com"
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="tiktok_url" className="flex items-center gap-2">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                        </svg>
+                        TikTok URL
+                      </Label>
+                      <Input
+                        id="tiktok_url"
+                        type="url"
+                        value={formData.tiktok_url}
+                        onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
+                        placeholder="https://tiktok.com/@username"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <DialogFooter>
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsAddDialogOpen(false)}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
@@ -311,10 +314,11 @@ export default function CompetitorsPage() {
                     </>
                   )}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
