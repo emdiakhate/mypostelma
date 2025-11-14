@@ -135,7 +135,13 @@ export default function CompetitorsPage() {
             Track and analyze your competitors with AI-powered insights
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button 
+          onClick={() => {
+            console.log('Add Competitor button clicked');
+            setIsAddDialogOpen(true);
+            console.log('isAddDialogOpen set to:', true);
+          }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Competitor
         </Button>
