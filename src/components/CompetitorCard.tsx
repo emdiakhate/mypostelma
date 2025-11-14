@@ -56,6 +56,7 @@ import {
   getLatestAnalysis,
 } from '@/services/competitorAnalytics';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { CompetitorMetricsChart } from './CompetitorMetricsChart';
 import { SentimentAnalysisView } from './SentimentAnalysisView';
 import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
@@ -68,6 +69,7 @@ interface CompetitorCardProps {
 export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
   const [analysis, setAnalysis] = useState<CompetitorAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSentimentAnalyzing, setIsSentimentAnalyzing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -150,6 +152,76 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
     }
   };
 
+  const handleSentimentAnalysis = async () => {
+    // Check if competitor has been analyzed at least once
+    if (!competitor.last_analyzed_at && competitor.analysis_count === 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez d\'abord lancer une analyse standard',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if competitor has social media URLs
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+    if (!hasUrls) {
+      toast({
+        title: 'URLs manquantes',
+        description: 'Ce concurrent n\'a aucun compte de réseau social configuré. Ajoutez au moins une URL (Instagram, Facebook ou Twitter).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSentimentAnalyzing(true);
+    try {
+      // Get latest analysis if not already loaded
+      let analysisId = analysis?.id;
+      if (!analysisId) {
+        const latestAnalysis = await getLatestAnalysis(competitor.id);
+        if (!latestAnalysis) {
+          throw new Error('Aucune analyse trouvée pour ce concurrent');
+        }
+        analysisId = latestAnalysis.id;
+        setAnalysis(latestAnalysis);
+      }
+
+      const { data, error } = await supabase.functions.invoke('analyze-competitor-sentiment', {
+        body: {
+          competitor_id: competitor.id,
+          analysis_id: analysisId,
+        },
+      });
+
+      // Check for HTTP error first, but also check if data contains an error message
+      if (error || (data && !data.success)) {
+        console.error('Edge function error:', error);
+        const errorMessage = data?.error || (error as any)?.message || 'Erreur lors de l\'analyse';
+        throw new Error(errorMessage);
+      }
+
+      toast({
+        title: 'Analyse de sentiment terminée',
+        description: 'Les résultats sont disponibles dans l\'onglet Sentiment',
+      });
+      
+      // Refresh the sentiment data
+      setIsExpanded(false);
+      setTimeout(() => setIsExpanded(true), 100);
+    } catch (error) {
+      console.error('Sentiment analysis error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Impossible d\'analyser le sentiment. Vérifiez que les URLs sont correctes.';
+      toast({
+        title: 'Erreur d\'analyse',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSentimentAnalyzing(false);
+    }
+  };
+
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -199,6 +271,24 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                   <>
                     <BarChart3 className="h-4 w-4 mr-2" />
                     {competitor.analysis_count > 0 ? 'Re-analyze' : 'Analyze'}
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSentimentAnalysis}
+                disabled={isSentimentAnalyzing || (!competitor.last_analyzed_at && competitor.analysis_count === 0)}
+              >
+                {isSentimentAnalyzing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Analyse sentiment...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Analyser sentiment
                   </>
                 )}
               </Button>
@@ -431,6 +521,9 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                         <SentimentAnalysisView
                           analysisId={analysis.id}
                           competitorName={competitor.name}
+                          competitorId={competitor.id}
+                          onTriggerAnalysis={handleSentimentAnalysis}
+                          isAnalyzing={isSentimentAnalyzing}
                         />
                       </TabsContent>
 

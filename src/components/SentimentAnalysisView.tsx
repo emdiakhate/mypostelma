@@ -32,26 +32,27 @@ import { fr } from 'date-fns/locale';
 interface SentimentAnalysisViewProps {
   analysisId: string;
   competitorName: string;
+  competitorId: string;
+  onTriggerAnalysis: () => Promise<void>;
+  isAnalyzing: boolean;
 }
 
 interface Post {
   id: string;
   platform: string;
   post_url: string;
-  caption: string;
+  post_text: string;
   likes: number;
-  comments_count: number;
+  comments: number;
   engagement_rate: number;
   posted_at: string;
-  sentiment_score: number;
-  sentiment_label: 'positive' | 'neutral' | 'negative';
 }
 
 interface Comment {
   id: string;
   author_username: string;
-  text: string;
-  likes: number;
+  comment_text: string;
+  comment_likes: number;
   posted_at: string;
   sentiment_score: number;
   sentiment_label: 'positive' | 'neutral' | 'negative';
@@ -66,12 +67,18 @@ interface Statistics {
   positive_percentage: number;
   neutral_percentage: number;
   negative_percentage: number;
-  top_keywords: Record<string, number>;
+  top_keywords: any; // JSONB from database
   response_rate: number;
   avg_engagement_rate: number;
 }
 
-export function SentimentAnalysisView({ analysisId, competitorName }: SentimentAnalysisViewProps) {
+export function SentimentAnalysisView({ 
+  analysisId, 
+  competitorName, 
+  competitorId,
+  onTriggerAnalysis,
+  isAnalyzing 
+}: SentimentAnalysisViewProps) {
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -92,42 +99,42 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
         .from('sentiment_statistics')
         .select('*')
         .eq('analysis_id', analysisId)
-        .single();
+        .maybeSingle();
 
       if (stats) {
         setStatistics(stats);
-      }
 
-      // Load posts
-      const { data: postsData } = await supabase
-        .from('competitor_posts')
-        .select('*')
-        .eq('analysis_id', analysisId)
-        .order('posted_at', { ascending: false });
+        // Load posts using competitor_id from statistics
+        const { data: postsData } = await supabase
+          .from('competitor_posts')
+          .select('*')
+          .eq('competitor_id', stats.competitor_id)
+          .order('posted_at', { ascending: false });
 
-      if (postsData) {
-        setPosts(postsData);
+        if (postsData) {
+          setPosts(postsData);
 
-        // Find top engagement post
-        const topPost = postsData.reduce((prev, current) =>
-          (prev.engagement_rate || 0) > (current.engagement_rate || 0) ? prev : current
-        );
-        setTopEngagementPost(topPost);
-      }
+          // Find top engagement post
+          const topPost = postsData.reduce((prev, current) =>
+            (prev.engagement_rate || 0) > (current.engagement_rate || 0) ? prev : current
+          );
+          setTopEngagementPost(topPost);
 
-      // Load best and worst comments
-      const { data: allComments } = await supabase
-        .from('post_comments')
-        .select('*')
-        .in(
-          'post_id',
-          postsData?.map(p => p.id) || []
-        )
-        .order('sentiment_score', { ascending: false });
+          // Load best and worst comments
+          const { data: allComments } = await supabase
+            .from('post_comments')
+            .select('*')
+            .in(
+              'post_id',
+              postsData.map(p => p.id)
+            )
+            .order('sentiment_score', { ascending: false });
 
-      if (allComments && allComments.length > 0) {
-        setBestComment(allComments[0]); // Highest score
-        setWorstComment(allComments[allComments.length - 1]); // Lowest score
+          if (allComments && allComments.length > 0) {
+            setBestComment(allComments[0] as any); // Highest score
+            setWorstComment(allComments[allComments.length - 1] as any); // Lowest score
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading sentiment data:', error);
@@ -174,8 +181,32 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
   if (!statistics) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">Aucune analyse de sentiment disponible pour ce concurrent.</p>
+        <CardContent className="p-6 text-center">
+          <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Analyse de sentiment non disponible</h3>
+          <p className="text-muted-foreground mb-6">
+            Lancez une analyse de sentiment pour voir les commentaires et réactions du public.
+          </p>
+          <Button 
+            onClick={onTriggerAnalysis}
+            disabled={isAnalyzing}
+            size="lg"
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Analyse en cours (2-3 min)...
+              </>
+            ) : (
+              <>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Lancer l'analyse de sentiment
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-4">
+            L'analyse scrape les posts et commentaires récents et analyse leur sentiment.
+          </p>
         </CardContent>
       </Card>
     );
@@ -188,8 +219,8 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
     { name: 'Négatif', value: statistics.negative_percentage, fill: 'hsl(0, 84%, 60%)' },
   ];
 
-  const topKeywords = Object.entries(statistics.top_keywords || {})
-    .sort(([, a], [, b]) => b - a)
+  const topKeywords = Object.entries((statistics.top_keywords as Record<string, number>) || {})
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 10);
 
   return (
@@ -309,7 +340,7 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
               <div className="flex items-start gap-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium">@{bestComment.author_username}</p>
-                  <p className="text-sm mt-1">{bestComment.text}</p>
+                  <p className="text-sm mt-1">{bestComment.comment_text}</p>
                 </div>
                 <Badge className={getSentimentBadgeColor(bestComment.sentiment_label)}>
                   {bestComment.sentiment_score.toFixed(2)}
@@ -339,7 +370,7 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
               <div className="flex items-start gap-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium">@{worstComment.author_username}</p>
-                  <p className="text-sm mt-1">{worstComment.text}</p>
+                  <p className="text-sm mt-1">{worstComment.comment_text}</p>
                 </div>
                 <Badge className={getSentimentBadgeColor(worstComment.sentiment_label)}>
                   {worstComment.sentiment_score.toFixed(2)}
@@ -379,11 +410,8 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
                     })}
                   </span>
                 </div>
-                <p className="text-sm">{topEngagementPost.caption}</p>
+                <p className="text-sm">{topEngagementPost.post_text}</p>
               </div>
-              <Badge className={getSentimentBadgeColor(topEngagementPost.sentiment_label)}>
-                {getSentimentIcon(topEngagementPost.sentiment_label)}
-              </Badge>
             </div>
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -393,7 +421,7 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
               </span>
               <span className="flex items-center gap-1">
                 <MessageCircle className="h-3 w-3" />
-                {topEngagementPost.comments_count} commentaires
+                {topEngagementPost.comments} commentaires
               </span>
               <span className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
@@ -424,11 +452,11 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {topKeywords.map(([keyword, count]) => (
-                <Badge key={keyword} variant="secondary" className="text-sm">
-                  {keyword} <span className="ml-1 text-xs opacity-70">({count})</span>
-                </Badge>
-              ))}
+                {topKeywords.map(([keyword, count]) => (
+                  <Badge key={keyword} variant="secondary" className="text-sm">
+                    {keyword} <span className="ml-1 text-xs opacity-70">({String(count)})</span>
+                  </Badge>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -451,18 +479,14 @@ export function SentimentAnalysisView({ analysisId, competitorName }: SentimentA
                     <Badge variant="outline" className="text-xs">
                       {post.platform}
                     </Badge>
-                    <Badge className={getSentimentBadgeColor(post.sentiment_label)}>
-                      {getSentimentIcon(post.sentiment_label)}
-                      <span className="ml-1">{post.sentiment_label}</span>
-                    </Badge>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(post.posted_at), { addSuffix: true, locale: fr })}
                     </span>
                   </div>
-                  <p className="text-sm line-clamp-2">{post.caption}</p>
+                  <p className="text-sm line-clamp-2">{post.post_text}</p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span>{post.likes} likes</span>
-                    <span>{post.comments_count} commentaires</span>
+                    <span>{post.comments} commentaires</span>
                     <span>{post.engagement_rate.toFixed(2)}% engagement</span>
                   </div>
                 </div>
