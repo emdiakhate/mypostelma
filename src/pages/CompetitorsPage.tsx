@@ -453,20 +453,17 @@ export default function CompetitorsPage() {
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              About Competitor Analysis
+              À propos de l'analyse concurrentielle
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              Our AI analyzes your competitors' social media presence, website, and content strategy
-              to provide actionable insights.
+              Notre IA analyse la présence sur les réseaux sociaux, le site web et la stratégie de contenu
+              de vos concurrents pour fournir des insights exploitables.
             </p>
             <p>
-              <strong>Analysis includes:</strong> positioning, content strategy, tone, strengths, weaknesses,
-              opportunities, and strategic recommendations.
-            </p>
-            <p className="text-xs">
-              Cost: ~€0.0013 (OpenAI) + Apify credits • Duration: 1-5 minutes (powered by Apify + Jina.ai + OpenAI)
+              <strong>L'analyse comprend :</strong> positionnement, stratégie de contenu, ton, forces, faiblesses,
+              opportunités et recommandations stratégiques.
             </p>
           </CardContent>
         </Card>

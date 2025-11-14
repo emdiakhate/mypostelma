@@ -382,12 +382,6 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                       </div>
                     )}
 
-                    {/* Cost Info */}
-                    {analysis.analysis_cost && (
-                      <div className="text-xs text-muted-foreground text-right">
-                        Coût de l'analyse : €{analysis.analysis_cost.toFixed(4)}
-                      </div>
-                    )}
                     
                     {/* Metrics Charts */}
                     <CompetitorMetricsChart 
