@@ -164,6 +164,15 @@ async function scrapeFacebookPostsApify(
 
   try {
     const actorUrl = 'https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs';
+    
+    const requestBody = {
+      startUrls: [{ url: pageUrl }],
+      maxPosts: CONFIG.posts_limit,
+      maxComments: CONFIG.comments_per_post,
+      commentsMode: 'RANKED_THREADED',
+    };
+    
+    console.log('[Facebook] Apify request:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(actorUrl, {
       method: 'POST',
@@ -171,12 +180,7 @@ async function scrapeFacebookPostsApify(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apifyToken}`,
       },
-      body: JSON.stringify({
-        startUrls: [{ url: pageUrl }],
-        maxPosts: CONFIG.posts_limit,
-        maxComments: CONFIG.comments_per_post,
-        commentsMode: 'RANKED_THREADED',
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -214,22 +218,29 @@ async function scrapeFacebookPostsApify(
     if (!finished) throw new Error('Apify run timed out');
 
     // Get results
+    console.log(`[Facebook] Fetching results from run ${runId}...`);
     const resultsResponse = await fetch(
       `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs/${runId}/dataset/items`,
       { headers: { Authorization: `Bearer ${apifyToken}` } }
     );
 
+    console.log(`[Facebook] Results response status:`, resultsResponse.status);
     const resultsData = await resultsResponse.json();
+    console.log(`[Facebook] Raw response from Apify:`, JSON.stringify(resultsData, null, 2));
     
     // Apify can return results directly as an array or wrapped in an object
     const results = Array.isArray(resultsData) ? resultsData : (resultsData.data || []);
     
-    console.log(`[Facebook] Scraped ${results.length} posts`);
+    console.log(`[Facebook] Parsed results count: ${results.length}`);
+    console.log(`[Facebook] Results type: ${typeof results}, isArray: ${Array.isArray(results)}`);
 
     if (!Array.isArray(results) || results.length === 0) {
       console.log('[Facebook] No posts found or invalid response format');
+      console.log('[Facebook] ResultsData structure:', Object.keys(resultsData || {}));
       return [];
     }
+    
+    console.log('[Facebook] Sample post data:', JSON.stringify(results[0], null, 2));
 
     const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
       platform: 'facebook',
@@ -248,10 +259,14 @@ async function scrapeFacebookPostsApify(
           posted_at: c.date || item.time,
         })),
     }));
+    
+    console.log(`[Facebook] Transformed ${posts.length} posts successfully`);
+    console.log('[Facebook] Sample transformed post:', JSON.stringify(posts[0], null, 2));
 
     return posts;
   } catch (error) {
     console.error('[Facebook] Scraping error:', error);
+    console.error('[Facebook] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return [];
   }
 }
