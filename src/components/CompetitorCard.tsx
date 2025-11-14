@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,6 +43,8 @@ import {
   ExternalLink,
   Download,
   FileText,
+  MessageSquare,
+  Activity,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -54,6 +57,7 @@ import {
 } from '@/services/competitorAnalytics';
 import { useToast } from '@/hooks/use-toast';
 import { CompetitorMetricsChart } from './CompetitorMetricsChart';
+import { SentimentAnalysisView } from './SentimentAnalysisView';
 import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
 
 interface CompetitorCardProps {
@@ -286,108 +290,158 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                   </div>
                 ) : analysis ? (
                   <>
-                    {/* Summary */}
-                    {analysis.summary && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Résumé exécutif</h4>
-                        <p className="text-sm text-muted-foreground">{analysis.summary}</p>
-                      </div>
-                    )}
-
-                    <Separator />
-
-                    {/* Positioning & Strategy */}
-                    {analysis.positioning && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Positionnement</h4>
-                        <p className="text-sm text-muted-foreground">{analysis.positioning}</p>
-                      </div>
-                    )}
-
-                    {analysis.content_strategy && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Stratégie de contenu</h4>
-                        <p className="text-sm text-muted-foreground">{analysis.content_strategy}</p>
-                      </div>
-                    )}
-
-                    {/* Strengths */}
-                    {analysis.strengths && analysis.strengths.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                          Forces
-                        </h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {analysis.strengths.map((strength, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground">{strength}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Weaknesses */}
-                    {analysis.weaknesses && analysis.weaknesses.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                          Faiblesses
-                        </h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {analysis.weaknesses.map((weakness, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground">{weakness}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Opportunities */}
-                    {analysis.opportunities_for_us && analysis.opportunities_for_us.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <Lightbulb className="h-4 w-4 text-yellow-500" />
-                          Opportunités pour vous
-                        </h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {analysis.opportunities_for_us.map((opportunity, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground">{opportunity}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <Separator />
-
-                    {/* Additional Info */}
-                    <div className="grid grid-cols-2 gap-4">
-                      {analysis.tone && (
-                        <div>
-                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Ton</h5>
-                          <Badge variant="secondary">{analysis.tone}</Badge>
-                        </div>
-                      )}
-                      {analysis.estimated_budget && (
-                        <div>
-                          <h5 className="text-xs font-semibold text-muted-foreground mb-1">Budget estimé</h5>
-                          <Badge variant="secondary">{analysis.estimated_budget}</Badge>
-                        </div>
-                      )}
+                    {/* Export Buttons */}
+                    <div className="flex gap-2 justify-end mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportToPDF(competitor, analysis)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Exporter PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportToExcel(competitor, analysis)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Exporter Excel
+                      </Button>
                     </div>
 
-                    {/* Recommendations */}
-                    {analysis.recommendations && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Recommandations stratégiques</h4>
-                        <p className="text-sm text-muted-foreground">{analysis.recommendations}</p>
-                      </div>
-                    )}
+                    {/* Tabs for different views */}
+                    <Tabs defaultValue="analysis" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="analysis">
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          Analyse
+                        </TabsTrigger>
+                        <TabsTrigger value="sentiment">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Sentiment
+                        </TabsTrigger>
+                        <TabsTrigger value="charts">
+                          <Activity className="h-4 w-4 mr-2" />
+                          Graphiques
+                        </TabsTrigger>
+                      </TabsList>
 
-                    
-                    {/* Metrics Charts */}
-                    <CompetitorMetricsChart 
-                      competitor={competitor} 
-                      analysis={undefined}
-                    />
+                      {/* Analysis Tab */}
+                      <TabsContent value="analysis" className="space-y-4 mt-4">
+                        {/* Summary */}
+                        {analysis.summary && (
+                          <div>
+                            <h4 className="font-semibold mb-2">Résumé exécutif</h4>
+                            <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        {/* Positioning & Strategy */}
+                        {analysis.positioning && (
+                          <div>
+                            <h4 className="font-semibold mb-2">Positionnement</h4>
+                            <p className="text-sm text-muted-foreground">{analysis.positioning}</p>
+                          </div>
+                        )}
+
+                        {analysis.content_strategy && (
+                          <div>
+                            <h4 className="font-semibold mb-2">Stratégie de contenu</h4>
+                            <p className="text-sm text-muted-foreground">{analysis.content_strategy}</p>
+                          </div>
+                        )}
+
+                        {/* Strengths */}
+                        {analysis.strengths && analysis.strengths.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-green-500" />
+                              Forces
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {analysis.strengths.map((strength, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Weaknesses */}
+                        {analysis.weaknesses && analysis.weaknesses.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <TrendingDown className="h-4 w-4 text-red-500" />
+                              Faiblesses
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {analysis.weaknesses.map((weakness, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{weakness}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Opportunities */}
+                        {analysis.opportunities_for_us && analysis.opportunities_for_us.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <Lightbulb className="h-4 w-4 text-yellow-500" />
+                              Opportunités pour vous
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {analysis.opportunities_for_us.map((opportunity, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{opportunity}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        {/* Additional Info */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {analysis.tone && (
+                            <div>
+                              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Ton</h5>
+                              <Badge variant="secondary">{analysis.tone}</Badge>
+                            </div>
+                          )}
+                          {analysis.estimated_budget && (
+                            <div>
+                              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Budget estimé</h5>
+                              <Badge variant="secondary">{analysis.estimated_budget}</Badge>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Recommendations */}
+                        {analysis.recommendations && (
+                          <div>
+                            <h4 className="font-semibold mb-2">Recommandations stratégiques</h4>
+                            <p className="text-sm text-muted-foreground">{analysis.recommendations}</p>
+                          </div>
+                        )}
+                      </TabsContent>
+
+                      {/* Sentiment Tab */}
+                      <TabsContent value="sentiment" className="mt-4">
+                        <SentimentAnalysisView
+                          analysisId={analysis.id}
+                          competitorName={competitor.name}
+                        />
+                      </TabsContent>
+
+                      {/* Charts Tab */}
+                      <TabsContent value="charts" className="mt-4">
+                        <CompetitorMetricsChart
+                          competitor={competitor}
+                          analysis={undefined}
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </>
                 ) : (
                   <Alert>

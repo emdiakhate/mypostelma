@@ -1,0 +1,716 @@
+/**
+ * Edge Function: analyze-competitor-sentiment
+ *
+ * Scrapes competitor posts with comments and performs sentiment analysis.
+ *
+ * Configuration: 10 posts × 50 comments = 500 comments
+ * Cost estimate: ~€0.08 per analysis
+ * Time: 2-3 minutes
+ */
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Configuration
+const CONFIG = {
+  posts_limit: 10, // 10 derniers posts (user specified)
+  comments_per_post: 50, // Top 50 commentaires par post
+  min_comment_length: 10, // Ignorer les commentaires trop courts
+  include_replies: true, // Inclure les réponses du concurrent
+  platforms: ['instagram', 'facebook', 'twitter'],
+};
+
+interface Comment {
+  author_username: string;
+  text: string;
+  likes: number;
+  posted_at: string;
+  is_response_from_brand?: boolean;
+}
+
+interface Post {
+  platform: string;
+  post_url: string;
+  caption: string;
+  likes: number;
+  comments_count: number;
+  posted_at: string;
+  comments: Comment[];
+}
+
+interface SentimentResult {
+  sentiment_score: number; // -1 to 1
+  sentiment_label: 'positive' | 'neutral' | 'negative';
+  explanation: string;
+  keywords: string[];
+}
+
+/**
+ * Scrape Instagram posts with comments using Apify
+ */
+async function scrapeInstagramPostsApify(
+  username: string,
+  apifyToken: string
+): Promise<Post[]> {
+  console.log(`[Instagram] Scraping posts for @${username}...`);
+
+  try {
+    // Step 1: Get posts using Instagram Post Scraper
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs';
+
+    const postsResponse = await fetch(actorUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apifyToken}`,
+      },
+      body: JSON.stringify({
+        directUrls: [`https://www.instagram.com/${username}/`],
+        resultsLimit: CONFIG.posts_limit,
+        commentsLimit: CONFIG.comments_per_post,
+        includeComments: true,
+      }),
+    });
+
+    if (!postsResponse.ok) {
+      throw new Error(`Apify Instagram scraper failed: ${postsResponse.status}`);
+    }
+
+    const runData = await postsResponse.json();
+    const runId = runData.data.id;
+
+    // Wait for run to complete
+    let finished = false;
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max
+
+    while (!finished && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+
+      const statusResponse = await fetch(
+        `https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs/${runId}`,
+        {
+          headers: { Authorization: `Bearer ${apifyToken}` },
+        }
+      );
+
+      const statusData = await statusResponse.json();
+      const status = statusData.data.status;
+
+      if (status === 'SUCCEEDED') {
+        finished = true;
+      } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+        throw new Error(`Apify run ${status}`);
+      }
+
+      attempts++;
+    }
+
+    if (!finished) {
+      throw new Error('Apify run timed out');
+    }
+
+    // Get results
+    const resultsResponse = await fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs/${runId}/dataset/items`,
+      {
+        headers: { Authorization: `Bearer ${apifyToken}` },
+      }
+    );
+
+    const results = await resultsResponse.json();
+    console.log(`[Instagram] Scraped ${results.length} posts`);
+
+    // Transform to our Post format
+    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
+      platform: 'instagram',
+      post_url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
+      caption: item.caption || '',
+      likes: item.likesCount || 0,
+      comments_count: item.commentsCount || 0,
+      posted_at: item.timestamp || new Date().toISOString(),
+      comments: (item.comments || [])
+        .filter((c: any) => c.text && c.text.length >= CONFIG.min_comment_length)
+        .slice(0, CONFIG.comments_per_post)
+        .map((c: any) => ({
+          author_username: c.ownerUsername || 'unknown',
+          text: c.text,
+          likes: c.likesCount || 0,
+          posted_at: c.timestamp || item.timestamp,
+          is_response_from_brand: c.ownerUsername === username,
+        })),
+    }));
+
+    return posts;
+  } catch (error) {
+    console.error('[Instagram] Scraping error:', error);
+    return [];
+  }
+}
+
+/**
+ * Scrape Facebook posts with comments using Apify
+ */
+async function scrapeFacebookPostsApify(
+  pageUrl: string,
+  apifyToken: string
+): Promise<Post[]> {
+  console.log(`[Facebook] Scraping posts for ${pageUrl}...`);
+
+  try {
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs';
+
+    const response = await fetch(actorUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apifyToken}`,
+      },
+      body: JSON.stringify({
+        startUrls: [{ url: pageUrl }],
+        maxPosts: CONFIG.posts_limit,
+        maxComments: CONFIG.comments_per_post,
+        commentsMode: 'RANKED_THREADED',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Apify Facebook scraper failed: ${response.status}`);
+    }
+
+    const runData = await response.json();
+    const runId = runData.data.id;
+
+    // Wait for completion (same pattern as Instagram)
+    let finished = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    while (!finished && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      const statusResponse = await fetch(
+        `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs/${runId}`,
+        { headers: { Authorization: `Bearer ${apifyToken}` } }
+      );
+
+      const statusData = await statusResponse.json();
+      const status = statusData.data.status;
+
+      if (status === 'SUCCEEDED') {
+        finished = true;
+      } else if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
+        throw new Error(`Apify run ${status}`);
+      }
+
+      attempts++;
+    }
+
+    if (!finished) throw new Error('Apify run timed out');
+
+    // Get results
+    const resultsResponse = await fetch(
+      `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/runs/${runId}/dataset/items`,
+      { headers: { Authorization: `Bearer ${apifyToken}` } }
+    );
+
+    const results = await resultsResponse.json();
+    console.log(`[Facebook] Scraped ${results.length} posts`);
+
+    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
+      platform: 'facebook',
+      post_url: item.url || '',
+      caption: item.text || '',
+      likes: item.likes || 0,
+      comments_count: item.comments || 0,
+      posted_at: item.time || new Date().toISOString(),
+      comments: (item.postComments || [])
+        .filter((c: any) => c.text && c.text.length >= CONFIG.min_comment_length)
+        .slice(0, CONFIG.comments_per_post)
+        .map((c: any) => ({
+          author_username: c.profileName || 'unknown',
+          text: c.text,
+          likes: c.likesCount || 0,
+          posted_at: c.date || item.time,
+        })),
+    }));
+
+    return posts;
+  } catch (error) {
+    console.error('[Facebook] Scraping error:', error);
+    return [];
+  }
+}
+
+/**
+ * Scrape Twitter posts (tweets) with replies using Apify
+ */
+async function scrapeTwitterPostsApify(
+  username: string,
+  apifyToken: string
+): Promise<Post[]> {
+  console.log(`[Twitter] Scraping posts for @${username}...`);
+
+  try {
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~twitter-scraper/runs';
+
+    const response = await fetch(actorUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apifyToken}`,
+      },
+      body: JSON.stringify({
+        handles: [username],
+        tweetsDesired: CONFIG.posts_limit,
+        includeReplies: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Apify Twitter scraper failed: ${response.status}`);
+    }
+
+    const runData = await response.json();
+    const runId = runData.data.id;
+
+    // Wait for completion
+    let finished = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    while (!finished && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      const statusResponse = await fetch(
+        `https://api.apify.com/v2/acts/apify~twitter-scraper/runs/${runId}`,
+        { headers: { Authorization: `Bearer ${apifyToken}` } }
+      );
+
+      const statusData = await statusResponse.json();
+      const status = statusData.data.status;
+
+      if (status === 'SUCCEEDED') {
+        finished = true;
+      } else if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
+        throw new Error(`Apify run ${status}`);
+      }
+
+      attempts++;
+    }
+
+    if (!finished) throw new Error('Apify run timed out');
+
+    // Get results
+    const resultsResponse = await fetch(
+      `https://api.apify.com/v2/acts/apify~twitter-scraper/runs/${runId}/dataset/items`,
+      { headers: { Authorization: `Bearer ${apifyToken}` } }
+    );
+
+    const results = await resultsResponse.json();
+    console.log(`[Twitter] Scraped ${results.length} tweets`);
+
+    // For Twitter, we need to fetch replies separately
+    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
+      platform: 'twitter',
+      post_url: item.url || '',
+      caption: item.text || '',
+      likes: item.likes || 0,
+      comments_count: item.replies || 0,
+      posted_at: item.createdAt || new Date().toISOString(),
+      comments: (item.replyTweets || [])
+        .filter((c: any) => c.text && c.text.length >= CONFIG.min_comment_length)
+        .slice(0, CONFIG.comments_per_post)
+        .map((c: any) => ({
+          author_username: c.author?.userName || 'unknown',
+          text: c.text,
+          likes: c.likes || 0,
+          posted_at: c.createdAt || item.createdAt,
+        })),
+    }));
+
+    return posts;
+  } catch (error) {
+    console.error('[Twitter] Scraping error:', error);
+    return [];
+  }
+}
+
+/**
+ * Analyze sentiment of comments in batch using OpenAI
+ */
+async function analyzeSentimentBatch(
+  comments: Comment[],
+  openaiApiKey: string
+): Promise<SentimentResult[]> {
+  if (comments.length === 0) return [];
+
+  console.log(`[OpenAI] Analyzing sentiment for ${comments.length} comments...`);
+
+  try {
+    const prompt = `Tu es un expert en analyse de sentiment. Analyse les commentaires suivants et retourne un JSON avec l'analyse de chaque commentaire.
+
+Pour chaque commentaire, détermine:
+1. sentiment_score: Score de -1 (très négatif) à 1 (très positif)
+2. sentiment_label: "positive", "neutral", ou "negative"
+3. explanation: Brève explication (1 phrase)
+4. keywords: 2-3 mots-clés principaux du commentaire
+
+Commentaires à analyser:
+${comments.map((c, i) => `[${i}] ${c.text}`).join('\n\n')}
+
+Retourne un JSON avec ce format exact:
+{
+  "results": [
+    {
+      "index": 0,
+      "sentiment_score": 0.8,
+      "sentiment_label": "positive",
+      "explanation": "Exprime de l'enthousiasme et de la satisfaction",
+      "keywords": ["super", "content", "qualité"]
+    },
+    ...
+  ]
+}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Tu es un expert en analyse de sentiment. Tu réponds toujours en JSON valide.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    const parsed = JSON.parse(content);
+
+    console.log(`[OpenAI] Successfully analyzed ${parsed.results.length} comments`);
+
+    return parsed.results.map((r: any) => ({
+      sentiment_score: r.sentiment_score || 0,
+      sentiment_label: r.sentiment_label || 'neutral',
+      explanation: r.explanation || '',
+      keywords: r.keywords || [],
+    }));
+  } catch (error) {
+    console.error('[OpenAI] Sentiment analysis error:', error);
+    // Return neutral sentiment for all comments on error
+    return comments.map(() => ({
+      sentiment_score: 0,
+      sentiment_label: 'neutral' as const,
+      explanation: 'Error during analysis',
+      keywords: [],
+    }));
+  }
+}
+
+/**
+ * Calculate global sentiment statistics
+ */
+function calculateStatistics(posts: any[], comments: any[]) {
+  const totalPosts = posts.length;
+  const totalComments = comments.length;
+
+  if (totalComments === 0) {
+    return {
+      total_posts: totalPosts,
+      total_comments: 0,
+      avg_sentiment_score: 0,
+      positive_percentage: 0,
+      neutral_percentage: 0,
+      negative_percentage: 0,
+      top_keywords: {},
+      response_rate: 0,
+      avg_engagement_rate: 0,
+    };
+  }
+
+  const avgSentiment = comments.reduce((sum, c) => sum + (c.sentiment_score || 0), 0) / totalComments;
+
+  const positive = comments.filter(c => c.sentiment_label === 'positive').length;
+  const neutral = comments.filter(c => c.sentiment_label === 'neutral').length;
+  const negative = comments.filter(c => c.sentiment_label === 'negative').length;
+
+  const positivePercentage = (positive / totalComments) * 100;
+  const neutralPercentage = (neutral / totalComments) * 100;
+  const negativePercentage = (negative / totalComments) * 100;
+
+  // Count keywords
+  const keywordCounts: Record<string, number> = {};
+  comments.forEach(c => {
+    (c.keywords || []).forEach((kw: string) => {
+      keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
+    });
+  });
+
+  // Top 10 keywords
+  const topKeywords = Object.entries(keywordCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .reduce((obj, [k, v]) => ({ ...obj, [k]: v }), {});
+
+  // Response rate (comments from brand)
+  const brandResponses = comments.filter(c => c.is_response_from_brand).length;
+  const responseRate = (brandResponses / totalComments) * 100;
+
+  // Average engagement rate
+  const avgEngagementRate = posts.reduce((sum, p) => {
+    const followers = 1000; // We don't have follower count here, would need to get from competitor table
+    const engagement = ((p.likes + p.comments_count) / followers) * 100;
+    return sum + engagement;
+  }, 0) / totalPosts;
+
+  return {
+    total_posts: totalPosts,
+    total_comments: totalComments,
+    avg_sentiment_score: avgSentiment,
+    positive_percentage: positivePercentage,
+    neutral_percentage: neutralPercentage,
+    negative_percentage: negativePercentage,
+    top_keywords: topKeywords,
+    response_rate: responseRate,
+    avg_engagement_rate: avgEngagementRate,
+  };
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const apifyToken = Deno.env.get('APIFY_TOKEN');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    if (!apifyToken) {
+      throw new Error('APIFY_TOKEN not configured');
+    }
+
+    if (!openaiApiKey) {
+      throw new Error('OPENAI_API_KEY not configured');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse request
+    const { competitor_id, analysis_id } = await req.json();
+
+    if (!competitor_id || !analysis_id) {
+      throw new Error('Missing competitor_id or analysis_id');
+    }
+
+    console.log(`[Sentiment Analysis] Starting for competitor ${competitor_id}...`);
+
+    // Get competitor info
+    const { data: competitor, error: competitorError } = await supabase
+      .from('competitors')
+      .select('*')
+      .eq('id', competitor_id)
+      .single();
+
+    if (competitorError || !competitor) {
+      throw new Error('Competitor not found');
+    }
+
+    // Scrape posts with comments from all platforms
+    const allPosts: Post[] = [];
+
+    // Instagram
+    if (competitor.instagram_url) {
+      const username = competitor.instagram_url.split('/').filter(Boolean).pop();
+      if (username) {
+        const instagramPosts = await scrapeInstagramPostsApify(username, apifyToken);
+        allPosts.push(...instagramPosts);
+      }
+    }
+
+    // Facebook
+    if (competitor.facebook_url) {
+      const facebookPosts = await scrapeFacebookPostsApify(competitor.facebook_url, apifyToken);
+      allPosts.push(...facebookPosts);
+    }
+
+    // Twitter
+    if (competitor.twitter_url) {
+      const username = competitor.twitter_url.split('/').filter(Boolean).pop();
+      if (username) {
+        const twitterPosts = await scrapeTwitterPostsApify(username, apifyToken);
+        allPosts.push(...twitterPosts);
+      }
+    }
+
+    console.log(`[Scraping] Collected ${allPosts.length} posts total`);
+
+    if (allPosts.length === 0) {
+      throw new Error('No posts found to analyze');
+    }
+
+    // Insert posts and analyze comments
+    const insertedPostIds: string[] = [];
+    const allComments: any[] = [];
+
+    for (const post of allPosts) {
+      // Calculate engagement rate
+      const engagementRate = post.likes + post.comments_count > 0
+        ? ((post.likes + post.comments_count) / 1000) * 100 // Simplified, would need follower count
+        : 0;
+
+      // Analyze post sentiment (from caption)
+      let postSentiment = { sentiment_score: 0, sentiment_label: 'neutral' as const };
+      if (post.caption && post.caption.length >= CONFIG.min_comment_length) {
+        const captionSentiments = await analyzeSentimentBatch(
+          [{ author_username: '', text: post.caption, likes: 0, posted_at: post.posted_at }],
+          openaiApiKey
+        );
+        if (captionSentiments.length > 0) {
+          postSentiment = captionSentiments[0];
+        }
+      }
+
+      // Insert post
+      const { data: insertedPost, error: postError } = await supabase
+        .from('competitor_posts')
+        .insert({
+          competitor_id,
+          analysis_id,
+          platform: post.platform,
+          post_url: post.post_url,
+          caption: post.caption,
+          likes: post.likes,
+          comments_count: post.comments_count,
+          engagement_rate: engagementRate,
+          posted_at: post.posted_at,
+          sentiment_score: postSentiment.sentiment_score,
+          sentiment_label: postSentiment.sentiment_label,
+          raw_data: post,
+        })
+        .select()
+        .single();
+
+      if (postError) {
+        console.error('[DB] Error inserting post:', postError);
+        continue;
+      }
+
+      insertedPostIds.push(insertedPost.id);
+
+      // Analyze comments in batches of 20 (to avoid token limits)
+      if (post.comments.length > 0) {
+        const batchSize = 20;
+        for (let i = 0; i < post.comments.length; i += batchSize) {
+          const batch = post.comments.slice(i, i + batchSize);
+          const sentiments = await analyzeSentimentBatch(batch, openaiApiKey);
+
+          // Insert comments with sentiment
+          for (let j = 0; j < batch.length; j++) {
+            const comment = batch[j];
+            const sentiment = sentiments[j] || {
+              sentiment_score: 0,
+              sentiment_label: 'neutral',
+              explanation: '',
+              keywords: [],
+            };
+
+            const { data: insertedComment, error: commentError } = await supabase
+              .from('post_comments')
+              .insert({
+                post_id: insertedPost.id,
+                author_username: comment.author_username,
+                text: comment.text,
+                likes: comment.likes,
+                posted_at: comment.posted_at,
+                sentiment_score: sentiment.sentiment_score,
+                sentiment_label: sentiment.sentiment_label,
+                sentiment_explanation: sentiment.explanation,
+                keywords: sentiment.keywords,
+                is_response_from_brand: comment.is_response_from_brand || false,
+              })
+              .select()
+              .single();
+
+            if (!commentError && insertedComment) {
+              allComments.push(insertedComment);
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`[DB] Inserted ${insertedPostIds.length} posts and ${allComments.length} comments`);
+
+    // Calculate and insert global statistics
+    const statistics = calculateStatistics(allPosts, allComments);
+
+    const { error: statsError } = await supabase
+      .from('sentiment_statistics')
+      .insert({
+        analysis_id,
+        ...statistics,
+      });
+
+    if (statsError) {
+      console.error('[DB] Error inserting statistics:', statsError);
+    }
+
+    console.log('[Sentiment Analysis] Completed successfully! ✅');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Sentiment analysis completed',
+        statistics: {
+          total_posts: statistics.total_posts,
+          total_comments: statistics.total_comments,
+          avg_sentiment_score: statistics.avg_sentiment_score,
+          positive_percentage: statistics.positive_percentage,
+          neutral_percentage: statistics.neutral_percentage,
+          negative_percentage: statistics.negative_percentage,
+        },
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('[Error]', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});
