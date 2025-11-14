@@ -219,8 +219,17 @@ async function scrapeFacebookPostsApify(
       { headers: { Authorization: `Bearer ${apifyToken}` } }
     );
 
-    const results = await resultsResponse.json();
+    const resultsData = await resultsResponse.json();
+    
+    // Apify can return results directly as an array or wrapped in an object
+    const results = Array.isArray(resultsData) ? resultsData : (resultsData.data || []);
+    
     console.log(`[Facebook] Scraped ${results.length} posts`);
+
+    if (!Array.isArray(results) || results.length === 0) {
+      console.log('[Facebook] No posts found or invalid response format');
+      return [];
+    }
 
     const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
       platform: 'facebook',

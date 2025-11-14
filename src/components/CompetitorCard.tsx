@@ -458,7 +458,10 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                                 }
                               );
 
-                              if (error) throw error;
+                              if (error) {
+                                console.error('Edge function error:', error);
+                                throw new Error('Erreur lors de l\'appel à la fonction');
+                              }
 
                               // Check if the response indicates an error
                               if (data && !data.success) {
@@ -477,9 +480,21 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                               }, 180000); // 3 minutes
                             } catch (error: any) {
                               console.error('Sentiment analysis error:', error);
+                              
+                              let errorMessage = 'Impossible de lancer l\'analyse de sentiment';
+                              
+                              // Try to extract error message from the error object
+                              if (error.message) {
+                                errorMessage = error.message;
+                              } else if (error.error?.message) {
+                                errorMessage = error.error.message;
+                              } else if (typeof error === 'string') {
+                                errorMessage = error;
+                              }
+                              
                               toast({
                                 title: 'Erreur',
-                                description: error.message || 'Impossible de lancer l\'analyse de sentiment',
+                                description: errorMessage,
                                 variant: 'destructive',
                               });
                             } finally {
