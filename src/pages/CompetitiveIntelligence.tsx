@@ -107,13 +107,25 @@ const CompetitiveIntelligence: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Competitive Intelligence</h1>
           <p className="text-gray-600">Analysez vos concurrents et adaptez leurs meilleures stratégies</p>
         </div>
-        <Button 
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white"
+        <button
+          onClick={() => {
+            alert('BOUTON CLIQUÉ!');
+            console.log('BOUTON CLIQUÉ!');
+            setShowCreateModal(true);
+          }}
+          style={{
+            padding: '8px 16px',
+            background: 'red',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+          }}
         >
-          <Target className="w-4 h-4 mr-2" />
-          Adapter une stratégie
-        </Button>
+          TEST
+        </button>
       </div>
 
       {/* Empty state */}
