@@ -192,7 +192,10 @@ export type Database = {
       }
       competitor_posts: {
         Row: {
+          analysis_id: string | null
+          caption: string | null
           comments: number | null
+          comments_count: number | null
           competitor_id: string | null
           content_type: string | null
           detected_tone: string | null
@@ -202,15 +205,20 @@ export type Database = {
           likes: number | null
           media_urls: string[] | null
           platform: string
-          post_text: string | null
           post_url: string | null
           posted_at: string | null
+          raw_data: Json | null
           scraped_at: string | null
+          sentiment_label: string | null
+          sentiment_score: number | null
           shares: number | null
           views: number | null
         }
         Insert: {
+          analysis_id?: string | null
+          caption?: string | null
           comments?: number | null
+          comments_count?: number | null
           competitor_id?: string | null
           content_type?: string | null
           detected_tone?: string | null
@@ -220,15 +228,20 @@ export type Database = {
           likes?: number | null
           media_urls?: string[] | null
           platform: string
-          post_text?: string | null
           post_url?: string | null
           posted_at?: string | null
+          raw_data?: Json | null
           scraped_at?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           shares?: number | null
           views?: number | null
         }
         Update: {
+          analysis_id?: string | null
+          caption?: string | null
           comments?: number | null
+          comments_count?: number | null
           competitor_id?: string | null
           content_type?: string | null
           detected_tone?: string | null
@@ -238,14 +251,23 @@ export type Database = {
           likes?: number | null
           media_urls?: string[] | null
           platform?: string
-          post_text?: string | null
           post_url?: string | null
           posted_at?: string | null
+          raw_data?: Json | null
           scraped_at?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           shares?: number | null
           views?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "competitor_posts_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_analysis"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "competitor_posts_competitor_id_fkey"
             columns: ["competitor_id"]
