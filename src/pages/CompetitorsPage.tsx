@@ -25,6 +25,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -298,13 +305,12 @@ export default function CompetitorsPage() {
                     </>
                   )}
                 </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+               </div>
+             </form>
+          </DialogContent>
+        </Dialog>
 
-      {/* Stats Cards */}
+       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
