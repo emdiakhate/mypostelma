@@ -196,10 +196,38 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
       });
 
       // Check for HTTP error first, but also check if data contains an error message
-      if (error || (data && !data.success)) {
+      if (error) {
         console.error('Edge function error:', error);
-        const errorMessage = data?.error || (error as any)?.message || 'Erreur lors de l\'analyse';
-        throw new Error(errorMessage);
+        
+        // Try to extract error message from the error context
+        let errorMessage = 'Erreur lors de l\'analyse';
+        
+        // Check if error has a context with error details
+        if ((error as any)?.context?.error) {
+          errorMessage = (error as any).context.error;
+        } else if ((error as any)?.message) {
+          errorMessage = (error as any).message;
+        }
+        
+        // Show detailed error toast
+        toast({
+          title: 'Erreur d\'analyse',
+          description: errorMessage,
+          variant: 'destructive',
+          duration: 15000,
+        });
+        return;
+      }
+      
+      if (data && !data.success) {
+        const errorMessage = data?.error || 'Erreur lors de l\'analyse';
+        toast({
+          title: 'Erreur d\'analyse',
+          description: errorMessage,
+          variant: 'destructive',
+          duration: 15000,
+        });
+        return;
       }
 
       toast({
