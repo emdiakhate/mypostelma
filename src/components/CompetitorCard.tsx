@@ -194,17 +194,11 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
         },
       });
 
-      if (error) {
+      // Check for HTTP error first, but also check if data contains an error message
+      if (error || (data && !data.success)) {
         console.error('Edge function error:', error);
-        const errorContext = (error as any).context;
-        if (errorContext?.error) {
-          throw new Error(errorContext.error);
-        }
-        throw error;
-      }
-
-      if (data && !data.success) {
-        throw new Error(data.error || 'Erreur lors de l\'analyse');
+        const errorMessage = data?.error || (error as any)?.message || 'Erreur lors de l\'analyse';
+        throw new Error(errorMessage);
       }
 
       toast({
