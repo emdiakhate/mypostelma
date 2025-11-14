@@ -216,6 +216,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
         title: 'Erreur d\'analyse',
         description: errorMessage,
         variant: 'destructive',
+        duration: 15000, // 15 seconds for detailed error messages
       });
     } finally {
       setIsSentimentAnalyzing(false);
