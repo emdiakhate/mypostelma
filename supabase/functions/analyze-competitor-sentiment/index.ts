@@ -241,24 +241,39 @@ async function scrapeFacebookPostsApify(
     }
     
     console.log('[Facebook] Sample post data:', JSON.stringify(results[0], null, 2));
+    console.log('[Facebook] Available comment fields:', {
+      comments_data: Array.isArray(results[0]?.comments_data),
+      postComments: Array.isArray(results[0]?.postComments),
+      latestComments: Array.isArray(results[0]?.latestComments),
+      comments_count: results[0]?.comments
+    });
 
-    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
-      platform: 'facebook',
-      post_url: item.url || '',
-      caption: item.text || '',
-      likes: item.likes || 0,
-      comments_count: item.comments || 0,
-      posted_at: item.time || new Date().toISOString(),
-      comments: (item.postComments || [])
-        .filter((c: any) => c.text && c.text.length >= CONFIG.min_comment_length)
-        .slice(0, CONFIG.comments_per_post)
-        .map((c: any) => ({
-          author_username: c.profileName || 'unknown',
-          text: c.text,
-          likes: c.likesCount || 0,
-          posted_at: c.date || item.time,
-        })),
-    }));
+    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => {
+      // Extract comments from various possible fields in Apify response
+      const rawComments = item.comments_data || item.postComments || item.latestComments || [];
+      
+      const processedComments = Array.isArray(rawComments)
+        ? rawComments
+            .filter((c: any) => c?.text && c.text.length >= CONFIG.min_comment_length)
+            .slice(0, CONFIG.comments_per_post)
+            .map((c: any) => ({
+              author_username: c.profileName || c.authorName || c.ownerUsername || 'unknown',
+              text: c.text,
+              likes: c.likesCount || c.likes || 0,
+              posted_at: c.date || c.timestamp || item.time,
+            }))
+        : [];
+
+      return {
+        platform: 'facebook',
+        post_url: item.url || '',
+        caption: item.text || '',
+        likes: item.likes || 0,
+        comments_count: item.comments || 0,
+        posted_at: item.time || new Date().toISOString(),
+        comments: processedComments,
+      };
+    });
     
     console.log(`[Facebook] Transformed ${posts.length} posts successfully`);
     console.log('[Facebook] Sample transformed post:', JSON.stringify(posts[0], null, 2));
