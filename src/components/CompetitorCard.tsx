@@ -46,6 +46,7 @@ import {
   MessageSquare,
   Activity,
 } from 'lucide-react';
+import { TwitterIcon, TikTokIcon } from '@/config/socialIcons';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Competitor } from '@/types/competitor';
@@ -329,6 +330,33 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                 <a href={competitor.linkedin_url} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="h-4 w-4 mr-2" />
                   {competitor.linkedin_followers || 'LinkedIn'}
+                </a>
+              </Button>
+            )}
+            {competitor.twitter_url && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={competitor.twitter_url} target="_blank" rel="noopener noreferrer">
+                  <TwitterIcon className="h-4 w-4 mr-2" />
+                  X (Twitter)
+                </a>
+              </Button>
+            )}
+            {competitor.tiktok_url && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={competitor.tiktok_url} target="_blank" rel="noopener noreferrer">
+                  <TikTokIcon className="h-4 w-4 mr-2" />
+                  TikTok
+                </a>
+              </Button>
+            )}
+            {competitor.youtube_url && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={competitor.youtube_url} target="_blank" rel="noopener noreferrer">
+                  <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <polygon points="10,8 16,12 10,16"/>
+                  </svg>
+                  YouTube
                 </a>
               </Button>
             )}
