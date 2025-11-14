@@ -152,6 +152,70 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
     }
   };
 
+  const handleSentimentAnalysis = async () => {
+    if (!analysis) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez d\'abord lancer une analyse standard',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if competitor has social media URLs
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+    if (!hasUrls) {
+      toast({
+        title: 'URLs manquantes',
+        description: 'Ce concurrent n\'a aucun compte de réseau social configuré. Ajoutez au moins une URL (Instagram, Facebook ou Twitter).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSentimentAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-competitor-sentiment', {
+        body: {
+          competitor_id: competitor.id,
+          analysis_id: analysis.id,
+        },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        const errorContext = (error as any).context;
+        if (errorContext?.error) {
+          throw new Error(errorContext.error);
+        }
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erreur lors de l\'analyse');
+      }
+
+      toast({
+        title: 'Analyse de sentiment terminée',
+        description: 'Les résultats sont disponibles dans l\'onglet Sentiment',
+      });
+      
+      // Refresh the sentiment data
+      setIsExpanded(false);
+      setTimeout(() => setIsExpanded(true), 100);
+    } catch (error) {
+      console.error('Sentiment analysis error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Impossible d\'analyser le sentiment. Vérifiez que les URLs sont correctes.';
+      toast({
+        title: 'Erreur d\'analyse',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSentimentAnalyzing(false);
+    }
+  };
+
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -201,6 +265,24 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                   <>
                     <BarChart3 className="h-4 w-4 mr-2" />
                     {competitor.analysis_count > 0 ? 'Re-analyze' : 'Analyze'}
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSentimentAnalysis}
+                disabled={isSentimentAnalyzing || !analysis}
+              >
+                {isSentimentAnalyzing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Analyse sentiment...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Analyser sentiment
                   </>
                 )}
               </Button>
@@ -434,78 +516,7 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
                           analysisId={analysis.id}
                           competitorName={competitor.name}
                           competitorId={competitor.id}
-                          onTriggerAnalysis={async () => {
-                            // Check if competitor has social media URLs before starting
-                            const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
-                            if (!hasUrls) {
-                              toast({
-                                title: 'URLs manquantes',
-                                description: 'Ce concurrent n\'a aucun compte de réseau social configuré. Ajoutez au moins une URL (Instagram, Facebook ou Twitter).',
-                                variant: 'destructive',
-                              });
-                              return;
-                            }
-
-                            setIsSentimentAnalyzing(true);
-                            try {
-                              const { data, error } = await supabase.functions.invoke(
-                                'analyze-competitor-sentiment',
-                                {
-                                  body: {
-                                    competitor_id: competitor.id,
-                                    analysis_id: analysis.id,
-                                  },
-                                }
-                              );
-
-                              if (error) {
-                                console.error('Edge function error:', error);
-                                // Try to extract the error message from the error context
-                                const errorContext = (error as any).context;
-                                if (errorContext?.error) {
-                                  throw new Error(errorContext.error);
-                                }
-                                throw error;
-                              }
-
-                              // Check if the response indicates an error
-                              if (data && !data.success) {
-                                throw new Error(data.error || 'Erreur lors de l\'analyse');
-                              }
-
-                              toast({
-                                title: 'Analyse de sentiment lancée',
-                                description: 'L\'analyse prendra 2-3 minutes. La page se mettra à jour automatiquement.',
-                              });
-
-                              // Refresh analysis after delay to show new sentiment data
-                              setTimeout(async () => {
-                                const latestAnalysis = await getLatestAnalysis(competitor.id);
-                                setAnalysis(latestAnalysis);
-                              }, 180000); // 3 minutes
-                            } catch (error: any) {
-                              console.error('Sentiment analysis error:', error);
-                              
-                              let errorMessage = 'Impossible de lancer l\'analyse de sentiment';
-                              
-                              // Try to extract error message from the error object
-                              if (error.message) {
-                                errorMessage = error.message;
-                              } else if (error.error?.message) {
-                                errorMessage = error.error.message;
-                              } else if (typeof error === 'string') {
-                                errorMessage = error;
-                              }
-                              
-                              toast({
-                                title: 'Erreur',
-                                description: errorMessage,
-                                variant: 'destructive',
-                              });
-                            } finally {
-                              setIsSentimentAnalyzing(false);
-                            }
-                          }}
+                          onTriggerAnalysis={handleSentimentAnalysis}
                           isAnalyzing={isSentimentAnalyzing}
                         />
                       </TabsContent>
