@@ -41,7 +41,7 @@ interface Post {
   id: string;
   platform: string;
   post_url: string;
-  post_text: string;
+  caption: string;
   likes: number;
   comments: number;
   engagement_rate: number;
@@ -410,7 +410,7 @@ export function SentimentAnalysisView({
                     })}
                   </span>
                 </div>
-                <p className="text-sm">{topEngagementPost.post_text}</p>
+                <p className="text-sm">{topEngagementPost.caption}</p>
               </div>
             </div>
 
@@ -483,7 +483,7 @@ export function SentimentAnalysisView({
                       {formatDistanceToNow(new Date(post.posted_at), { addSuffix: true, locale: fr })}
                     </span>
                   </div>
-                  <p className="text-sm line-clamp-2">{post.post_text}</p>
+                  <p className="text-sm line-clamp-2">{post.caption}</p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span>{post.likes} likes</span>
                     <span>{post.comments} commentaires</span>
