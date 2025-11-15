@@ -364,44 +364,49 @@ async function scrapeFacebookPostsApify(
 }
 
 /**
- * Scrape TikTok posts with comments using Apify
+ * Scrape TikTok posts and comments using Apify (apidojo/tiktok-comments-scraper)
  */
 async function scrapeTikTokPostsApify(
-  username: string,
+  tiktokUrl: string,
   apifyToken: string
 ): Promise<Post[]> {
-  console.log(`[TikTok] Scraping posts for @${username}...`);
-
   try {
-    const actorUrl = 'https://api.apify.com/v2/acts/clockworks~tiktok-comments-scraper/runs';
+    console.log(`[TikTok] Starting scrape for URL: ${tiktokUrl} using Apify apidojo/tiktok-comments-scraper...`);
 
-    console.log('[TikTok] Apify request:', JSON.stringify({
-      profiles: [username],
-      resultsPerPage: CONFIG.posts_limit,
-      commentsPerPost: CONFIG.comments_per_post,
-      maxRepliesPerComment: 0,
-    }, null, 2));
+    // Construire les startUrls - peut être un profil ou des vidéos
+    const startUrls = [{ url: tiktokUrl }];
 
-    const response = await fetch(actorUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apifyToken}`,
-      },
-      body: JSON.stringify({
-        profiles: [username],
-        resultsPerPage: CONFIG.posts_limit,
-        commentsPerPost: CONFIG.comments_per_post,
-        maxRepliesPerComment: 0, // On veut juste les commentaires principaux
-      }),
-    });
+    const requestBody = {
+      startUrls,
+      includeReplies: false,
+      maxItems: CONFIG.posts_limit * CONFIG.comments_per_post,
+    };
+
+    console.log('[TikTok] Request body:', JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch(
+      'https://api.apify.com/v2/acts/apidojo~tiktok-comments-scraper/runs',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apifyToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    console.log('[TikTok] Apify response status:', response.status);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[TikTok] Apify error response:', errorText);
       throw new Error(`Apify TikTok scraper failed: ${response.status}`);
     }
 
     const runData = await response.json();
     const runId = runData.data.id;
+    console.log(`[TikTok] Run started with ID: ${runId}`);
 
     // Wait for completion
     let finished = false;
@@ -412,12 +417,14 @@ async function scrapeTikTokPostsApify(
       await new Promise(resolve => setTimeout(resolve, 5000));
 
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/clockworks~tiktok-comments-scraper/runs/${runId}`,
+        `https://api.apify.com/v2/acts/apidojo~tiktok-comments-scraper/runs/${runId}`,
         { headers: { Authorization: `Bearer ${apifyToken}` } }
       );
 
       const statusData = await statusResponse.json();
       const status = statusData.data.status;
+
+      console.log(`[TikTok] Run status (attempt ${attempts + 1}): ${status}`);
 
       if (status === 'SUCCEEDED') {
         finished = true;
@@ -452,45 +459,44 @@ async function scrapeTikTokPostsApify(
     }
 
     console.log('[TikTok] 🔍 Processing comment items...');
-    console.log('[TikTok] Results type:', typeof results, ', isArray:', Array.isArray(results));
-    
     if (results.length > 0) {
       console.log('[TikTok] Sample comment data:', JSON.stringify(results[0], null, 2));
     }
 
-    // Transformer les données TikTok en format Post
+    // Regrouper les commentaires par post (awemeId)
     const postMap = new Map<string, Post>();
     let processedComments = 0;
     let skippedComments = 0;
 
     results.forEach((item: any) => {
-      const videoId = item.videoId || item.id || 'unknown';
+      const postId = item.awemeId || item.parentId || 'unknown';
       
-      if (!postMap.has(videoId)) {
+      // Créer le post s'il n'existe pas encore
+      if (!postMap.has(postId)) {
         const newPost: Post = {
           platform: 'tiktok',
-          post_url: item.webVideoUrl || item.videoUrl || `https://www.tiktok.com/@${username}/video/${videoId}`,
-          caption: item.text || item.videoDescription || '',
-          likes: item.diggCount || item.videoLikes || 0,
+          post_url: item.post?.url || `https://www.tiktok.com/video/${postId}`,
+          caption: '',
+          likes: 0,
           comments_count: 0,
-          posted_at: item.createTime ? new Date(item.createTime * 1000).toISOString() : new Date().toISOString(),
+          posted_at: item.createdAt || new Date().toISOString(),
           comments: [],
         };
-        postMap.set(videoId, newPost);
-        console.log(`[TikTok] ➕ Created new post with ID: ${videoId}`);
+        postMap.set(postId, newPost);
+        console.log(`[TikTok] ➕ Created new post with ID: ${postId}`);
       }
       
-      const post = postMap.get(videoId)!;
+      const post = postMap.get(postId)!;
       
-      // Ajouter le commentaire s'il existe
+      // Ajouter le commentaire
       if (item.text && item.text.trim()) {
         const commentText = item.text.trim();
         if (commentText.length >= CONFIG.min_comment_length) {
           post.comments.push({
-            author_username: item.uniqueId || item.authorMeta?.name || 'Unknown',
+            author_username: item.user?.username || 'unknown',
             text: commentText,
-            likes: item.diggCount || 0,
-            posted_at: item.createTime ? new Date(item.createTime * 1000).toISOString() : new Date().toISOString(),
+            likes: item.likeCount || 0,
+            posted_at: item.createdAt || new Date().toISOString(),
           });
           post.comments_count = post.comments.length;
           processedComments++;
@@ -503,25 +509,18 @@ async function scrapeTikTokPostsApify(
       }
     });
     
-    const posts: Post[] = Array.from(postMap.values()).slice(0, CONFIG.posts_limit);
+    const posts: Post[] = Array.from(postMap.values())
+      .filter(p => p.comments.length >= 10) // Au moins 10 commentaires par post
+      .slice(0, CONFIG.posts_limit);
     
-    console.log(`[TikTok] ✅ Transformation complete:`);
-    console.log(`[TikTok]   - Total posts created: ${posts.length}`);
-    console.log(`[TikTok]   - Processed comments: ${processedComments}`);
-    console.log(`[TikTok]   - Skipped comments (too short): ${skippedComments}`);
-    
-    posts.forEach((post, index) => {
-      console.log(`[TikTok]   - Post ${index + 1}: ${post.comments_count} comments, URL: ${post.post_url}`);
+    console.log(`[TikTok] ✅ Successfully processed ${posts.length} posts with ${processedComments} comments (${skippedComments} skipped)`);
+    posts.forEach((post, i) => {
+      console.log(`[TikTok]   Post ${i + 1}: ${post.comments_count} comments, ${post.likes} likes`);
     });
-    
-    if (posts.length > 0) {
-      console.log('[TikTok] 📊 Sample transformed post:', JSON.stringify(posts[0], null, 2));
-    }
 
     return posts;
   } catch (error) {
     console.error('[TikTok] Scraping error:', error);
-    console.error('[TikTok] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return [];
   }
 }
@@ -821,13 +820,13 @@ serve(async (req) => {
       throw new Error('Competitor not found');
     }
 
-    // Check if competitor has any SUPPORTED social media URLs (Instagram, Facebook, Twitter)
-    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+    // Check if competitor has any social media URLs
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url || competitor.tiktok_url;
     if (!hasUrls) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Ce concurrent n\'a aucun compte de réseau social configuré pour l\'analyse de sentiment. Veuillez ajouter au moins une URL Instagram, Facebook ou Twitter.\n\n⚠️ Note: TikTok n\'est pas encore supporté pour l\'analyse de sentiment.' 
+          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook, Twitter ou TikTok) pour pouvoir analyser le sentiment.' 
         }),
         {
           status: 400,
@@ -890,11 +889,17 @@ serve(async (req) => {
       }
     }
 
-    // TikTok - TEMPORAIREMENT DÉSACTIVÉ (scraper Apify non disponible)
+    // TikTok
     if (competitor.tiktok_url) {
       platformResults.tiktok.attempted = true;
-      platformResults.tiktok.error = 'Le scraping TikTok n\'est pas encore disponible pour l\'analyse de sentiment. Utilisez Instagram, Facebook ou Twitter.';
-      console.log('[TikTok] ⚠️ TikTok scraping temporarily disabled - Apify scraper not available');
+      try {
+        const tiktokPosts = await scrapeTikTokPostsApify(competitor.tiktok_url, apifyToken);
+        platformResults.tiktok.posts = tiktokPosts.length;
+        allPosts.push(...tiktokPosts);
+      } catch (error) {
+        platformResults.tiktok.error = error instanceof Error ? error.message : 'Erreur inconnue';
+        console.error(`[TikTok] Failed to scrape posts for ${competitor.tiktok_url}:`, error);
+      }
     }
 
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
