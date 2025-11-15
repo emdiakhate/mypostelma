@@ -333,6 +333,169 @@ async function scrapeFacebookPostsApify(
 }
 
 /**
+ * Scrape TikTok posts with comments using Apify
+ */
+async function scrapeTikTokPostsApify(
+  username: string,
+  apifyToken: string
+): Promise<Post[]> {
+  console.log(`[TikTok] Scraping posts for @${username}...`);
+
+  try {
+    const actorUrl = 'https://api.apify.com/v2/acts/clockworks~tiktok-comments-scraper/runs';
+
+    console.log('[TikTok] Apify request:', JSON.stringify({
+      profiles: [username],
+      resultsPerPage: CONFIG.posts_limit,
+      commentsPerPost: CONFIG.comments_per_post,
+      maxRepliesPerComment: 0,
+    }, null, 2));
+
+    const response = await fetch(actorUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apifyToken}`,
+      },
+      body: JSON.stringify({
+        profiles: [username],
+        resultsPerPage: CONFIG.posts_limit,
+        commentsPerPost: CONFIG.comments_per_post,
+        maxRepliesPerComment: 0, // On veut juste les commentaires principaux
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Apify TikTok scraper failed: ${response.status}`);
+    }
+
+    const runData = await response.json();
+    const runId = runData.data.id;
+
+    // Wait for completion
+    let finished = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    while (!finished && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      const statusResponse = await fetch(
+        `https://api.apify.com/v2/acts/clockworks~tiktok-comments-scraper/runs/${runId}`,
+        { headers: { Authorization: `Bearer ${apifyToken}` } }
+      );
+
+      const statusData = await statusResponse.json();
+      const status = statusData.data.status;
+
+      if (status === 'SUCCEEDED') {
+        finished = true;
+      } else if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
+        throw new Error(`Apify run ${status}`);
+      }
+
+      attempts++;
+    }
+
+    if (!finished) throw new Error('Apify run timed out');
+
+    // Get results
+    console.log(`[TikTok] Fetching results from run ${runId}...`);
+    const resultsResponse = await fetch(
+      `https://api.apify.com/v2/actor-runs/${runId}/dataset/items`,
+      { headers: { Authorization: `Bearer ${apifyToken}` } }
+    );
+
+    console.log('[TikTok] Results response status:', resultsResponse.status);
+
+    if (!resultsResponse.ok) {
+      throw new Error(`Failed to fetch results: ${resultsResponse.status}`);
+    }
+
+    const results = await resultsResponse.json();
+    console.log('[TikTok] Parsed results count:', results?.length || 0);
+
+    if (!results || results.length === 0) {
+      console.log('[TikTok] ⚠️ No data returned from Apify');
+      return [];
+    }
+
+    console.log('[TikTok] 🔍 Processing comment items...');
+    console.log('[TikTok] Results type:', typeof results, ', isArray:', Array.isArray(results));
+    
+    if (results.length > 0) {
+      console.log('[TikTok] Sample comment data:', JSON.stringify(results[0], null, 2));
+    }
+
+    // Transformer les données TikTok en format Post
+    const postMap = new Map<string, Post>();
+    let processedComments = 0;
+    let skippedComments = 0;
+
+    results.forEach((item: any) => {
+      const videoId = item.videoId || item.id || 'unknown';
+      
+      if (!postMap.has(videoId)) {
+        const newPost: Post = {
+          platform: 'tiktok',
+          post_url: item.webVideoUrl || item.videoUrl || `https://www.tiktok.com/@${username}/video/${videoId}`,
+          caption: item.text || item.videoDescription || '',
+          likes: item.diggCount || item.videoLikes || 0,
+          comments_count: 0,
+          posted_at: item.createTime ? new Date(item.createTime * 1000).toISOString() : new Date().toISOString(),
+          comments: [],
+        };
+        postMap.set(videoId, newPost);
+        console.log(`[TikTok] ➕ Created new post with ID: ${videoId}`);
+      }
+      
+      const post = postMap.get(videoId)!;
+      
+      // Ajouter le commentaire s'il existe
+      if (item.text && item.text.trim()) {
+        const commentText = item.text.trim();
+        if (commentText.length >= CONFIG.min_comment_length) {
+          post.comments.push({
+            author_username: item.uniqueId || item.authorMeta?.name || 'Unknown',
+            text: commentText,
+            likes: item.diggCount || 0,
+            posted_at: item.createTime ? new Date(item.createTime * 1000).toISOString() : new Date().toISOString(),
+          });
+          post.comments_count = post.comments.length;
+          processedComments++;
+        } else {
+          skippedComments++;
+          if (skippedComments <= 3) {
+            console.log(`[TikTok] ⏭️ Skipped short comment (${commentText.length} chars): "${commentText.substring(0, 50)}..."`);
+          }
+        }
+      }
+    });
+    
+    const posts: Post[] = Array.from(postMap.values()).slice(0, CONFIG.posts_limit);
+    
+    console.log(`[TikTok] ✅ Transformation complete:`);
+    console.log(`[TikTok]   - Total posts created: ${posts.length}`);
+    console.log(`[TikTok]   - Processed comments: ${processedComments}`);
+    console.log(`[TikTok]   - Skipped comments (too short): ${skippedComments}`);
+    
+    posts.forEach((post, index) => {
+      console.log(`[TikTok]   - Post ${index + 1}: ${post.comments_count} comments, URL: ${post.post_url}`);
+    });
+    
+    if (posts.length > 0) {
+      console.log('[TikTok] 📊 Sample transformed post:', JSON.stringify(posts[0], null, 2));
+    }
+
+    return posts;
+  } catch (error) {
+    console.error('[TikTok] Scraping error:', error);
+    console.error('[TikTok] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    return [];
+  }
+}
+
+/**
  * Scrape Twitter posts (tweets) with replies using Apify
  */
 async function scrapeTwitterPostsApify(
@@ -628,12 +791,12 @@ serve(async (req) => {
     }
 
     // Check if competitor has any social media URLs
-    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url || competitor.tiktok_url;
     if (!hasUrls) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook ou Twitter) pour pouvoir analyser le sentiment.' 
+          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook, Twitter ou TikTok) pour pouvoir analyser le sentiment.' 
         }),
         {
           status: 400,
@@ -648,6 +811,7 @@ serve(async (req) => {
       instagram: { attempted: false, posts: 0, error: null as string | null },
       facebook: { attempted: false, posts: 0, error: null as string | null },
       twitter: { attempted: false, posts: 0, error: null as string | null },
+      tiktok: { attempted: false, posts: 0, error: null as string | null },
     };
 
     // Instagram
@@ -695,6 +859,22 @@ serve(async (req) => {
       }
     }
 
+    // TikTok
+    if (competitor.tiktok_url) {
+      platformResults.tiktok.attempted = true;
+      const username = competitor.tiktok_url.split('/').filter(Boolean).pop()?.replace('@', '');
+      if (username) {
+        try {
+          const tiktokPosts = await scrapeTikTokPostsApify(username, apifyToken);
+          platformResults.tiktok.posts = tiktokPosts.length;
+          allPosts.push(...tiktokPosts);
+        } catch (error) {
+          platformResults.tiktok.error = error instanceof Error ? error.message : 'Erreur inconnue';
+          console.error(`[TikTok] Failed to scrape posts for @${username}:`, error);
+        }
+      }
+    }
+
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
     console.log(`[Scraping] Platform results:`, JSON.stringify(platformResults, null, 2));
 
@@ -710,6 +890,9 @@ serve(async (req) => {
       }
       if (platformResults.twitter.attempted && platformResults.twitter.posts === 0) {
         platformErrors.push(`❌ Twitter: ${platformResults.twitter.error || 'Aucun post trouvé ou compte privé'}`);
+      }
+      if (platformResults.tiktok.attempted && platformResults.tiktok.posts === 0) {
+        platformErrors.push(`❌ TikTok: ${platformResults.tiktok.error || 'Aucun post trouvé ou compte privé'}`);
       }
 
       const errorDetails = platformErrors.length > 0 
