@@ -820,13 +820,13 @@ serve(async (req) => {
       throw new Error('Competitor not found');
     }
 
-    // Check if competitor has any social media URLs
+    // Check if competitor has any SUPPORTED social media URLs (Instagram, Facebook, Twitter, TikTok)
     const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url || competitor.tiktok_url;
     if (!hasUrls) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook, Twitter ou TikTok) pour pouvoir analyser le sentiment.' 
+          error: 'Ce concurrent n\'a aucun compte de réseau social configuré pour l\'analyse de sentiment. Veuillez ajouter au moins une URL (Instagram, Facebook, Twitter ou TikTok).' 
         }),
         {
           status: 400,
