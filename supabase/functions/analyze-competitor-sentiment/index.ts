@@ -60,29 +60,35 @@ async function scrapeInstagramPostsApify(
   console.log(`[Instagram] Scraping posts for @${username}...`);
 
   try {
-    // Step 1: Get posts using Instagram Post Scraper
-    const actorUrl = 'https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs';
+    // Utiliser l'actor Instagram Scraper
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~instagram-scraper/runs';
 
-    const postsResponse = await fetch(actorUrl, {
+    const requestBody = {
+      directUrls: [`https://www.instagram.com/${username}/`],
+      resultsType: 'posts',
+      resultsLimit: CONFIG.posts_limit,
+      searchLimit: 1,
+      // Pour chaque post on va récupérer les commentaires séparément
+    };
+
+    console.log('[Instagram] Apify request:', JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch(actorUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apifyToken}`,
       },
-      body: JSON.stringify({
-        directUrls: [`https://www.instagram.com/${username}/`],
-        resultsLimit: CONFIG.posts_limit,
-        commentsLimit: CONFIG.comments_per_post,
-        includeComments: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
-    if (!postsResponse.ok) {
-      throw new Error(`Apify Instagram scraper failed: ${postsResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`Apify Instagram scraper failed: ${response.status}`);
     }
 
-    const runData = await postsResponse.json();
+    const runData = await response.json();
     const runId = runData.data.id;
+    console.log(`[Instagram] Run started: ${runId}`);
 
     // Wait for run to complete
     let finished = false;
@@ -93,7 +99,7 @@ async function scrapeInstagramPostsApify(
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
 
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/apify~instagram-post-scraper/runs/${runId}`,
+        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs/${runId}`,
         {
           headers: { Authorization: `Bearer ${apifyToken}` },
         }
@@ -101,6 +107,8 @@ async function scrapeInstagramPostsApify(
 
       const statusData = await statusResponse.json();
       const status = statusData.data.status;
+
+      console.log(`[Instagram] Run status: ${status}`);
 
       if (status === 'SUCCEEDED') {
         finished = true;
@@ -124,27 +132,50 @@ async function scrapeInstagramPostsApify(
     );
 
     const results = await resultsResponse.json();
-    console.log(`[Instagram] Scraped ${results.length} posts`);
+    console.log(`[Instagram] Raw results count: ${results.length}`);
+    
+    if (results.length > 0) {
+      console.log(`[Instagram] First item structure:`, JSON.stringify(results[0], null, 2).substring(0, 500));
+    }
 
     // Transform to our Post format
-    const posts: Post[] = results.slice(0, CONFIG.posts_limit).map((item: any) => ({
-      platform: 'instagram',
-      post_url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
-      caption: item.caption || '',
-      likes: item.likesCount || 0,
-      comments_count: item.commentsCount || 0,
-      posted_at: item.timestamp || new Date().toISOString(),
-      comments: (item.comments || [])
-        .filter((c: any) => c.text && c.text.length >= CONFIG.min_comment_length)
-        .slice(0, CONFIG.comments_per_post)
-        .map((c: any) => ({
-          author_username: c.ownerUsername || 'unknown',
-          text: c.text,
-          likes: c.likesCount || 0,
-          posted_at: c.timestamp || item.timestamp,
-          is_response_from_brand: c.ownerUsername === username,
-        })),
-    }));
+    const posts: Post[] = results
+      .slice(0, CONFIG.posts_limit)
+      .map((item: any, idx: number) => {
+        console.log(`[Instagram] Processing post ${idx + 1}/${results.length}`);
+        
+        const post: Post = {
+          platform: 'instagram',
+          post_url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
+          caption: item.caption || '',
+          likes: item.likesCount || 0,
+          comments_count: item.commentsCount || 0,
+          posted_at: item.timestamp || new Date().toISOString(),
+          comments: (item.latestComments || [])
+            .filter((c: any) => {
+              const hasText = c.text && c.text.length >= CONFIG.min_comment_length;
+              if (!hasText) {
+                console.log(`[Instagram] Skipping short comment: ${c.text?.substring(0, 30)}...`);
+              }
+              return hasText;
+            })
+            .slice(0, CONFIG.comments_per_post)
+            .map((c: any) => ({
+              author_username: c.ownerUsername || 'unknown',
+              text: c.text,
+              likes: parseInt(String(c.likesCount || 0)),
+              posted_at: c.timestamp || item.timestamp,
+              is_response_from_brand: c.ownerUsername === username,
+            })),
+        };
+
+        console.log(`[Instagram] Post ${idx + 1}: ${post.comments.length} comments extracted`);
+        return post;
+      });
+
+    console.log(`[Instagram] Extracted ${posts.length} posts with comments`);
+    const totalComments = posts.reduce((sum, p) => sum + p.comments.length, 0);
+    console.log(`[Instagram] Total comments: ${totalComments}`);
 
     return posts;
   } catch (error) {

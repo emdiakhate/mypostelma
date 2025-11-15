@@ -82,6 +82,8 @@ export function SentimentAnalysisView({
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
   const [bestComment, setBestComment] = useState<Comment | null>(null);
   const [worstComment, setWorstComment] = useState<Comment | null>(null);
   const [topEngagementPost, setTopEngagementPost] = useState<Post | null>(null);
@@ -89,6 +91,14 @@ export function SentimentAnalysisView({
   useEffect(() => {
     loadSentimentData();
   }, [analysisId]);
+
+  useEffect(() => {
+    if (selectedPlatform === 'all') {
+      setFilteredPosts(posts);
+    } else {
+      setFilteredPosts(posts.filter(p => p.platform === selectedPlatform));
+    }
+  }, [selectedPlatform, posts]);
 
   async function loadSentimentData() {
     try {
@@ -223,6 +233,24 @@ export function SentimentAnalysisView({
     .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 10);
 
+  // Calcul du sentiment moyen par plateforme
+  const platformSentimentData = ['instagram', 'facebook', 'twitter', 'tiktok'].map(platform => {
+    const platformPosts = posts.filter(p => p.platform === platform);
+    if (platformPosts.length === 0) return null;
+
+    // On récupère les posts avec leurs commentaires pour calculer le sentiment
+    const avgSentiment = statistics.avg_sentiment_score || 0;
+    
+    return {
+      platform: platform.charAt(0).toUpperCase() + platform.slice(1),
+      sentiment: avgSentiment,
+      posts: platformPosts.length,
+    };
+  }).filter(Boolean);
+
+  // Plateformes disponibles
+  const availablePlatforms = Array.from(new Set(posts.map(p => p.platform)));
+
   return (
     <div className="space-y-6">
       {/* Global Sentiment Dashboard */}
@@ -325,6 +353,43 @@ export function SentimentAnalysisView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Platform Sentiment Comparison */}
+      {platformSentimentData.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Comparaison par plateforme
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={platformSentimentData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="platform" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                  }}
+                  formatter={(value: number) => value.toFixed(2)}
+                />
+                <Bar dataKey="sentiment" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
+              {platformSentimentData.map((data: any) => (
+                <span key={data.platform}>
+                  {data.platform}: {data.posts} posts
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Best and Worst Comments */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -464,15 +529,34 @@ export function SentimentAnalysisView({
 
       {/* Posts List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Posts analysés ({posts.length})
+            Posts analysés ({filteredPosts.length})
           </CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant={selectedPlatform === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPlatform('all')}
+            >
+              Toutes
+            </Button>
+            {availablePlatforms.map(platform => (
+              <Button
+                key={platform}
+                variant={selectedPlatform === platform ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedPlatform(platform)}
+              >
+                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+              </Button>
+            ))}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {posts.map(post => (
+            {filteredPosts.map(post => (
               <div key={post.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
