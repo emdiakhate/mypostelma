@@ -317,17 +317,12 @@ async function scrapeFacebook(url: string, apifyToken: string): Promise<any> {
 
 // Scrape TikTok with Apify (using apidojo/tiktok-scraper)
 async function scrapeTikTok(url: string, apifyToken: string): Promise<any> {
-  const username = extractTikTokUsername(url);
-  if (!username) {
-    return { error: 'Invalid TikTok URL' };
-  }
-
   try {
     const results = await runApifyActor(
       'apidojo/tiktok-scraper',
       {
-        profiles: [`@${username}`],
-        resultsPerPage: 100,
+        startUrls: [{ url: url }],
+        maxItems: 100,
       },
       apifyToken
     );
@@ -336,24 +331,26 @@ async function scrapeTikTok(url: string, apifyToken: string): Promise<any> {
       return { error: 'No data returned from TikTok' };
     }
 
-    const profile = results[0];
+    // Aggregate profile data from posts
+    const firstPost = results[0];
+    const channel = firstPost.channel;
 
     return {
-      username: profile.authorMeta?.name,
-      followers: profile.authorMeta?.fans,
-      following: profile.authorMeta?.following,
-      hearts: profile.authorMeta?.heart,
-      videos: profile.authorMeta?.video,
-      verified: profile.authorMeta?.verified,
-      recent_videos: profile.collector?.slice(0, 10).map((video: any) => ({
-        description: video.text?.substring(0, 200),
-        likes: video.diggCount,
-        comments: video.commentCount,
-        shares: video.shareCount,
-        views: video.playCount,
-        created_at: video.createTime,
-      })) || [],
-      raw: profile,
+      username: channel?.username,
+      followers: channel?.followers,
+      following: channel?.following,
+      hearts: null,
+      videos: channel?.videos,
+      verified: channel?.verified,
+      recent_videos: results.slice(0, 10).map((post: any) => ({
+        description: post.title?.substring(0, 200),
+        likes: post.likes,
+        comments: post.comments,
+        shares: post.shares,
+        views: post.views,
+        created_at: post.uploadedAt,
+      })),
+      raw: { channel, posts: results },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
