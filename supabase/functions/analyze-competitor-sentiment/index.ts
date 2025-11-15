@@ -800,15 +800,14 @@ serve(async (req) => {
                 .from('post_comments')
                 .insert({
                   post_id: postId,
+                  comment_text: comment.text,
                   author_username: comment.author_username,
-                  text: comment.text,
-                  likes: comment.likes,
+                  comment_likes: comment.likes,
                   posted_at: comment.posted_at,
                   sentiment_score: sentiment.sentiment_score,
                   sentiment_label: sentiment.sentiment_label,
                   sentiment_explanation: sentiment.explanation,
                   keywords: sentiment.keywords,
-                  is_response_from_brand: comment.is_response_from_brand || false,
                 })
                 .select()
                 .single();
