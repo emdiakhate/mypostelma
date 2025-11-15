@@ -529,29 +529,31 @@ export function SentimentAnalysisView({
 
       {/* Posts List */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Posts analysés ({filteredPosts.length})
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant={selectedPlatform === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedPlatform('all')}
-            >
-              Toutes
-            </Button>
-            {availablePlatforms.map(platform => (
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Posts analysés ({filteredPosts.length})
+            </CardTitle>
+            <div className="flex flex-wrap gap-2">
               <Button
-                key={platform}
-                variant={selectedPlatform === platform ? 'default' : 'outline'}
+                variant={selectedPlatform === 'all' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setSelectedPlatform(platform)}
+                onClick={() => setSelectedPlatform('all')}
               >
-                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                Toutes
               </Button>
-            ))}
+              {availablePlatforms.map(platform => (
+                <Button
+                  key={platform}
+                  variant={selectedPlatform === platform ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedPlatform(platform)}
+                >
+                  {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
