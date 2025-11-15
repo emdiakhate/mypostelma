@@ -1,20 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 
-const allowedOrigins = [
-  'https://postelma.com',
-  'https://www.postelma.com',
-  'https://8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovableproject.com',
-  'https://id-preview--8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovable.app',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-const getCorsHeaders = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Credentials': 'true',
-});
+};
 
 function logStep(step: string, data?: any) {
   console.log(`[analyze-competitor-apify] ${step}`, data ? JSON.stringify(data, null, 2) : '');
@@ -536,9 +526,6 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 }
 
 serve(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
-
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
