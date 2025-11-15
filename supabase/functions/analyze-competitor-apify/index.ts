@@ -315,7 +315,7 @@ async function scrapeFacebook(url: string, apifyToken: string): Promise<any> {
   }
 }
 
-// Scrape TikTok with Apify
+// Scrape TikTok with Apify (using apidojo/tiktok-scraper)
 async function scrapeTikTok(url: string, apifyToken: string): Promise<any> {
   const username = extractTikTokUsername(url);
   if (!username) {
@@ -324,7 +324,7 @@ async function scrapeTikTok(url: string, apifyToken: string): Promise<any> {
 
   try {
     const results = await runApifyActor(
-      'apify/tiktok-scraper',
+      'apidojo/tiktok-scraper',
       {
         profiles: [`@${username}`],
         resultsPerPage: 100,
