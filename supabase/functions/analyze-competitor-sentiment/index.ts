@@ -248,40 +248,81 @@ async function scrapeFacebookPostsApify(
     // Il faut les regrouper par post (facebookId)
     const postMap = new Map<string, Post>();
     
-    results.forEach((item: any) => {
+    console.log(`[Facebook] 🔍 Processing ${results.length} comment items...`);
+    
+    let processedComments = 0;
+    let skippedComments = 0;
+    
+    results.forEach((item: any, index: number) => {
       const postId = item.facebookId || item.postId || 'unknown';
+      
+      // Log détaillé du premier commentaire pour debug
+      if (index === 0) {
+        console.log(`[Facebook] 📝 First comment structure:`, {
+          facebookId: item.facebookId,
+          postTitle: item.postTitle,
+          text: item.text?.substring(0, 100),
+          profileName: item.profileName,
+          likesCount: item.likesCount,
+          date: item.date,
+          threadingDepth: item.threadingDepth,
+          inputUrl: item.inputUrl,
+          facebookUrl: item.facebookUrl,
+        });
+      }
       
       if (!postMap.has(postId)) {
         // Créer un nouveau post
-        postMap.set(postId, {
+        const newPost = {
           platform: 'facebook',
-          post_url: item.inputUrl || item.facebookUrl || '',
+          post_url: item.inputUrl || item.facebookUrl || item.commentUrl || '',
           caption: item.postTitle || '',
           likes: 0, // Les likes du post ne sont pas fournis par le comment scraper
           comments_count: 0,
-          posted_at: new Date().toISOString(),
+          posted_at: item.date || new Date().toISOString(),
           comments: [],
-        });
+        };
+        postMap.set(postId, newPost);
+        console.log(`[Facebook] ➕ Created new post with ID: ${postId}`);
       }
       
       const post = postMap.get(postId)!;
       
-      // Ajouter le commentaire au post (seulement si c'est un commentaire de niveau 0)
-      if (item.threadingDepth === 0 && item.text && item.text.length >= CONFIG.min_comment_length) {
-        post.comments.push({
-          author_username: item.profileName || 'Unknown',
-          text: item.text,
-          likes: parseInt(item.likesCount || '0'),
-          posted_at: item.date || new Date().toISOString(),
-        });
-        post.comments_count = post.comments.length;
+      // Ajouter TOUS les commentaires de niveau 0 (top-level), même courts
+      if (item.threadingDepth === 0 && item.text) {
+        const commentText = item.text.trim();
+        if (commentText.length >= CONFIG.min_comment_length) {
+          post.comments.push({
+            author_username: item.profileName || 'Unknown',
+            text: commentText,
+            likes: parseInt(item.likesCount || '0', 10),
+            posted_at: item.date || new Date().toISOString(),
+          });
+          post.comments_count = post.comments.length;
+          processedComments++;
+        } else {
+          skippedComments++;
+          if (skippedComments <= 3) {
+            console.log(`[Facebook] ⏭️ Skipped short comment (${commentText.length} chars): "${commentText.substring(0, 50)}..."`);
+          }
+        }
       }
     });
     
     const posts: Post[] = Array.from(postMap.values()).slice(0, CONFIG.posts_limit);
     
-    console.log(`[Facebook] Transformed ${posts.length} posts successfully`);
-    console.log('[Facebook] Sample transformed post:', JSON.stringify(posts[0], null, 2));
+    console.log(`[Facebook] ✅ Transformation complete:`);
+    console.log(`[Facebook]   - Total posts created: ${posts.length}`);
+    console.log(`[Facebook]   - Processed comments: ${processedComments}`);
+    console.log(`[Facebook]   - Skipped comments (too short): ${skippedComments}`);
+    
+    posts.forEach((post, index) => {
+      console.log(`[Facebook]   - Post ${index + 1}: ${post.comments_count} comments, URL: ${post.post_url}`);
+    });
+    
+    if (posts.length > 0) {
+      console.log('[Facebook] 📊 Sample transformed post:', JSON.stringify(posts[0], null, 2));
+    }
 
     return posts;
   } catch (error) {
@@ -769,15 +810,22 @@ serve(async (req) => {
             continue;
           }
         } else {
-          console.error('[DB] Error inserting post:', postError);
+          console.error('[DB] ❌ Error inserting post:', postError);
+          console.error('[DB] Post data that failed:', {
+            platform: post.platform,
+            url: post.post_url?.substring(0, 60),
+            caption: post.caption?.substring(0, 60),
+          });
           continue;
         }
       } else {
         postId = insertedPost.id;
+        console.log('[DB] ✅ Inserted new post:', postId);
       }
 
       if (postId) {
         insertedPostIds.push(postId);
+        console.log(`[DB] 📝 Processing ${post.comments.length} comments for post ${postId}...`);
 
         // Analyze comments in batches of 20 (to avoid token limits)
         if (post.comments.length > 0) {
