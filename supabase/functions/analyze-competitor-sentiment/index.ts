@@ -821,13 +821,13 @@ serve(async (req) => {
       throw new Error('Competitor not found');
     }
 
-    // Check if competitor has any social media URLs
-    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url || competitor.tiktok_url;
+    // Check if competitor has any SUPPORTED social media URLs (Instagram, Facebook, Twitter)
+    const hasUrls = competitor.instagram_url || competitor.facebook_url || competitor.twitter_url;
     if (!hasUrls) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Ce concurrent n\'a aucun compte de réseau social configuré. Veuillez ajouter au moins une URL (Instagram, Facebook, Twitter ou TikTok) pour pouvoir analyser le sentiment.' 
+          error: 'Ce concurrent n\'a aucun compte de réseau social configuré pour l\'analyse de sentiment. Veuillez ajouter au moins une URL Instagram, Facebook ou Twitter.\n\n⚠️ Note: TikTok n\'est pas encore supporté pour l\'analyse de sentiment.' 
         }),
         {
           status: 400,
@@ -890,20 +890,11 @@ serve(async (req) => {
       }
     }
 
-    // TikTok
+    // TikTok - TEMPORAIREMENT DÉSACTIVÉ (scraper Apify non disponible)
     if (competitor.tiktok_url) {
       platformResults.tiktok.attempted = true;
-      const username = competitor.tiktok_url.split('/').filter(Boolean).pop()?.replace('@', '');
-      if (username) {
-        try {
-          const tiktokPosts = await scrapeTikTokPostsApify(username, apifyToken);
-          platformResults.tiktok.posts = tiktokPosts.length;
-          allPosts.push(...tiktokPosts);
-        } catch (error) {
-          platformResults.tiktok.error = error instanceof Error ? error.message : 'Erreur inconnue';
-          console.error(`[TikTok] Failed to scrape posts for @${username}:`, error);
-        }
-      }
+      platformResults.tiktok.error = 'Le scraping TikTok n\'est pas encore disponible pour l\'analyse de sentiment. Utilisez Instagram, Facebook ou Twitter.';
+      console.log('[TikTok] ⚠️ TikTok scraping temporarily disabled - Apify scraper not available');
     }
 
     console.log(`[Scraping] Collected ${allPosts.length} posts total`);
