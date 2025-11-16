@@ -19,7 +19,7 @@ export interface Post {
   captions?: { [key: string]: string }; // Captions générées par IA pour chaque plateforme
   dayColumn: string; // e.g., 'sunday', 'monday', etc.
   timeSlot: number; // position in the day column
-  
+
   // Métriques d'engagement
   likes?: number;
   comments?: number;
@@ -32,6 +32,12 @@ export interface Post {
     shares: number;
     views: number;
   };
+
+  // Sentiment analysis (added for user posts)
+  last_sentiment_analysis_at?: string | Date;
+  sentiment_score?: number; // -1 to 1
+  sentiment_label?: 'positive' | 'neutral' | 'negative';
+  comments_sentiment_count?: number; // Number of comments analyzed
 }
 
 export interface Campaign {
