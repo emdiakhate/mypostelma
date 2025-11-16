@@ -29,26 +29,26 @@ interface SentimentStatistics {
   id: string;
   week_start_date: string;
   week_end_date: string;
-  total_posts: number;
-  total_comments: number;
-  avg_sentiment_score: number;
-  positive_count: number;
-  neutral_count: number;
-  negative_count: number;
-  positive_percentage: number;
-  neutral_percentage: number;
-  negative_percentage: number;
-  top_keywords: Record<string, number>;
-  analyzed_at: string;
+  total_posts: number | null;
+  total_comments: number | null;
+  avg_sentiment_score: number | null;
+  positive_count: number | null;
+  neutral_count: number | null;
+  negative_count: number | null;
+  positive_percentage: number | null;
+  neutral_percentage: number | null;
+  negative_percentage: number | null;
+  top_keywords: Record<string, number> | null;
+  analyzed_at: string | null;
 }
 
 interface Post {
   id: string;
   content: string;
-  sentiment_score: number;
-  sentiment_label: 'positive' | 'neutral' | 'negative';
-  comments_sentiment_count: number;
-  last_sentiment_analysis_at: string;
+  sentiment_score: number | null;
+  sentiment_label: string | null;
+  comments_sentiment_count: number | null;
+  last_sentiment_analysis_at: string | null;
 }
 
 const SENTIMENT_COLORS = {
@@ -86,7 +86,10 @@ export function UserSentimentWidget() {
         .single();
 
       if (latestStats) {
-        setStatistics(latestStats);
+        setStatistics({
+          ...latestStats,
+          top_keywords: latestStats.top_keywords as Record<string, number> | null
+        });
 
         // Load top/worst posts from this week
         const weekStart = new Date(latestStats.week_start_date);
@@ -95,7 +98,7 @@ export function UserSentimentWidget() {
         const { data: posts } = await supabase
           .from('posts')
           .select('id, content, sentiment_score, sentiment_label, comments_sentiment_count, last_sentiment_analysis_at')
-          .eq('user_id', user.id)
+          .eq('author_id', user.id)
           .gte('published_at', weekStart.toISOString())
           .lte('published_at', weekEnd.toISOString())
           .not('sentiment_score', 'is', null)
@@ -118,7 +121,10 @@ export function UserSentimentWidget() {
         .limit(4);
 
       if (trendData) {
-        setWeeklyTrend(trendData.reverse());
+        setWeeklyTrend(trendData.map(stat => ({
+          ...stat,
+          top_keywords: stat.top_keywords as Record<string, number> | null
+        })).reverse());
       }
     } catch (error) {
       console.error('Error loading sentiment data:', error);

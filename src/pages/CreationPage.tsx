@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Palette, Rotate3D, Home, Megaphone, Users, User,
   Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2,
-  Video, Play, Building, Store, Egg, Shirt
+  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus
 } from "lucide-react";
 import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
@@ -32,6 +32,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { PRODUCT_TYPES, getTemplatePrompt, TEMPLATE_RESULT_LABELS } from '@/config/templatePrompts';
+import { UseTemplateModal as UseTemplateModalComponent } from '@/components/studio/UseTemplateModal';
 
 // Types
 interface TemplateInput {
