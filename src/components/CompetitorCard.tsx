@@ -97,11 +97,7 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
-      await analyzeCompetitorStrategy({
-        ...competitor,
-        added_at: competitor.added_at.toISOString(),
-        last_analyzed_at: competitor.last_analyzed_at?.toISOString(),
-      });
+      await analyzeCompetitorStrategy(competitor);
 
       toast({
         title: 'Analyse lancée',
@@ -591,7 +587,7 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
 
                       {/* Charts Tab */}
                       <TabsContent value="charts" className="mt-4">
-                        <CompetitorMetricsChart competitor={competitor} />
+                        <CompetitorMetricsChart competitorId={competitor.id} competitor={competitor} />
                       </TabsContent>
                     </Tabs>
                   </>

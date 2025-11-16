@@ -14,6 +14,7 @@ import {
   BarChart3,
   RefreshCw,
   ArrowUpDown,
+  GitCompare,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,12 +37,16 @@ import type { Competitor } from '@/types/competitor';
 type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
 
 export default function CompetitorsPage() {
-  const { competitors, loading, addCompetitor, refreshCompetitors } = useCompetitors();
+  const navigate = useNavigate();
+  const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date_added');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
@@ -64,7 +69,21 @@ export default function CompetitorsPage() {
       const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
-      return matchesSearch && matchesIndustry;
+      
+      // Platform filter
+      const matchesPlatform = platformFilter === 'all' || 
+        (platformFilter === 'instagram' && competitor.instagram_url) ||
+        (platformFilter === 'facebook' && competitor.facebook_url) ||
+        (platformFilter === 'linkedin' && competitor.linkedin_url) ||
+        (platformFilter === 'twitter' && competitor.twitter_url) ||
+        (platformFilter === 'tiktok' && competitor.tiktok_url);
+      
+      // Status filter
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'analyzed' && competitor.analysis_count > 0) ||
+        (statusFilter === 'not_analyzed' && competitor.analysis_count === 0);
+      
+      return matchesSearch && matchesIndustry && matchesPlatform && matchesStatus;
     });
 
     // Sort
@@ -87,7 +106,7 @@ export default function CompetitorsPage() {
     });
 
     return filtered;
-  }, [competitors, searchQuery, filterIndustry, sortBy]);
+  }, [competitors, searchQuery, filterIndustry, platformFilter, statusFilter, sortBy]);
 
   // Get unique industries for filter
   const industries = Array.from(new Set(competitors.map(c => c.industry).filter(Boolean)));
@@ -99,8 +118,53 @@ export default function CompetitorsPage() {
     pending: competitors.filter(c => c.analysis_count === 0).length,
   };
 
-  // Handle add competitor
-  const handleAddCompetitor = async (e: React.FormEvent) => {
+  // Handle modal open
+  const handleOpenAddModal = () => {
+    setEditingCompetitor(null);
+    setIsFormModalOpen(true);
+  };
+
+  // Handle edit
+  const handleEdit = (competitor: Competitor) => {
+    setEditingCompetitor(competitor);
+    setIsFormModalOpen(true);
+  };
+
+  // Handle submit
+  const handleSubmitCompetitor = async (competitorData: Partial<Competitor>) => {
+    setIsSubmitting(true);
+    try {
+      if (editingCompetitor) {
+        await updateCompetitor(editingCompetitor.id, competitorData);
+        toast({
+          title: 'Concurrent mis à jour',
+          description: 'Les informations du concurrent ont été mises à jour avec succès.',
+        });
+      } else {
+        await addCompetitor(competitorData as Omit<Competitor, 'id' | 'added_at' | 'analysis_count' | 'user_id'>);
+        toast({
+          title: 'Concurrent ajouté',
+          description: 'Le concurrent a été ajouté avec succès.',
+        });
+      }
+      setIsFormModalOpen(false);
+      setEditingCompetitor(null);
+      await refreshCompetitors();
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: editingCompetitor 
+          ? 'Impossible de mettre à jour le concurrent.' 
+          : 'Impossible d\'ajouter le concurrent.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Old handler - to delete
+  const handleAddCompetitor_old = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -130,7 +194,7 @@ export default function CompetitorsPage() {
         website_url: '',
       });
 
-      setIsAddDialogOpen(false);
+      // No need to close dialog here - old code
 
       toast({
         title: 'Concurrent ajouté',
@@ -145,7 +209,6 @@ export default function CompetitorsPage() {
     } finally {
       setIsSubmitting(false);
     }
-    setEditingCompetitor(null);
   };
 
   return (
@@ -286,21 +349,19 @@ export default function CompetitorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Trier par" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="date_desc">Plus récent</SelectItem>
-                  <SelectItem value="date_asc">Plus ancien</SelectItem>
-                  <SelectItem value="name_asc">Nom A-Z</SelectItem>
-                  <SelectItem value="name_desc">Nom Z-A</SelectItem>
-                  <SelectItem value="analyzed_desc">Dernière analyse</SelectItem>
-                  <SelectItem value="analyzed_asc">Analyse la plus ancienne</SelectItem>
+                  <SelectItem value="date_added">Plus récent</SelectItem>
+                  <SelectItem value="name">Nom A-Z</SelectItem>
+                  <SelectItem value="last_analyzed">Dernière analyse</SelectItem>
+                  <SelectItem value="analysis_count">Plus analysé</SelectItem>
                 </SelectContent>
               </Select>
 
-              {(searchQuery || filterIndustry !== 'all' || platformFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date_desc') && (
+              {(searchQuery || filterIndustry !== 'all' || platformFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date_added') && (
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -308,7 +369,7 @@ export default function CompetitorsPage() {
                     setFilterIndustry('all');
                     setPlatformFilter('all');
                     setStatusFilter('all');
-                    setSortBy('date_desc');
+                    setSortBy('date_added');
                   }}
                 >
                   Effacer les filtres

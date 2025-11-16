@@ -64,10 +64,13 @@ interface Statistics {
   total_posts: number;
   total_comments: number;
   avg_sentiment_score: number;
+  positive_count: number;
+  neutral_count: number;
+  negative_count: number;
   positive_percentage: number;
   neutral_percentage: number;
   negative_percentage: number;
-  top_keywords: Record<string, number>; // JSONB from database
+  top_keywords: Record<string, number> | null;
   response_rate: number;
   avg_engagement_rate: number;
 }
@@ -112,7 +115,10 @@ export function SentimentAnalysisView({
         .maybeSingle();
 
       if (stats) {
-        setStatistics(stats);
+        setStatistics({
+          ...stats,
+          top_keywords: (stats.top_keywords as Record<string, number>) || null,
+        });
 
         // Load posts using competitor_id from statistics
         const { data: postsData } = await supabase

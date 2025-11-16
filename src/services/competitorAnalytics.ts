@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Competitor } from '@/types/competitor';
 
 // Input type for analyzing competitor (accepts string dates from API)
 export interface CompetitorInput {
