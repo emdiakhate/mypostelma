@@ -760,12 +760,12 @@ function MultiSelect({ options, onChange }: { options: string[]; onChange: (valu
 
 // Modal Utilisation (Formulaire)
 function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; label: string }>>([]);
   const [productType, setProductType] = useState('other');
   const [prompt, setPrompt] = useState('');
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
 
   // Pré-remplir le prompt quand le template ou le type de produit change
   React.useEffect(() => {
@@ -773,17 +773,25 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
     setPrompt(templatePrompt);
   }, [template.id, productType]);
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File, index: number = 0) => {
     if (!file) return;
 
     try {
       // Créer une URL temporaire pour afficher l'image
       const imageUrl = URL.createObjectURL(file);
-      setUploadedImageUrl(imageUrl);
+      setUploadedImageUrls(prev => {
+        const newUrls = [...prev];
+        newUrls[index] = imageUrl;
+        return newUrls;
+      });
 
-      // Stocker le fichier dans formData
-      setFormData(prev => ({ ...prev, uploadedFile: file }));
-      toast.success('Image uploadée avec succès');
+      // Stocker le fichier
+      setUploadedFiles(prev => {
+        const newFiles = [...prev];
+        newFiles[index] = file;
+        return newFiles;
+      });
+      toast.success(`Image ${index + 1} uploadée avec succès`);
     } catch (error) {
       console.error('Erreur upload:', error);
       toast.error('Erreur lors de l\'upload de l\'image');
@@ -791,20 +799,30 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   };
 
   const handleGenerate = async () => {
-    if (!formData.uploadedFile) {
-      toast.error('Veuillez uploader une image');
+    const requiredCount = template.hasMultipleInputs ? 2 : 1;
+    const validFiles = uploadedFiles.filter(f => f);
+    
+    if (validFiles.length < requiredCount) {
+      toast.error(template.hasMultipleInputs 
+        ? 'Veuillez uploader 2 images (produit + influenceur)' 
+        : 'Veuillez uploader une image'
+      );
       return;
     }
 
     setIsGenerating(true);
     try {
-      // Convertir l'image en base64
-      const reader = new FileReader();
-      const imageBase64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(formData.uploadedFile);
+      // Convertir les images en base64
+      const imagePromises = validFiles.map((file: File) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
       });
+
+      const imageBase64Array = await Promise.all(imagePromises);
 
       // Déterminer le nombre d'images à générer selon le template
       let numImages = 1;
@@ -818,7 +836,7 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
       const { data, error } = await supabase.functions.invoke('fal-image-generation', {
         body: {
           prompt: prompt,
-          image_urls: [imageBase64],
+          image_urls: imageBase64Array,
           type: 'edit',
           num_images: numImages,
           template_id: template.id
@@ -859,7 +877,7 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
 
   const handleUseInPost = (imageUrl: string) => {
     // Sauvegarder l'URL de l'image dans le localStorage
-    localStorage.setItem('pendingPostImage', imageUrl);
+    localStorage.setItem('studioGeneratedImage', imageUrl);
     
     // Naviguer vers la page de création de posts
     window.location.href = '/app';
@@ -909,45 +927,28 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
             </p>
           </div>
 
-          {template.inputs.map((input) => (
+          {template.inputs.filter(input => input.type !== 'image').map((input) => (
             <div key={input.label}>
               <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
               
-              {input.type === 'image' && (
-                <div className="mt-2 space-y-2">
-                  <ImageUploader
-                    onUpload={handleImageUpload}
-                  />
-                  {uploadedImageUrl && (
-                    <div className="relative rounded-lg overflow-hidden border border-border">
-                      <img 
-                        src={uploadedImageUrl} 
-                        alt="Image uploadée" 
-                        className="w-full h-48 object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
               {input.type === 'color-picker' && (
                 <ColorPicker
                   multiple={input.multiple}
-                  onChange={(colors) => setFormData({ ...formData, colors })}
+                  onChange={(colors) => {}}
                 />
               )}
 
               {input.type === 'text' && (
                 <Input
                   placeholder={input.placeholder}
-                  onChange={(e) => setFormData({ ...formData, [input.label]: e.target.value })}
+                  onChange={(e) => {}}
                   className="mt-2"
                 />
               )}
 
               {input.type === 'select' && (
                 <Select
-                  onValueChange={(value) => setFormData({ ...formData, [input.label]: value })}
+                  onValueChange={(value) => {}}
                 >
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder={`Choisir ${input.label.toLowerCase()}`} />
@@ -963,7 +964,7 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
               {input.type === 'multi-select' && (
                 <MultiSelect
                   options={input.options || []}
-                  onChange={(values) => setFormData({ ...formData, [input.label]: values })}
+                  onChange={(values) => {}}
                 />
               )}
             </div>
