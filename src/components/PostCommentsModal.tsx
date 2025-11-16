@@ -26,9 +26,9 @@ interface Comment {
   comment_likes: number;
   posted_at: string;
   sentiment_score: number;
-  sentiment_label: 'positive' | 'neutral' | 'negative';
-  sentiment_explanation: string;
-  keywords: string[];
+  sentiment_label: string | null;
+  sentiment_explanation: string | null;
+  keywords: string[] | null;
 }
 
 interface PostCommentsModalProps {
