@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, ThumbsUp, SmilePlus, Meh, Frown } from 'lucide-react';
+import { X, ThumbsUp, SmilePlus, Meh, Frown, MessageCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
