@@ -37,17 +37,51 @@ export default function CompetitorsPage() {
   const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('date_desc');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
 
 
-  // Filter competitors
-  const filteredCompetitors = competitors.filter((competitor) => {
-    const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
-    return matchesSearch && matchesIndustry;
-  });
+  // Filter and sort competitors
+  const filteredCompetitors = competitors
+    .filter((competitor) => {
+      const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
+      
+      const matchesPlatform = platformFilter === 'all' || 
+        (platformFilter === 'instagram' && competitor.instagram_url) ||
+        (platformFilter === 'facebook' && competitor.facebook_url) ||
+        (platformFilter === 'linkedin' && competitor.linkedin_url) ||
+        (platformFilter === 'twitter' && competitor.twitter_url) ||
+        (platformFilter === 'tiktok' && competitor.tiktok_url);
+      
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'analyzed' && competitor.last_analyzed_at) ||
+        (statusFilter === 'not_analyzed' && !competitor.last_analyzed_at);
+      
+      return matchesSearch && matchesIndustry && matchesPlatform && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'date_desc':
+          return b.added_at.getTime() - a.added_at.getTime();
+        case 'date_asc':
+          return a.added_at.getTime() - b.added_at.getTime();
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'analyzed_desc':
+          return (b.last_analyzed_at?.getTime() || 0) - (a.last_analyzed_at?.getTime() || 0);
+        case 'analyzed_asc':
+          return (a.last_analyzed_at?.getTime() || 0) - (b.last_analyzed_at?.getTime() || 0);
+        default:
+          return 0;
+      }
+    });
 
   // Get unique industries for filter
   const industries = Array.from(new Set(competitors.map(c => c.industry).filter(Boolean)));

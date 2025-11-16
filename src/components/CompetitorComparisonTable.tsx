@@ -8,16 +8,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Users, Heart, MessageCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Heart, MessageCircle, Smile, Frown, Meh } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type CompetitorComparison = Tables<'competitor_comparison'>;
+type SentimentStats = Tables<'sentiment_statistics'>;
+type LatestAnalysis = Tables<'competitor_latest_analysis'>;
 
 interface CompetitorComparisonTableProps {
   competitors: CompetitorComparison[];
+  sentimentData: Record<string, SentimentStats>;
+  analysisData: Record<string, LatestAnalysis>;
 }
 
-export function CompetitorComparisonTable({ competitors }: CompetitorComparisonTableProps) {
+export function CompetitorComparisonTable({ competitors, sentimentData, analysisData }: CompetitorComparisonTableProps) {
   if (competitors.length === 0) {
     return (
       <Card>
@@ -68,6 +72,7 @@ export function CompetitorComparisonTable({ competitors }: CompetitorComparisonT
                   <TableHead className="text-right">LinkedIn</TableHead>
                   <TableHead className="text-right">Posts suivis</TableHead>
                   <TableHead className="text-right">Engagement</TableHead>
+                  <TableHead className="text-right">Sentiment</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,6 +133,24 @@ export function CompetitorComparisonTable({ competitors }: CompetitorComparisonT
                           {formatPercentage(Number(competitor.avg_engagement_rate))}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {competitor.id && sentimentData[competitor.id] ? (
+                        <div className="flex items-center justify-end gap-2">
+                          {sentimentData[competitor.id].positive_percentage! > 60 ? (
+                            <Smile className="h-4 w-4 text-green-500" />
+                          ) : sentimentData[competitor.id].negative_percentage! > 40 ? (
+                            <Frown className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <Meh className="h-4 w-4 text-yellow-500" />
+                          )}
+                          <span className="text-sm">
+                            {sentimentData[competitor.id].positive_percentage?.toFixed(0)}% positif
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -202,6 +225,57 @@ export function CompetitorComparisonTable({ competitors }: CompetitorComparisonT
           </CardContent>
         </Card>
       </div>
+
+      {/* Strengths & Weaknesses Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Forces & Faiblesses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {competitors.map((competitor) => {
+              const analysis = competitor.id ? analysisData[competitor.id] : null;
+              if (!analysis) return null;
+
+              return (
+                <div key={competitor.id} className="space-y-4">
+                  <h3 className="font-semibold text-lg">{competitor.name}</h3>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-green-600 mb-2 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Forces
+                    </h4>
+                    <ul className="space-y-1">
+                      {analysis.strengths?.map((strength, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-green-500 mt-1">•</span>
+                          <span>{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4" />
+                      Faiblesses
+                    </h4>
+                    <ul className="space-y-1">
+                      {analysis.weaknesses?.map((weakness, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-red-500 mt-1">•</span>
+                          <span>{weakness}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

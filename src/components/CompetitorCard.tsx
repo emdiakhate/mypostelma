@@ -597,6 +597,7 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
                       {/* Charts Tab */}
                       <TabsContent value="charts" className="mt-4">
                         <CompetitorMetricsChart
+                          competitorId={competitor.id}
                           competitor={competitor}
                           analysis={undefined}
                         />
