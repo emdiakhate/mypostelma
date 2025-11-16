@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Palette, Rotate3D, Home, Megaphone, Users, User,
   Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2,
-  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus, Plus
+  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus, Plus, Check
 } from "lucide-react";
 import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
@@ -763,6 +763,7 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; label: string }>>([]);
+  const [selectedImageIndices, setSelectedImageIndices] = useState<number[]>([]);
   const [productType, setProductType] = useState('other');
   const [prompt, setPrompt] = useState('');
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
@@ -865,19 +866,42 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
     }
   };
 
-  const handleDownloadImage = (imageUrl: string, label: string) => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `${template.name}-${label}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Image téléchargée');
+  const toggleImageSelection = (index: number) => {
+    setSelectedImageIndices(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    );
   };
 
-  const handleUseInPost = (imageUrl: string) => {
-    // Sauvegarder l'URL de l'image dans le localStorage
-    localStorage.setItem('studioGeneratedImage', imageUrl);
+  const handleDownloadSelected = () => {
+    if (selectedImageIndices.length === 0) {
+      toast.error('Veuillez sélectionner au moins une image');
+      return;
+    }
+
+    selectedImageIndices.forEach(index => {
+      const img = generatedImages[index];
+      const link = document.createElement('a');
+      link.href = img.url;
+      link.download = `${template.name}-${img.label}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    toast.success(`${selectedImageIndices.length} image(s) téléchargée(s)`);
+  };
+
+  const handleUseSelected = () => {
+    if (selectedImageIndices.length === 0) {
+      toast.error('Veuillez sélectionner au moins une image');
+      return;
+    }
+
+    // Sauvegarder toutes les URLs sélectionnées dans le localStorage
+    const selectedUrls = selectedImageIndices.map(index => generatedImages[index].url);
+    localStorage.setItem('studioGeneratedImages', JSON.stringify(selectedUrls));
     
     // Naviguer vers la page de création de posts
     window.location.href = '/app';
@@ -977,33 +1001,56 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
             <h3 className="font-semibold mb-3">Images générées</h3>
             <div className="grid grid-cols-2 gap-4">
               {generatedImages.map((img, idx) => (
-                <div key={idx} className="relative rounded-lg overflow-hidden border border-border bg-card">
+                <div 
+                  key={idx} 
+                  className={`relative rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                    selectedImageIndices.includes(idx) 
+                      ? 'border-primary shadow-lg' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  onClick={() => toggleImageSelection(idx)}
+                >
                   <img src={img.url} alt={img.label} className="w-full h-48 object-cover" />
-                  <div className="p-3 space-y-2">
-                    <p className="text-sm font-medium text-center">{img.label}</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleDownloadImage(img.url, img.label)}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Télécharger
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleUseInPost(img.url)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Utiliser
-                      </Button>
+                  {selectedImageIndices.includes(idx) && (
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+                      <Check className="h-4 w-4" />
                     </div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-center">{img.label}</p>
                   </div>
                 </div>
               ))}
+            </div>
+            
+            {/* Boutons d'action globaux */}
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedImageIndices(
+                  selectedImageIndices.length === generatedImages.length 
+                    ? [] 
+                    : generatedImages.map((_, i) => i)
+                )}
+              >
+                {selectedImageIndices.length === generatedImages.length ? 'Désélectionner tout' : 'Tout sélectionner'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDownloadSelected}
+                disabled={selectedImageIndices.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Télécharger ({selectedImageIndices.length})
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleUseSelected}
+                disabled={selectedImageIndices.length === 0}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Utiliser ({selectedImageIndices.length})
+              </Button>
             </div>
           </div>
         )}
