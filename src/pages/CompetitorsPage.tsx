@@ -202,44 +202,88 @@ export default function CompetitorsPage() {
           <CardTitle className="text-lg">Filtrer les concurrents</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex-1 min-w-[250px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par nom ou secteur..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex-1 min-w-[250px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom ou secteur..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+
+              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrer par secteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les secteurs</SelectItem>
+                  {industries.map((industry) => (
+                    <SelectItem key={industry} value={industry || ''}>
+                      {industry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Plateforme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les plateformes</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="tiktok">TikTok</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="analyzed">Analysés</SelectItem>
+                  <SelectItem value="not_analyzed">Non analysés</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Plus récent</SelectItem>
+                  <SelectItem value="date_asc">Plus ancien</SelectItem>
+                  <SelectItem value="name_asc">Nom A-Z</SelectItem>
+                  <SelectItem value="name_desc">Nom Z-A</SelectItem>
+                  <SelectItem value="analyzed_desc">Dernière analyse</SelectItem>
+                  <SelectItem value="analyzed_asc">Analyse la plus ancienne</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(searchQuery || filterIndustry !== 'all' || platformFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date_desc') && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setFilterIndustry('all');
+                    setPlatformFilter('all');
+                    setStatusFilter('all');
+                    setSortBy('date_desc');
+                  }}
+                >
+                  Effacer les filtres
+                </Button>
+              )}
             </div>
-
-            <Select value={filterIndustry} onValueChange={setFilterIndustry}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrer par secteur" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les secteurs</SelectItem>
-                {industries.map((industry) => (
-                  <SelectItem key={industry} value={industry || ''}>
-                    {industry}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(searchQuery || filterIndustry !== 'all') && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterIndustry('all');
-                }}
-              >
-                Effacer les filtres
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -293,6 +337,7 @@ export default function CompetitorsPage() {
                 key={competitor.id}
                 competitor={competitor}
                 onUpdate={refreshCompetitors}
+                onEdit={handleEdit}
               />
             ))}
           </div>
