@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Palette, Rotate3D, Home, Megaphone, Users, User,
   Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2,
-  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus
+  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus, Plus
 } from "lucide-react";
 import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
@@ -762,9 +762,10 @@ function MultiSelect({ options, onChange }: { options: string[]; onChange: (valu
 function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; label: string }>>([]);
   const [productType, setProductType] = useState('other');
   const [prompt, setPrompt] = useState('');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
 
   // Pré-remplir le prompt quand le template ou le type de produit change
   React.useEffect(() => {
@@ -772,35 +773,82 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
     setPrompt(templatePrompt);
   }, [template.id, productType]);
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    
-    try {
-      // Préparer les données selon le template
-      const payload = {
-        templateId: template.id,
-        prompt: prompt,
-        productType: productType,
-        ...formData
-      };
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
 
-      // Appel au webhook N8N
-      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/creation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+    try {
+      // Créer une URL temporaire pour afficher l'image
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImageUrl(imageUrl);
+
+      // Stocker le fichier dans formData
+      setFormData(prev => ({ ...prev, uploadedFile: file }));
+      toast.success('Image uploadée avec succès');
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      toast.error('Erreur lors de l\'upload de l\'image');
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!formData.uploadedFile) {
+      toast.error('Veuillez uploader une image');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Convertir l'image en base64
+      const reader = new FileReader();
+      const imageBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(formData.uploadedFile);
       });
 
-      const result = await response.json();
-      setGeneratedImages(result.images || []);
+      // Appeler l'Edge Function fal-image-generation
+      const { data, error } = await supabase.functions.invoke('fal-image-generation', {
+        body: {
+          prompt: prompt,
+          image_urls: [imageBase64],
+          type: 'edit'
+        }
+      });
+
+      if (error) throw error;
+
+      // Générer les labels pour chaque image
+      const labels = TEMPLATE_RESULT_LABELS[template.id] || ['Image 1', 'Image 2', 'Image 3', 'Image 4'];
       
+      // Créer 4 variations (pour l'instant fal retourne une seule image)
+      const images = labels.map((label, index) => ({
+        url: data.imageUrl,
+        label: label
+      }));
+
+      setGeneratedImages(images);
       toast.success('Images générées avec succès !');
     } catch (error) {
-      console.error('Erreur lors de la génération:', error);
-      toast.error('Erreur lors de la génération');
+      console.error('Erreur:', error);
+      toast.error('Erreur lors de la génération des images');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleDownloadImage = (imageUrl: string, label: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `${template.name}-${label}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Image téléchargée');
+  };
+
+  const handleUseInPost = (imageUrl: string) => {
+    toast.info('Fonctionnalité à venir : utiliser dans un post');
+    // TODO: Navigation vers /app avec l'image
   };
 
   return (
@@ -850,10 +898,19 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
               <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
               
               {input.type === 'image' && (
-                <div className="mt-2">
+                <div className="mt-2 space-y-2">
                   <ImageUploader
-                    onUpload={(file) => setFormData({ ...formData, image: file })}
+                    onUpload={handleImageUpload}
                   />
+                  {uploadedImageUrl && (
+                    <div className="relative rounded-lg overflow-hidden border border-border">
+                      <img 
+                        src={uploadedImageUrl} 
+                        alt="Image uploadée" 
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -899,16 +956,36 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
 
         {/* Images générées */}
         {generatedImages.length > 0 && (
-          <div className="space-y-2">
-            <Label>Images générées</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {generatedImages.map((img, index) => (
-                <img
-                  key={index}
-                  src={img}
-                  alt={`Résultat ${index + 1}`}
-                  className="rounded-lg border"
-                />
+          <div className="mt-6">
+            <h3 className="font-semibold mb-3">Images générées</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {generatedImages.map((img, idx) => (
+                <div key={idx} className="relative rounded-lg overflow-hidden border border-border bg-card">
+                  <img src={img.url} alt={img.label} className="w-full h-48 object-cover" />
+                  <div className="p-3 space-y-2">
+                    <p className="text-sm font-medium text-center">{img.label}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDownloadImage(img.url, img.label)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Télécharger
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleUseInPost(img.url)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Utiliser
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
