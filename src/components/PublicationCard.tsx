@@ -1,9 +1,11 @@
-import { format } from 'date-fns';
+import { useState } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { 
+import {
   Eye, Pencil, Copy, Trash2, MoreVertical,
   Instagram, Facebook, Linkedin, Twitter, Youtube, Music,
-  CalendarIcon, FileText, Heart, MessageCircle, Share2
+  CalendarIcon, FileText, Heart, MessageCircle, Share2,
+  SmilePlus, Meh, Frown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { Post } from '@/types/Post';
 import { getDefaultImage } from '@/data/mockPublicationsData';
+import { PostCommentsModal } from './PostCommentsModal';
 
 interface PublicationCardProps {
   post: Post;
@@ -28,11 +31,13 @@ interface PublicationCardProps {
 }
 
 export default function PublicationCard({ post, onView, onEdit, onDuplicate, onDelete }: PublicationCardProps) {
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+
   // Garantir qu'il y a toujours une image
-  const displayImage = (post.images && post.images.length > 0) 
-    ? post.images[0] 
-    : post.image 
-    ? post.image 
+  const displayImage = (post.images && post.images.length > 0)
+    ? post.images[0]
+    : post.image
+    ? post.image
     : getDefaultImage(0); // Image de fallback
 
   // Garantir qu'il y a toujours des stats
@@ -42,6 +47,44 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
     shares: 0,
     views: 0,
     engagement: 0
+  };
+
+  // Get sentiment badge configuration
+  const getSentimentBadge = () => {
+    if (!post.sentiment_label) return null;
+
+    const sentimentConfigs = {
+      positive: {
+        icon: SmilePlus,
+        label: 'Positif',
+        className: 'bg-green-100 text-green-800 border-green-200',
+        iconColor: 'text-green-600'
+      },
+      neutral: {
+        icon: Meh,
+        label: 'Neutre',
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        iconColor: 'text-yellow-600'
+      },
+      negative: {
+        icon: Frown,
+        label: 'Négatif',
+        className: 'bg-red-100 text-red-800 border-red-200',
+        iconColor: 'text-red-600'
+      }
+    };
+
+    const config = sentimentConfigs[post.sentiment_label];
+    if (!config) return null;
+
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`${config.className} flex items-center gap-1 px-2 py-1 border`}>
+        <Icon className={`w-3 h-3 ${config.iconColor}`} />
+        <span className="text-xs">{config.label}</span>
+      </Badge>
+    );
   };
 
   const getStatusConfig = () => {
@@ -161,9 +204,16 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
           )}
         </div>
 
-        {/* Indicateur d'images multiples en haut à droite */}
-        {post.images && post.images.length > 1 && (
+        {/* Badge sentiment en haut à droite */}
+        {post.sentiment_label && (
           <div className="absolute top-3 right-3">
+            {getSentimentBadge()}
+          </div>
+        )}
+
+        {/* Indicateur d'images multiples en haut à droite (décalé si sentiment) */}
+        {post.images && post.images.length > 1 && (
+          <div className={`absolute ${post.sentiment_label ? 'top-12' : 'top-3'} right-3`}>
             <div className="w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-xs font-medium text-white">
               +{post.images.length - 1}
             </div>
@@ -219,7 +269,7 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
             <span className="text-sm font-semibold">Total Engagements</span>
             <span className="text-sm font-bold">{(stats.likes || 0) + (stats.comments || 0) + (stats.shares || 0)}</span>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Likes</span>
@@ -234,6 +284,40 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
               <span className="font-medium">{stats.shares || 0}</span>
             </div>
           </div>
+
+          {/* Sentiment Analysis Info */}
+          {post.last_sentiment_analysis_at && (
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <MessageCircle className="w-3 h-3" />
+                  Sentiment analysé
+                </span>
+                <span className="text-muted-foreground">
+                  {post.comments_sentiment_count || 0} commentaires
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.last_sentiment_analysis_at), {
+                    addSuffix: true,
+                    locale: fr,
+                  })}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCommentsModal(true);
+                  }}
+                >
+                  Voir les commentaires
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
 
@@ -300,6 +384,14 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Comments Modal */}
+      <PostCommentsModal
+        open={showCommentsModal}
+        onOpenChange={setShowCommentsModal}
+        postId={post.id}
+        postCaption={post.content || ''}
+      />
     </Card>
   );
 }
