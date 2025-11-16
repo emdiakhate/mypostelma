@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUploadPost } from '@/hooks/useUploadPost';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PLATFORMS } from '@/config/platforms';
+import { UserSentimentWidget } from '@/components/dashboard/UserSentimentWidget';
 
 const Dashboard = () => {
   const { connectedAccounts, loading: accountsLoading, profile } = useUploadPost();
@@ -113,6 +114,9 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* User Sentiment Analysis Widget */}
+      <UserSentimentWidget />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
