@@ -15,6 +15,7 @@ import Analytics from "./pages/Analytics";
 
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitorsPage from "./pages/CompetitorsPage";
+import CompetitorsComparePage from "./pages/CompetitorsComparePage";
 import AuthPage from "./pages/AuthPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -42,6 +43,7 @@ function MainLayout() {
         
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitorsPage />} />
+        <Route path="/competitors/compare" element={<CompetitorsComparePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />
