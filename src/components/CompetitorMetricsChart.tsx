@@ -76,8 +76,8 @@ export function CompetitorMetricsChart({ competitor }: CompetitorMetricsChartPro
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-          </Card>
-        )}
+        </Card>
+      )}
 
       {/* Platform Distribution Pie Chart */}
       {socialData.length > 1 && (
@@ -115,9 +115,8 @@ export function CompetitorMetricsChart({ competitor }: CompetitorMetricsChartPro
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
-          </Card>
-        )}
-      </div>
+        </Card>
+      )}
     </div>
   );
 }
