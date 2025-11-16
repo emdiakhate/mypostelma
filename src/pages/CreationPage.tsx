@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PRODUCT_TYPES, getTemplatePrompt, TEMPLATE_RESULT_LABELS } from '@/config/templatePrompts';
-import { UseTemplateModal } from '@/components/studio/UseTemplateModal';
+import { UseTemplateModal as UseTemplateModalComponent } from '@/components/studio/UseTemplateModal';
 
 // Types
 interface TemplateInput {
@@ -758,6 +758,143 @@ function MultiSelect({ options, onChange }: { options: string[]; onChange: (valu
   );
 }
 
+// Modal Utilisation (Formulaire)
+function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose: () => void; template: Template }) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    
+    try {
+      // Préparer les données selon le template
+      const payload = {
+        templateId: template.id,
+        ...formData
+      };
+
+      // Appel au webhook N8N
+      const response = await fetch('https://n8n.srv837294.hstgr.cloud/webhook/creation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      setGeneratedImages(result.images || []);
+      
+      toast.success('Images générées avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la génération:', error);
+      toast.error('Erreur lors de la génération');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{template.name}</DialogTitle>
+          <DialogDescription>
+            Remplissez les informations pour générer vos visuels
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {template.inputs.map((input) => (
+            <div key={input.label}>
+              <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
+              
+              {input.type === 'image' && (
+                <div className="mt-2">
+                  <ImageUploader
+                    onUpload={(file) => setFormData({ ...formData, image: file })}
+                  />
+                </div>
+              )}
+
+              {input.type === 'color-picker' && (
+                <ColorPicker
+                  multiple={input.multiple}
+                  onChange={(colors) => setFormData({ ...formData, colors })}
+                />
+              )}
+
+              {input.type === 'text' && (
+                <Input
+                  placeholder={input.placeholder}
+                  onChange={(e) => setFormData({ ...formData, [input.label]: e.target.value })}
+                  className="mt-2"
+                />
+              )}
+
+              {input.type === 'select' && (
+                <Select
+                  onValueChange={(value) => setFormData({ ...formData, [input.label]: value })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder={`Choisir ${input.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {input.options?.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {input.type === 'multi-select' && (
+                <MultiSelect
+                  options={input.options || []}
+                  onChange={(values) => setFormData({ ...formData, [input.label]: values })}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Images générées */}
+        {generatedImages.length > 0 && (
+          <div className="space-y-2">
+            <Label>Images générées</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {generatedImages.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Résultat ${index + 1}`}
+                  className="rounded-lg border"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isGenerating}>
+            Annuler
+          </Button>
+          <Button onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Génération...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Générer
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // Composant VideoTemplateCard
 function VideoTemplateCard({ template }: { template: VideoTemplate }) {
