@@ -806,12 +806,22 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
         reader.readAsDataURL(formData.uploadedFile);
       });
 
+      // Déterminer le nombre d'images à générer selon le template
+      let numImages = 1;
+      if (template.id === 'palette-couleurs' || template.id === 'vue-360') {
+        numImages = 4;
+      } else if (template.id === 'ugc-creator') {
+        numImages = 1;
+      }
+
       // Appeler l'Edge Function fal-image-generation
       const { data, error } = await supabase.functions.invoke('fal-image-generation', {
         body: {
           prompt: prompt,
           image_urls: [imageBase64],
-          type: 'edit'
+          type: 'edit',
+          num_images: numImages,
+          template_id: template.id
         }
       });
 
@@ -820,14 +830,15 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
       // Générer les labels pour chaque image
       const labels = TEMPLATE_RESULT_LABELS[template.id] || ['Image 1', 'Image 2', 'Image 3', 'Image 4'];
       
-      // Créer 4 variations (pour l'instant fal retourne une seule image)
-      const images = labels.map((label, index) => ({
-        url: data.imageUrl,
-        label: label
+      // Utiliser les URLs retournées par l'API
+      const imageUrls = data.imageUrls || [data.imageUrl];
+      const images = imageUrls.slice(0, labels.length).map((url: string, index: number) => ({
+        url: url,
+        label: labels[index] || `Image ${index + 1}`
       }));
 
       setGeneratedImages(images);
-      toast.success('Images générées avec succès !');
+      toast.success(`${images.length} image(s) générée(s) avec succès !`);
     } catch (error) {
       console.error('Erreur:', error);
       toast.error('Erreur lors de la génération des images');
@@ -847,8 +858,13 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   };
 
   const handleUseInPost = (imageUrl: string) => {
-    toast.info('Fonctionnalité à venir : utiliser dans un post');
-    // TODO: Navigation vers /app avec l'image
+    // Sauvegarder l'URL de l'image dans le localStorage
+    localStorage.setItem('pendingPostImage', imageUrl);
+    
+    // Naviguer vers la page de création de posts
+    window.location.href = '/app';
+    
+    toast.success('Redirection vers la création de posts...');
   };
 
   return (

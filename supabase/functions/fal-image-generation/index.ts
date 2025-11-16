@@ -72,9 +72,9 @@ serve(async (req) => {
 
     console.log('✅ Quota checked:', quotaResult);
 
-    const { prompt, image_urls, type = 'simple' } = await req.json();
+    const { prompt, image_urls, type = 'simple', num_images = 1, template_id } = await req.json();
 
-    console.log('🎨 Image generation request:', { type, prompt, hasImages: !!image_urls, userId: user.id });
+    console.log('🎨 Image generation request:', { type, prompt, hasImages: !!image_urls, userId: user.id, num_images, template_id });
 
     // Utiliser fal.ai pour la génération
     console.log('💰 Utilisation de Fal.ai...');
@@ -93,7 +93,7 @@ serve(async (req) => {
         prompt,
         image_size: "square_hd",
         num_inference_steps: 4,
-        num_images: 1,
+        num_images: num_images,
       };
     } else if (type === 'edit' && image_urls && image_urls.length > 0) {
       endpoint = 'https://queue.fal.run/fal-ai/nano-banana/edit';
@@ -102,7 +102,7 @@ serve(async (req) => {
         image_urls: image_urls,
         image_size: "square_hd",
         num_inference_steps: 4,
-        num_images: 1,
+        num_images: num_images,
       };
     } else {
       throw new Error('Invalid generation type or missing image_urls for edit');
@@ -140,9 +140,9 @@ serve(async (req) => {
     // Poll for completion
     let attempts = 0;
     const maxAttempts = 60; // 60 seconds max for image editing
-    let imageUrl = null;
+    let imageUrls: string[] = [];
 
-    while (attempts < maxAttempts && !imageUrl) {
+    while (attempts < maxAttempts && imageUrls.length === 0) {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
 
       const statusResponse = await fetch(statusUrl, {
@@ -168,11 +168,11 @@ serve(async (req) => {
             console.log('Final result:', finalResult);
             
             if (finalResult.images && finalResult.images.length > 0) {
-              imageUrl = finalResult.images[0].url;
-              console.log('Image générée avec succès:', imageUrl);
+              imageUrls = finalResult.images.map((img: any) => img.url);
+              console.log('Images générées avec succès:', imageUrls);
             } else if (finalResult.image?.url) {
-              imageUrl = finalResult.image.url;
-              console.log('Image générée avec succès:', imageUrl);
+              imageUrls = [finalResult.image.url];
+              console.log('Image générée avec succès:', imageUrls);
             }
           }
           break;
@@ -184,18 +184,49 @@ serve(async (req) => {
       attempts++;
     }
 
-    if (!imageUrl) {
+    if (imageUrls.length === 0) {
       throw new Error('Image generation timeout');
     }
 
-    console.log('✅ Image générée avec Fal.ai (payant)');
+    console.log('✅ Images générées avec Fal.ai (payant)');
+
+    // Sauvegarder les images dans media_archives
+    const savedImages = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imageUrl = imageUrls[i];
+      
+      try {
+        const { data: mediaData, error: mediaError } = await supabaseClient
+          .from('media_archives')
+          .insert({
+            user_id: user.id,
+            title: `${template_id || 'Generated'} - Image ${i + 1}`,
+            file_path: imageUrl,
+            file_type: 'image/png',
+            source: 'fal_ai_generation',
+          })
+          .select()
+          .single();
+
+        if (mediaError) {
+          console.error('Error saving to media_archives:', mediaError);
+        } else {
+          savedImages.push(mediaData);
+          console.log('Image saved to media_archives:', mediaData.id);
+        }
+      } catch (error) {
+        console.error('Error saving image:', error);
+      }
+    }
     
     return new Response(
       JSON.stringify({ 
         success: true,
-        imageUrl,
+        imageUrls: imageUrls,
+        imageUrl: imageUrls[0], // Backward compatibility
         requestId,
-        provider: 'fal_ai'
+        provider: 'fal_ai',
+        savedImages
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
