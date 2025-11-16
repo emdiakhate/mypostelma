@@ -26,13 +26,7 @@ export const useCompetitors = () => {
 
       if (error) throw error;
 
-      const transformedData: Competitor[] = (data || []).map(item => ({
-        ...item,
-        added_at: new Date(item.added_at),
-        last_analyzed_at: item.last_analyzed_at ? new Date(item.last_analyzed_at) : undefined
-      }));
-
-      setCompetitors(transformedData);
+      setCompetitors(data || []);
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -70,15 +64,9 @@ export const useCompetitors = () => {
 
       if (error) throw error;
 
-      const transformedData: Competitor = {
-        ...data,
-        added_at: new Date(data.added_at),
-        last_analyzed_at: data.last_analyzed_at ? new Date(data.last_analyzed_at) : undefined
-      };
-
-      setCompetitors(prev => [transformedData, ...prev]);
+      setCompetitors(prev => [data, ...prev]);
       toast.success('Concurrent ajouté avec succès');
-      return transformedData;
+      return data;
     } catch (err) {
       toast.error('Erreur lors de l\'ajout du concurrent');
       throw err;
@@ -110,15 +98,9 @@ export const useCompetitors = () => {
 
       if (error) throw error;
 
-      const transformedData: Competitor = {
-        ...data,
-        added_at: new Date(data.added_at),
-        last_analyzed_at: data.last_analyzed_at ? new Date(data.last_analyzed_at) : undefined
-      };
-
-      setCompetitors(prev => prev.map(c => c.id === id ? transformedData : c));
+      setCompetitors(prev => prev.map(c => c.id === id ? data : c));
       toast.success('Concurrent mis à jour');
-      return transformedData;
+      return data;
     } catch (err) {
       toast.error('Erreur lors de la mise à jour');
       throw err;

@@ -14,7 +14,7 @@ export interface Competitor {
   twitter_url?: string;
   tiktok_url?: string;
   youtube_url?: string;
-  added_at: Date;
-  last_analyzed_at?: Date;
+  added_at: string;
+  last_analyzed_at?: string;
   analysis_count: number;
 }
