@@ -14,6 +14,7 @@ import {
   BarChart3,
   RefreshCw,
   ArrowUpDown,
+  GitCompare,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,26 +37,26 @@ import type { Competitor } from '@/types/competitor';
 type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
 
 export default function CompetitorsPage() {
-  const { competitors, loading, addCompetitor, refreshCompetitors } = useCompetitors();
+  const navigate = useNavigate();
+  const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('date_added');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState('date_desc');
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    industry: '',
-    description: '',
-    instagram_url: '',
-    facebook_url: '',
-    linkedin_url: '',
-    twitter_url: '',
-    tiktok_url: '',
-    website_url: '',
-  });
+  const handleOpenAddModal = () => {
+    setEditingCompetitor(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleEdit = (competitor: Competitor) => {
+    setEditingCompetitor(competitor);
+    setIsFormModalOpen(true);
+  };
 
 
   // Filter and sort competitors
@@ -64,30 +65,51 @@ export default function CompetitorsPage() {
       const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
-      return matchesSearch && matchesIndustry;
+      
+      const matchesPlatform = platformFilter === 'all' || (
+        (platformFilter === 'instagram' && competitor.instagram_url) ||
+        (platformFilter === 'facebook' && competitor.facebook_url) ||
+        (platformFilter === 'linkedin' && competitor.linkedin_url) ||
+        (platformFilter === 'twitter' && competitor.twitter_url) ||
+        (platformFilter === 'tiktok' && competitor.tiktok_url)
+      );
+
+      const matchesStatus = statusFilter === 'all' || (
+        (statusFilter === 'analyzed' && competitor.analysis_count > 0) ||
+        (statusFilter === 'not_analyzed' && competitor.analysis_count === 0)
+      );
+
+      return matchesSearch && matchesIndustry && matchesPlatform && matchesStatus;
     });
 
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'name':
+        case 'name_asc':
           return a.name.localeCompare(b.name, 'fr');
-        case 'date_added':
+        case 'name_desc':
+          return b.name.localeCompare(a.name, 'fr');
+        case 'date_desc':
           return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
-        case 'last_analyzed':
+        case 'date_asc':
+          return new Date(a.added_at).getTime() - new Date(b.added_at).getTime();
+        case 'analyzed_desc':
           if (!a.last_analyzed_at && !b.last_analyzed_at) return 0;
           if (!a.last_analyzed_at) return 1;
           if (!b.last_analyzed_at) return -1;
           return new Date(b.last_analyzed_at).getTime() - new Date(a.last_analyzed_at).getTime();
-        case 'analysis_count':
-          return b.analysis_count - a.analysis_count;
+        case 'analyzed_asc':
+          if (!a.last_analyzed_at && !b.last_analyzed_at) return 0;
+          if (!a.last_analyzed_at) return -1;
+          if (!b.last_analyzed_at) return 1;
+          return new Date(a.last_analyzed_at).getTime() - new Date(b.last_analyzed_at).getTime();
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [competitors, searchQuery, filterIndustry, sortBy]);
+  }, [competitors, searchQuery, filterIndustry, platformFilter, statusFilter, sortBy]);
 
   // Get unique industries for filter
   const industries = Array.from(new Set(competitors.map(c => c.industry).filter(Boolean)));
@@ -99,53 +121,31 @@ export default function CompetitorsPage() {
     pending: competitors.filter(c => c.analysis_count === 0).length,
   };
 
-  // Handle add competitor
-  const handleAddCompetitor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
+  const handleSubmitCompetitor = async (data: Partial<Competitor>) => {
     try {
-      await addCompetitor({
-        name: formData.name,
-        industry: formData.industry || undefined,
-        description: formData.description || undefined,
-        instagram_url: formData.instagram_url || undefined,
-        facebook_url: formData.facebook_url || undefined,
-        linkedin_url: formData.linkedin_url || undefined,
-        twitter_url: formData.twitter_url || undefined,
-        tiktok_url: formData.tiktok_url || undefined,
-        website_url: formData.website_url || undefined,
-      });
-
-      // Reset form
-      setFormData({
-        name: '',
-        industry: '',
-        description: '',
-        instagram_url: '',
-        facebook_url: '',
-        linkedin_url: '',
-        twitter_url: '',
-        tiktok_url: '',
-        website_url: '',
-      });
-
-      setIsAddDialogOpen(false);
-
-      toast({
-        title: 'Concurrent ajouté',
-        description: `${formData.name} a été ajouté avec succès.`,
-      });
+      if (editingCompetitor) {
+        await updateCompetitor(editingCompetitor.id, data);
+        toast({
+          title: 'Concurrent mis à jour',
+          description: `${data.name} a été mis à jour avec succès.`,
+        });
+      } else {
+        await addCompetitor(data as Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'last_analyzed_at' | 'analysis_count'>);
+        toast({
+          title: 'Concurrent ajouté',
+          description: `${data.name} a été ajouté avec succès.`,
+        });
+      }
+      setIsFormModalOpen(false);
+      setEditingCompetitor(null);
+      refreshCompetitors();
     } catch (error) {
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'ajouter le concurrent. Veuillez réessayer.',
+        description: 'Une erreur est survenue. Veuillez réessayer.',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
     }
-    setEditingCompetitor(null);
   };
 
   return (

@@ -67,7 +67,7 @@ interface Statistics {
   positive_percentage: number;
   neutral_percentage: number;
   negative_percentage: number;
-  top_keywords: Record<string, number>; // JSONB from database
+  top_keywords: Record<string, number>;
   response_rate: number;
   avg_engagement_rate: number;
 }

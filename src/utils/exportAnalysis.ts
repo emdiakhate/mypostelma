@@ -12,10 +12,10 @@ import type { CompetitorAnalysis } from '@/services/competitorAnalytics';
  */
 export function exportToPDF(competitor: Competitor, analysis: CompetitorAnalysis | null) {
   try {
-    // Create a printable HTML version
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups sont autorisés.');
+      alert('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups sont autorisés.');
+      return;
     }
 
   const html = `

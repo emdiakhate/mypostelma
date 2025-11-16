@@ -2,12 +2,11 @@
  * Competitor Analytics Service
  *
  * Integrates with Apify (Instagram/Facebook/Twitter/TikTok) + Jina.ai (websites) + OpenAI for competitor strategy analysis.
- * Cost: ~0.0013€ per analysis using GPT-4o-mini (calculated automatically) + Apify credits
  */
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Input type for analyzing competitor (accepts string dates from API)
+// Input type (dates as strings from API/DB)
 export interface CompetitorInput {
   id: string;
   user_id: string;
@@ -138,9 +137,7 @@ export const deleteCompetitor = async (id: string): Promise<void> => {
     .delete()
     .eq('id', id);
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 };
 
 /**
