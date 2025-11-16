@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PRODUCT_TYPES, getTemplatePrompt, TEMPLATE_RESULT_LABELS } from '@/config/templatePrompts';
-import { UseTemplateModal as UseTemplateModalComponent } from '@/components/studio/UseTemplateModal';
+import { Textarea } from '@/components/ui/textarea';
 
 // Types
 interface TemplateInput {
@@ -763,6 +763,14 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [productType, setProductType] = useState('other');
+  const [prompt, setPrompt] = useState('');
+
+  // Pré-remplir le prompt quand le template ou le type de produit change
+  React.useEffect(() => {
+    const templatePrompt = getTemplatePrompt(template.id, productType);
+    setPrompt(templatePrompt);
+  }, [template.id, productType]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -771,6 +779,8 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
       // Préparer les données selon le template
       const payload = {
         templateId: template.id,
+        prompt: prompt,
+        productType: productType,
         ...formData
       };
 
@@ -804,6 +814,37 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Sélection du type de produit */}
+          <div>
+            <Label>Type de produit</Label>
+            <Select value={productType} onValueChange={setProductType}>
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUCT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Prompt pré-rempli */}
+          <div>
+            <Label>Prompt de génération</Label>
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="mt-2 min-h-[120px]"
+              placeholder="Le prompt sera généré automatiquement..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Ce prompt sera utilisé pour générer vos images. Vous pouvez le modifier si nécessaire.
+            </p>
+          </div>
+
           {template.inputs.map((input) => (
             <div key={input.label}>
               <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
