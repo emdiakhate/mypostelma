@@ -7,7 +7,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface Competitor {
+// Input type for analyzing competitor (accepts string dates from API)
+export interface CompetitorInput {
   id: string;
   user_id: string;
   name: string;
@@ -65,7 +66,6 @@ export const getCompetitors = async (): Promise<Competitor[]> => {
     .order('last_analyzed_at', { ascending: false, nullsFirst: false });
 
   if (error) {
-    console.error('Error fetching competitors:', error);
     throw error;
   }
 
@@ -83,7 +83,6 @@ export const getCompetitor = async (id: string): Promise<Competitor | null> => {
     .single();
 
   if (error) {
-    console.error('Error fetching competitor:', error);
     throw error;
   }
 
@@ -106,7 +105,6 @@ export const createCompetitor = async (competitor: Omit<Competitor, 'id' | 'adde
     .single();
 
   if (error) {
-    console.error('Error creating competitor:', error);
     throw error;
   }
 
@@ -125,7 +123,6 @@ export const updateCompetitor = async (id: string, updates: Partial<Competitor>)
     .single();
 
   if (error) {
-    console.error('Error updating competitor:', error);
     throw error;
   }
 
@@ -142,7 +139,6 @@ export const deleteCompetitor = async (id: string): Promise<void> => {
     .eq('id', id);
 
   if (error) {
-    console.error('Error deleting competitor:', error);
     throw error;
   }
 };
@@ -164,7 +160,6 @@ export const getLatestAnalysis = async (competitorId: string): Promise<Competito
       // No rows found
       return null;
     }
-    console.error('Error fetching analysis:', error);
     throw error;
   }
 
@@ -182,7 +177,6 @@ export const getCompetitorAnalysisHistory = async (competitorId: string): Promis
     .order('analyzed_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching analysis history:', error);
     throw error;
   }
 
@@ -194,7 +188,7 @@ export const getCompetitorAnalysisHistory = async (competitorId: string): Promis
  * This initiates web scraping via Apify (social media) and Jina.ai (websites), then AI analysis via OpenAI
  * Typically takes 1-5 minutes to complete (depending on Apify actor execution time)
  */
-export const analyzeCompetitorStrategy = async (competitor: Competitor): Promise<any> => {
+export const analyzeCompetitorStrategy = async (competitor: CompetitorInput): Promise<void> => {
   try {
     const { data, error } = await supabase.functions.invoke('analyze-competitor-apify', {
       body: {
@@ -220,7 +214,6 @@ export const analyzeCompetitorStrategy = async (competitor: Competitor): Promise
 
     return data;
   } catch (error) {
-    console.error('Error analyzing competitor:', error);
     throw error;
   }
 };
@@ -235,7 +228,6 @@ export const getCompetitorsWithLatestAnalysis = async (): Promise<any[]> => {
     .order('last_analyzed_at', { ascending: false, nullsFirst: false });
 
   if (error) {
-    console.error('Error fetching competitors with analysis:', error);
     throw error;
   }
 
@@ -252,7 +244,6 @@ export const getCompetitorComparison = async (): Promise<any[]> => {
     .order('instagram_followers', { ascending: false });
 
   if (error) {
-    console.error('Error fetching competitor comparison:', error);
     throw error;
   }
 

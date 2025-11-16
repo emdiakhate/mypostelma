@@ -11,9 +11,12 @@ import type { CompetitorAnalysis } from '@/services/competitorAnalytics';
  * Export analysis to PDF
  */
 export function exportToPDF(competitor: Competitor, analysis: CompetitorAnalysis | null) {
-  // Create a printable HTML version
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
+  try {
+    // Create a printable HTML version
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups sont autorisés.');
+    }
 
   const html = `
     <!DOCTYPE html>
@@ -157,15 +160,20 @@ export function exportToPDF(competitor: Competitor, analysis: CompetitorAnalysis
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  } catch (error) {
+    console.error('Erreur lors de l\'export PDF:', error);
+    throw error;
+  }
 }
 
 /**
  * Export analysis to Excel (CSV format)
  */
 export function exportToExcel(competitor: Competitor, analysis: CompetitorAnalysis | null) {
-  const rows = [
+  try {
+    const rows = [
     ['Analyse Concurrentielle - ' + competitor.name],
     [''],
     ['Information de base'],
@@ -237,8 +245,12 @@ export function exportToExcel(competitor: Competitor, analysis: CompetitorAnalys
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
   link.setAttribute('download', `analyse-${competitor.name.replace(/[^a-z0-9]/gi, '-')}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de l\'export Excel:', error);
+    throw error;
+  }
 }

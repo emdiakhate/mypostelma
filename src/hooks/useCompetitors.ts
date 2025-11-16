@@ -34,7 +34,6 @@ export const useCompetitors = () => {
 
       setCompetitors(transformedData);
     } catch (err) {
-      console.error('Error loading competitors:', err);
       setError(err as Error);
     } finally {
       setLoading(false);
@@ -81,7 +80,6 @@ export const useCompetitors = () => {
       toast.success('Concurrent ajouté avec succès');
       return transformedData;
     } catch (err) {
-      console.error('Error adding competitor:', err);
       toast.error('Erreur lors de l\'ajout du concurrent');
       throw err;
     }
@@ -122,7 +120,6 @@ export const useCompetitors = () => {
       toast.success('Concurrent mis à jour');
       return transformedData;
     } catch (err) {
-      console.error('Error updating competitor:', err);
       toast.error('Erreur lors de la mise à jour');
       throw err;
     }
@@ -140,7 +137,6 @@ export const useCompetitors = () => {
       setCompetitors(prev => prev.filter(c => c.id !== id));
       toast.success('Concurrent supprimé');
     } catch (err) {
-      console.error('Error deleting competitor:', err);
       toast.error('Erreur lors de la suppression');
       throw err;
     }

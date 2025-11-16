@@ -5,7 +5,7 @@
  * Integrates with Apify + Jina.ai workflow for web scraping and OpenAI analysis.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Users,
   Plus,
@@ -13,7 +13,7 @@ import {
   TrendingUp,
   BarChart3,
   RefreshCw,
-  GitCompare,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,58 +30,64 @@ import {
 import { CompetitorCard } from '@/components/CompetitorCard';
 import { CompetitorFormModal } from '@/components/CompetitorFormModal';
 import { useCompetitors } from '@/hooks/useCompetitors';
+import { useToast } from '@/hooks/use-toast';
 import type { Competitor } from '@/types/competitor';
 
+type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
+
 export default function CompetitorsPage() {
-  const navigate = useNavigate();
-  const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
+  const { competitors, loading, addCompetitor, refreshCompetitors } = useCompetitors();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('date_desc');
-  const [platformFilter, setPlatformFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('date_added');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    industry: '',
+    description: '',
+    instagram_url: '',
+    facebook_url: '',
+    linkedin_url: '',
+    twitter_url: '',
+    tiktok_url: '',
+    website_url: '',
+  });
 
 
   // Filter and sort competitors
-  const filteredCompetitors = competitors
-    .filter((competitor) => {
+  const filteredCompetitors = useMemo(() => {
+    let filtered = competitors.filter((competitor) => {
       const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
-      
-      const matchesPlatform = platformFilter === 'all' || 
-        (platformFilter === 'instagram' && competitor.instagram_url) ||
-        (platformFilter === 'facebook' && competitor.facebook_url) ||
-        (platformFilter === 'linkedin' && competitor.linkedin_url) ||
-        (platformFilter === 'twitter' && competitor.twitter_url) ||
-        (platformFilter === 'tiktok' && competitor.tiktok_url);
-      
-      const matchesStatus = statusFilter === 'all' ||
-        (statusFilter === 'analyzed' && competitor.last_analyzed_at) ||
-        (statusFilter === 'not_analyzed' && !competitor.last_analyzed_at);
-      
-      return matchesSearch && matchesIndustry && matchesPlatform && matchesStatus;
-    })
-    .sort((a, b) => {
+      return matchesSearch && matchesIndustry;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'date_desc':
-          return b.added_at.getTime() - a.added_at.getTime();
-        case 'date_asc':
-          return a.added_at.getTime() - b.added_at.getTime();
-        case 'name_asc':
-          return a.name.localeCompare(b.name);
-        case 'name_desc':
-          return b.name.localeCompare(a.name);
-        case 'analyzed_desc':
-          return (b.last_analyzed_at?.getTime() || 0) - (a.last_analyzed_at?.getTime() || 0);
-        case 'analyzed_asc':
-          return (a.last_analyzed_at?.getTime() || 0) - (b.last_analyzed_at?.getTime() || 0);
+        case 'name':
+          return a.name.localeCompare(b.name, 'fr');
+        case 'date_added':
+          return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
+        case 'last_analyzed':
+          if (!a.last_analyzed_at && !b.last_analyzed_at) return 0;
+          if (!a.last_analyzed_at) return 1;
+          if (!b.last_analyzed_at) return -1;
+          return new Date(b.last_analyzed_at).getTime() - new Date(a.last_analyzed_at).getTime();
+        case 'analysis_count':
+          return b.analysis_count - a.analysis_count;
         default:
           return 0;
       }
     });
+
+    return filtered;
+  }, [competitors, searchQuery, filterIndustry, sortBy]);
 
   // Get unique industries for filter
   const industries = Array.from(new Set(competitors.map(c => c.industry).filter(Boolean)));
@@ -93,28 +99,53 @@ export default function CompetitorsPage() {
     pending: competitors.filter(c => c.analysis_count === 0).length,
   };
 
-  // Handle submit (add or edit)
-  const handleSubmitCompetitor = async (data: Partial<Competitor>) => {
-    if (editingCompetitor) {
-      await updateCompetitor(editingCompetitor.id, data);
-    } else {
-      // Ensure name is provided for adding
-      if (!data.name) {
-        throw new Error('Name is required');
-      }
-      await addCompetitor(data as Omit<Competitor, 'id' | 'user_id' | 'added_at' | 'last_analyzed_at' | 'analysis_count'>);
+  // Handle add competitor
+  const handleAddCompetitor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await addCompetitor({
+        name: formData.name,
+        industry: formData.industry || undefined,
+        description: formData.description || undefined,
+        instagram_url: formData.instagram_url || undefined,
+        facebook_url: formData.facebook_url || undefined,
+        linkedin_url: formData.linkedin_url || undefined,
+        twitter_url: formData.twitter_url || undefined,
+        tiktok_url: formData.tiktok_url || undefined,
+        website_url: formData.website_url || undefined,
+      });
+
+      // Reset form
+      setFormData({
+        name: '',
+        industry: '',
+        description: '',
+        instagram_url: '',
+        facebook_url: '',
+        linkedin_url: '',
+        twitter_url: '',
+        tiktok_url: '',
+        website_url: '',
+      });
+
+      setIsAddDialogOpen(false);
+
+      toast({
+        title: 'Concurrent ajouté',
+        description: `${formData.name} a été ajouté avec succès.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter le concurrent. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
     setEditingCompetitor(null);
-  };
-
-  const handleOpenAddModal = () => {
-    setEditingCompetitor(null);
-    setIsFormModalOpen(true);
-  };
-
-  const handleEdit = (competitor: Competitor) => {
-    setEditingCompetitor(competitor);
-    setIsFormModalOpen(true);
   };
 
   return (

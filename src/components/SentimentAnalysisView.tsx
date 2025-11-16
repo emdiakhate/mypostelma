@@ -67,7 +67,7 @@ interface Statistics {
   positive_percentage: number;
   neutral_percentage: number;
   negative_percentage: number;
-  top_keywords: any; // JSONB from database
+  top_keywords: Record<string, number>; // JSONB from database
   response_rate: number;
   avg_engagement_rate: number;
 }
@@ -141,13 +141,13 @@ export function SentimentAnalysisView({
             .order('sentiment_score', { ascending: false });
 
           if (allComments && allComments.length > 0) {
-            setBestComment(allComments[0] as any); // Highest score
-            setWorstComment(allComments[allComments.length - 1] as any); // Lowest score
+            setBestComment(allComments[0] as Comment); // Highest score
+            setWorstComment(allComments[allComments.length - 1] as Comment); // Lowest score
           }
         }
       }
     } catch (error) {
-      console.error('Error loading sentiment data:', error);
+      // Silent error - will show empty state
     } finally {
       setLoading(false);
     }
@@ -229,24 +229,27 @@ export function SentimentAnalysisView({
     { name: 'Négatif', value: statistics.negative_percentage, fill: 'hsl(0, 84%, 60%)' },
   ];
 
-  const topKeywords = Object.entries((statistics.top_keywords as Record<string, number>) || {})
-    .sort(([, a], [, b]) => (b as number) - (a as number))
+  const topKeywords = Object.entries(statistics.top_keywords || {})
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 10);
 
   // Calcul du sentiment moyen par plateforme
-  const platformSentimentData = ['instagram', 'facebook', 'twitter', 'tiktok'].map(platform => {
-    const platformPosts = posts.filter(p => p.platform === platform);
-    if (platformPosts.length === 0) return null;
+  const platformSentimentData = ['instagram', 'facebook', 'twitter', 'tiktok']
+    .map(platform => {
+      const platformPosts = posts.filter(p => p.platform === platform);
+      if (platformPosts.length === 0) return null;
 
-    // On récupère les posts avec leurs commentaires pour calculer le sentiment
-    const avgSentiment = statistics.avg_sentiment_score || 0;
-    
-    return {
-      platform: platform.charAt(0).toUpperCase() + platform.slice(1),
-      sentiment: avgSentiment,
-      posts: platformPosts.length,
-    };
-  }).filter(Boolean);
+      // Note: Using global avg_sentiment_score for MVP
+      // TODO: Calculate per-platform sentiment in future version
+      const avgSentiment = statistics.avg_sentiment_score || 0;
+
+      return {
+        platform: platform.charAt(0).toUpperCase() + platform.slice(1),
+        sentiment: avgSentiment,
+        posts: platformPosts.length,
+      };
+    })
+    .filter((item): item is { platform: string; sentiment: number; posts: number } => item !== null);
 
   // Plateformes disponibles
   const availablePlatforms = Array.from(new Set(posts.map(p => p.platform)));
@@ -381,7 +384,7 @@ export function SentimentAnalysisView({
               </BarChart>
             </ResponsiveContainer>
             <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
-              {platformSentimentData.map((data: any) => (
+              {platformSentimentData.map((data) => (
                 <span key={data.platform}>
                   {data.platform}: {data.posts} posts
                 </span>

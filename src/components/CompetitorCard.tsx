@@ -86,7 +86,7 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
         const latestAnalysis = await getLatestAnalysis(competitor.id);
         setAnalysis(latestAnalysis);
       } catch (error) {
-        console.error('Error loading analysis:', error);
+        // Silent error - will show empty state in UI
       } finally {
         setIsLoadingAnalysis(false);
       }
@@ -132,22 +132,21 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
             // Timeout after 5 minutes
             clearInterval(pollForAnalysis);
             toast({
-              title: 'Analysis Taking Longer',
-              description: 'The analysis is taking longer than expected. Please check back in a few minutes.',
+              title: 'Analyse plus longue que prévu',
+              description: 'L\'analyse prend plus de temps que prévu. Veuillez revenir dans quelques minutes.',
               variant: 'destructive',
             });
             setIsAnalyzing(false);
           }
         } catch (error) {
-          console.error('Error polling for analysis:', error);
+          // Silent error during polling, will timeout naturally
         }
       }, pollInterval);
 
     } catch (error) {
-      console.error('Error analyzing competitor:', error);
       toast({
-        title: 'Analysis Failed',
-        description: 'Failed to analyze competitor. Please try again.',
+        title: 'Échec de l\'analyse',
+        description: 'Impossible d\'analyser le concurrent. Veuillez réessayer.',
         variant: 'destructive',
       });
       setIsAnalyzing(false);
@@ -198,18 +197,16 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
 
       // Check for HTTP error first, but also check if data contains an error message
       if (error) {
-        console.error('Edge function error:', error);
-        
         // Try to extract error message from the error context
         let errorMessage = 'Erreur lors de l\'analyse';
-        
+
         // Check if error has a context with error details
-        if ((error as any)?.context?.error) {
-          errorMessage = (error as any).context.error;
-        } else if ((error as any)?.message) {
-          errorMessage = (error as any).message;
+        if (error?.context?.error) {
+          errorMessage = error.context.error;
+        } else if (error?.message) {
+          errorMessage = error.message;
         }
-        
+
         // Show detailed error toast
         toast({
           title: 'Erreur d\'analyse',
@@ -240,13 +237,12 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
       setIsExpanded(false);
       setTimeout(() => setIsExpanded(true), 100);
     } catch (error) {
-      console.error('Sentiment analysis error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Impossible d\'analyser le sentiment. Vérifiez que les URLs sont correctes.';
       toast({
         title: 'Erreur d\'analyse',
         description: errorMessage,
         variant: 'destructive',
-        duration: 15000, // 15 seconds for detailed error messages
+        duration: 15000,
       });
     } finally {
       setIsSentimentAnalyzing(false);
@@ -258,15 +254,14 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
     try {
       await deleteCompetitor(competitor.id);
       toast({
-        title: 'Competitor Deleted',
-        description: `${competitor.name} has been removed.`,
+        title: 'Concurrent supprimé',
+        description: `${competitor.name} a été supprimé.`,
       });
       onUpdate?.();
     } catch (error) {
-      console.error('Error deleting competitor:', error);
       toast({
-        title: 'Delete Failed',
-        description: 'Failed to delete competitor. Please try again.',
+        title: 'Échec de la suppression',
+        description: 'Impossible de supprimer le concurrent. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -305,12 +300,12 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
                 {isAnalyzing ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing...
+                    Analyse en cours...
                   </>
                 ) : (
                   <>
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    {competitor.analysis_count > 0 ? 'Re-analyze' : 'Analyze'}
+                    {competitor.analysis_count > 0 ? 'Ré-analyser' : 'Analyser'}
                   </>
                 )}
               </Button>
@@ -596,11 +591,7 @@ export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardP
 
                       {/* Charts Tab */}
                       <TabsContent value="charts" className="mt-4">
-                        <CompetitorMetricsChart
-                          competitorId={competitor.id}
-                          competitor={competitor}
-                          analysis={undefined}
-                        />
+                        <CompetitorMetricsChart competitor={competitor} />
                       </TabsContent>
                     </Tabs>
                   </>
