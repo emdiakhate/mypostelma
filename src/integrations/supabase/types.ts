@@ -572,15 +572,19 @@ export type Database = {
           campaign: string | null
           campaign_color: string | null
           captions: Json | null
+          comments_sentiment_count: number | null
           content: string
           created_at: string
           day_column: string | null
           id: string
           images: string[] | null
+          last_sentiment_analysis_at: string | null
           platforms: string[]
           published_at: string | null
           rejection_reason: string | null
           scheduled_time: string | null
+          sentiment_label: string | null
+          sentiment_score: number | null
           status: Database["public"]["Enums"]["post_status"]
           time_slot: number | null
           updated_at: string
@@ -593,15 +597,19 @@ export type Database = {
           campaign?: string | null
           campaign_color?: string | null
           captions?: Json | null
+          comments_sentiment_count?: number | null
           content: string
           created_at?: string
           day_column?: string | null
           id?: string
           images?: string[] | null
+          last_sentiment_analysis_at?: string | null
           platforms?: string[]
           published_at?: string | null
           rejection_reason?: string | null
           scheduled_time?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null
           updated_at?: string
@@ -614,15 +622,19 @@ export type Database = {
           campaign?: string | null
           campaign_color?: string | null
           captions?: Json | null
+          comments_sentiment_count?: number | null
           content?: string
           created_at?: string
           day_column?: string | null
           id?: string
           images?: string[] | null
+          last_sentiment_analysis_at?: string | null
           platforms?: string[]
           published_at?: string | null
           rejection_reason?: string | null
           scheduled_time?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null
           updated_at?: string
@@ -840,6 +852,68 @@ export type Database = {
         }
         Relationships: []
       }
+      user_post_comments: {
+        Row: {
+          author_is_verified: boolean | null
+          author_username: string | null
+          comment_likes: number | null
+          comment_text: string
+          comment_url: string | null
+          created_at: string | null
+          id: string
+          is_user_reply: boolean | null
+          keywords: string[] | null
+          post_id: string
+          posted_at: string | null
+          scraped_at: string | null
+          sentiment_explanation: string | null
+          sentiment_label: string | null
+          sentiment_score: number | null
+        }
+        Insert: {
+          author_is_verified?: boolean | null
+          author_username?: string | null
+          comment_likes?: number | null
+          comment_text: string
+          comment_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_user_reply?: boolean | null
+          keywords?: string[] | null
+          post_id: string
+          posted_at?: string | null
+          scraped_at?: string | null
+          sentiment_explanation?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+        }
+        Update: {
+          author_is_verified?: boolean | null
+          author_username?: string | null
+          comment_likes?: number | null
+          comment_text?: string
+          comment_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_user_reply?: boolean | null
+          keywords?: string[] | null
+          post_id?: string
+          posted_at?: string | null
+          scraped_at?: string | null
+          sentiment_explanation?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -858,6 +932,69 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_sentiment_statistics: {
+        Row: {
+          analyzed_at: string | null
+          avg_engagement_rate: number | null
+          avg_sentiment_score: number | null
+          created_at: string | null
+          id: string
+          negative_count: number | null
+          negative_percentage: number | null
+          neutral_count: number | null
+          neutral_percentage: number | null
+          positive_count: number | null
+          positive_percentage: number | null
+          response_rate: number | null
+          top_keywords: Json | null
+          total_comments: number | null
+          total_posts: number | null
+          user_id: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          avg_engagement_rate?: number | null
+          avg_sentiment_score?: number | null
+          created_at?: string | null
+          id?: string
+          negative_count?: number | null
+          negative_percentage?: number | null
+          neutral_count?: number | null
+          neutral_percentage?: number | null
+          positive_count?: number | null
+          positive_percentage?: number | null
+          response_rate?: number | null
+          top_keywords?: Json | null
+          total_comments?: number | null
+          total_posts?: number | null
+          user_id: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          avg_engagement_rate?: number | null
+          avg_sentiment_score?: number | null
+          created_at?: string | null
+          id?: string
+          negative_count?: number | null
+          negative_percentage?: number | null
+          neutral_count?: number | null
+          neutral_percentage?: number | null
+          positive_count?: number | null
+          positive_percentage?: number | null
+          response_rate?: number | null
+          top_keywords?: Json | null
+          total_comments?: number | null
+          total_posts?: number | null
+          user_id?: string
+          week_end_date?: string
+          week_start_date?: string
         }
         Relationships: []
       }
