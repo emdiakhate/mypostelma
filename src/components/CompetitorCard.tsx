@@ -65,9 +65,10 @@ import { exportToPDF, exportToExcel } from '@/utils/exportAnalysis';
 interface CompetitorCardProps {
   competitor: Competitor;
   onUpdate?: () => void;
+  onEdit?: (competitor: Competitor) => void;
 }
 
-export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
+export function CompetitorCard({ competitor, onUpdate, onEdit }: CompetitorCardProps) {
   const [analysis, setAnalysis] = useState<CompetitorAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSentimentAnalyzing, setIsSentimentAnalyzing] = useState(false);
@@ -281,6 +282,15 @@ export function CompetitorCard({ competitor, onUpdate }: CompetitorCardProps) {
               )}
             </div>
             <div className="flex gap-2">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(competitor)}
+                >
+                  Éditer
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"

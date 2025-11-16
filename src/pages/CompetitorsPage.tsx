@@ -12,26 +12,14 @@ import {
   Search,
   TrendingUp,
   BarChart3,
-  Instagram,
-  Facebook,
-  Linkedin,
-  Globe,
   RefreshCw,
   ArrowUpDown,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -40,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CompetitorCard } from '@/components/CompetitorCard';
+import { CompetitorFormModal } from '@/components/CompetitorFormModal';
 import { useCompetitors } from '@/hooks/useCompetitors';
 import { useToast } from '@/hooks/use-toast';
 import type { Competitor } from '@/types/competitor';
@@ -156,6 +145,7 @@ export default function CompetitorsPage() {
     } finally {
       setIsSubmitting(false);
     }
+    setEditingCompetitor(null);
   };
 
   return (
@@ -171,181 +161,41 @@ export default function CompetitorsPage() {
             Suivez et analysez vos concurrents avec des insights IA
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau concurrent
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => navigate('/app/competitors/compare')}
+            variant="outline"
+          >
+            <GitCompare className="mr-2 h-4 w-4" />
+            Comparer
+          </Button>
+          <Button
+            onClick={() => refreshCompetitors()}
+            variant="outline"
+            size="icon"
+            title="Actualiser"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button onClick={handleOpenAddModal}>
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter un concurrent
+          </Button>
+        </div>
       </div>
 
-      {/* Add Competitor Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Ajouter un concurrent</DialogTitle>
-              <DialogDescription>
-                Entrez les informations du concurrent. Les URLs des réseaux sociaux et du site web sont utilisées pour l'analyse IA.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAddCompetitor}>
-              <div className="space-y-4 py-4">
-                {/* Basic Info */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom de l'entreprise *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Nom du concurrent"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="industry">Secteur d'activité</Label>
-                    <Input
-                      id="industry"
-                      value={formData.industry}
-                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      placeholder="Technologie, Mode, etc."
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brève description du concurrent..."
-                    rows={3}
-                  />
-                </div>
-
-                {/* Social Media URLs */}
-                <div className="space-y-4 pt-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    Réseaux Sociaux & Site Web (pour l'analyse IA)
-                  </h4>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram_url" className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
-                      Instagram URL
-                    </Label>
-                    <Input
-                      id="instagram_url"
-                      type="url"
-                      value={formData.instagram_url}
-                      onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
-                      placeholder="https://instagram.com/company"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="facebook_url" className="flex items-center gap-2">
-                      <Facebook className="h-4 w-4" />
-                      Facebook URL
-                    </Label>
-                    <Input
-                      id="facebook_url"
-                      type="url"
-                      value={formData.facebook_url}
-                      onChange={(e) => setFormData({ ...formData, facebook_url: e.target.value })}
-                      placeholder="https://facebook.com/company"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter_url" className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      Twitter/X URL
-                    </Label>
-                    <Input
-                      id="twitter_url"
-                      type="url"
-                      value={formData.twitter_url}
-                      onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
-                      placeholder="https://twitter.com/company"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin_url" className="flex items-center gap-2">
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn URL
-                    </Label>
-                    <Input
-                      id="linkedin_url"
-                      type="url"
-                      value={formData.linkedin_url}
-                      onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      placeholder="https://linkedin.com/company/company"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tiktok_url" className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                      </svg>
-                      TikTok URL
-                    </Label>
-                    <Input
-                      id="tiktok_url"
-                      type="url"
-                      value={formData.tiktok_url}
-                      onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
-                      placeholder="https://tiktok.com/@company"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="website_url" className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Website URL
-                    </Label>
-                    <Input
-                      id="website_url"
-                      type="url"
-                      value={formData.website_url}
-                      onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                      placeholder="https://company.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Ajout en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter le concurrent
-                    </>
-                  )}
-                </Button>
-               </div>
-             </form>
-          </DialogContent>
-        </Dialog>
+      {/* Competitor Form Modal */}
+      <CompetitorFormModal
+        open={isFormModalOpen}
+        onOpenChange={(open) => {
+          setIsFormModalOpen(open);
+          if (!open) setEditingCompetitor(null);
+        }}
+        onSubmit={handleSubmitCompetitor}
+        competitor={editingCompetitor}
+        title={editingCompetitor ? "Modifier le concurrent" : "Ajouter un concurrent"}
+        description={editingCompetitor ? "Modifiez les informations du concurrent." : "Renseignez les informations du concurrent à analyser."}
+      />
 
        {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -383,44 +233,88 @@ export default function CompetitorsPage() {
           <CardTitle className="text-lg">Filtrer les concurrents</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex-1 min-w-[250px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par nom ou secteur..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex-1 min-w-[250px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom ou secteur..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+
+              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrer par secteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les secteurs</SelectItem>
+                  {industries.map((industry) => (
+                    <SelectItem key={industry} value={industry || ''}>
+                      {industry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Plateforme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les plateformes</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="tiktok">TikTok</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="analyzed">Analysés</SelectItem>
+                  <SelectItem value="not_analyzed">Non analysés</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Plus récent</SelectItem>
+                  <SelectItem value="date_asc">Plus ancien</SelectItem>
+                  <SelectItem value="name_asc">Nom A-Z</SelectItem>
+                  <SelectItem value="name_desc">Nom Z-A</SelectItem>
+                  <SelectItem value="analyzed_desc">Dernière analyse</SelectItem>
+                  <SelectItem value="analyzed_asc">Analyse la plus ancienne</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(searchQuery || filterIndustry !== 'all' || platformFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date_desc') && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setFilterIndustry('all');
+                    setPlatformFilter('all');
+                    setStatusFilter('all');
+                    setSortBy('date_desc');
+                  }}
+                >
+                  Effacer les filtres
+                </Button>
+              )}
             </div>
-
-            <Select value={filterIndustry} onValueChange={setFilterIndustry}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrer par secteur" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les secteurs</SelectItem>
-                {industries.map((industry) => (
-                  <SelectItem key={industry} value={industry || ''}>
-                    {industry}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(searchQuery || filterIndustry !== 'all') && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterIndustry('all');
-                }}
-              >
-                Effacer les filtres
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -460,7 +354,7 @@ export default function CompetitorsPage() {
                   : 'Essayez d\'ajuster vos filtres ou votre recherche.'}
               </p>
               {competitors.length === 0 && (
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={handleOpenAddModal}>
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter votre premier concurrent
                 </Button>
@@ -474,6 +368,7 @@ export default function CompetitorsPage() {
                 key={competitor.id}
                 competitor={competitor}
                 onUpdate={refreshCompetitors}
+                onEdit={handleEdit}
               />
             ))}
           </div>

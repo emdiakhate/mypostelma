@@ -20,6 +20,7 @@ import {
 import { Users, Activity } from 'lucide-react';
 
 interface CompetitorMetricsChartProps {
+  competitorId: string;
   competitor: {
     name: string;
     instagram_followers?: string;
@@ -75,8 +76,8 @@ export function CompetitorMetricsChart({ competitor }: CompetitorMetricsChartPro
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
 
       {/* Platform Distribution Pie Chart */}
       {socialData.length > 1 && (
@@ -114,8 +115,9 @@ export function CompetitorMetricsChart({ competitor }: CompetitorMetricsChartPro
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
