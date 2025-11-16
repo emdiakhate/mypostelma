@@ -8,19 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
 } from 'recharts';
-import { TrendingUp, Users, Activity } from 'lucide-react';
+import { Users, Activity } from 'lucide-react';
 
 interface CompetitorMetricsChartProps {
   competitor: {
@@ -29,14 +26,11 @@ interface CompetitorMetricsChartProps {
     facebook_likes?: string;
     linkedin_followers?: string;
   };
-  analysis?: {
-    engagement_data?: any;
-  };
 }
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'];
 
-export function CompetitorMetricsChart({ competitor, analysis }: CompetitorMetricsChartProps) {
+export function CompetitorMetricsChart({ competitor }: CompetitorMetricsChartProps) {
   // Prepare social media followers data
   const socialData = [
     {
@@ -53,19 +47,8 @@ export function CompetitorMetricsChart({ competitor, analysis }: CompetitorMetri
     },
   ].filter(item => item.followers > 0);
 
-  // Sample engagement data (would be from real analysis)
-  const engagementData = [
-    { name: 'Lun', engagement: 65, reach: 2400 },
-    { name: 'Mar', engagement: 59, reach: 1398 },
-    { name: 'Mer', engagement: 80, reach: 9800 },
-    { name: 'Jeu', engagement: 81, reach: 3908 },
-    { name: 'Ven', engagement: 56, reach: 4800 },
-    { name: 'Sam', engagement: 55, reach: 3800 },
-    { name: 'Dim', engagement: 40, reach: 4300 },
-  ];
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+    <div className="grid grid-cols-1 gap-4 mt-4">
       {/* Social Media Followers Chart */}
       {socialData.length > 0 && (
         <Card>
@@ -94,47 +77,6 @@ export function CompetitorMetricsChart({ competitor, analysis }: CompetitorMetri
           </CardContent>
         </Card>
       )}
-
-      {/* Engagement Trend Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Tendance d'engagement
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={engagementData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px',
-                }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="engagement"
-                stroke="hsl(var(--primary))"
-                name="Engagement (%)"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="reach"
-                stroke="hsl(var(--secondary))"
-                name="Portée"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
 
       {/* Platform Distribution Pie Chart */}
       {socialData.length > 1 && (

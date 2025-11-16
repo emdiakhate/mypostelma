@@ -5,7 +5,7 @@
  * Integrates with Apify + Jina.ai workflow for web scraping and OpenAI analysis.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Users,
   Plus,
@@ -17,6 +17,7 @@ import {
   Linkedin,
   Globe,
   RefreshCw,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,11 +41,17 @@ import {
 } from '@/components/ui/select';
 import { CompetitorCard } from '@/components/CompetitorCard';
 import { useCompetitors } from '@/hooks/useCompetitors';
+import { useToast } from '@/hooks/use-toast';
+import type { Competitor } from '@/types/competitor';
+
+type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
 
 export default function CompetitorsPage() {
   const { competitors, loading, addCompetitor, refreshCompetitors } = useCompetitors();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('date_added');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,13 +69,36 @@ export default function CompetitorsPage() {
   });
 
 
-  // Filter competitors
-  const filteredCompetitors = competitors.filter((competitor) => {
-    const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
-    return matchesSearch && matchesIndustry;
-  });
+  // Filter and sort competitors
+  const filteredCompetitors = useMemo(() => {
+    let filtered = competitors.filter((competitor) => {
+      const matchesSearch = competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           competitor.industry?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesIndustry = filterIndustry === 'all' || competitor.industry === filterIndustry;
+      return matchesSearch && matchesIndustry;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name, 'fr');
+        case 'date_added':
+          return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
+        case 'last_analyzed':
+          if (!a.last_analyzed_at && !b.last_analyzed_at) return 0;
+          if (!a.last_analyzed_at) return 1;
+          if (!b.last_analyzed_at) return -1;
+          return new Date(b.last_analyzed_at).getTime() - new Date(a.last_analyzed_at).getTime();
+        case 'analysis_count':
+          return b.analysis_count - a.analysis_count;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [competitors, searchQuery, filterIndustry, sortBy]);
 
   // Get unique industries for filter
   const industries = Array.from(new Set(competitors.map(c => c.industry).filter(Boolean)));
@@ -112,14 +142,21 @@ export default function CompetitorsPage() {
       });
 
       setIsAddDialogOpen(false);
-    } catch (error: any) {
-      console.error('Error adding competitor:', error);
+
+      toast({
+        title: 'Concurrent ajouté',
+        description: `${formData.name} a été ajouté avec succès.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter le concurrent. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  console.log('CompetitorsPage render, isAddDialogOpen:', isAddDialogOpen);
 
   return (
     <div className="p-6 space-y-6">
