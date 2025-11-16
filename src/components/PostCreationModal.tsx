@@ -176,6 +176,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [selectedImages, setSelectedImages] = useState<string[]>(
     initialData?.images || (initialData?.image ? [initialData.image] : [])
   );
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(initialData?.video || null);
+  const [videoThumbnail, setVideoThumbnail] = useState<string | null>(initialData?.video_thumbnail || null);
   const [activePreview, setActivePreview] = useState('instagram');
   const [campaign, setCampaign] = useState(initialData?.campaign || '');
   const [publishType, setPublishType] = useState<'now' | 'scheduled'>(
@@ -214,6 +216,16 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [videoImage, setVideoImage] = useState<File | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+
+  // Récupérer l'image depuis localStorage au montage du composant
+  useEffect(() => {
+    const savedImage = localStorage.getItem('studioGeneratedImage');
+    if (savedImage && !initialData) {
+      setSelectedImages([savedImage]);
+      localStorage.removeItem('studioGeneratedImage');
+      toast.success('Image du studio importée automatiquement');
+    }
+  }, [initialData]);
   
 
   // Hooks pour l'analyse
