@@ -661,6 +661,25 @@ serve(async (req) => {
       throw analysisError;
     }
 
+    // Save metrics to history
+    const { error: metricsError } = await supabaseClient
+      .from('competitor_metrics_history')
+      .insert({
+        competitor_id,
+        instagram_followers: scrapedData.instagram?.followers || null,
+        instagram_following: scrapedData.instagram?.following || null,
+        instagram_posts_count: scrapedData.instagram?.posts_count || null,
+        facebook_likes: scrapedData.facebook?.likes || null,
+        linkedin_followers: scrapedData.linkedin?.followers || null,
+        avg_likes: scrapedData.instagram?.avg_likes || null,
+        avg_comments: scrapedData.instagram?.avg_comments || null,
+        avg_engagement_rate: scrapedData.instagram?.engagement_rate || null,
+      });
+
+    if (metricsError) {
+      logStep('Error saving metrics history', { error: metricsError });
+    }
+
     // Update competitor last_analyzed_at
     const { error: competitorUpdateError } = await supabaseClient
       .from('competitors')

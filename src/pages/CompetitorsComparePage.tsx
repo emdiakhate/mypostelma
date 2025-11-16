@@ -12,10 +12,14 @@ import { CompetitorMetricsChart } from '@/components/CompetitorMetricsChart';
 import type { Tables } from '@/integrations/supabase/types';
 
 type CompetitorComparison = Tables<'competitor_comparison'>;
+type SentimentStats = Tables<'sentiment_statistics'>;
+type LatestAnalysis = Tables<'competitor_latest_analysis'>;
 
 export default function CompetitorsComparePage() {
   const navigate = useNavigate();
   const [competitors, setCompetitors] = useState<CompetitorComparison[]>([]);
+  const [sentimentData, setSentimentData] = useState<Record<string, SentimentStats>>({});
+  const [analysisData, setAnalysisData] = useState<Record<string, LatestAnalysis>>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +36,40 @@ export default function CompetitorsComparePage() {
 
       if (error) throw error;
       setCompetitors(data || []);
+
+      // Load sentiment and analysis data for all competitors
+      if (data && data.length > 0) {
+        const competitorIds = data.map(c => c.id).filter(Boolean) as string[];
+        
+        // Load sentiment statistics
+        const { data: sentimentStats } = await supabase
+          .from('sentiment_statistics')
+          .select('*')
+          .in('competitor_id', competitorIds)
+          .order('analyzed_at', { ascending: false });
+
+        const sentimentMap: Record<string, SentimentStats> = {};
+        sentimentStats?.forEach(stat => {
+          if (!sentimentMap[stat.competitor_id]) {
+            sentimentMap[stat.competitor_id] = stat;
+          }
+        });
+        setSentimentData(sentimentMap);
+
+        // Load latest analysis
+        const { data: latestAnalyses } = await supabase
+          .from('competitor_latest_analysis')
+          .select('*')
+          .in('competitor_id', competitorIds);
+
+        const analysisMap: Record<string, LatestAnalysis> = {};
+        latestAnalyses?.forEach(analysis => {
+          if (analysis.competitor_id) {
+            analysisMap[analysis.competitor_id] = analysis;
+          }
+        });
+        setAnalysisData(analysisMap);
+      }
     } catch (error) {
       console.error('Error loading competitors:', error);
     } finally {
@@ -137,7 +175,11 @@ export default function CompetitorsComparePage() {
       {/* Comparison Results */}
       {selectedIds.length >= 2 ? (
         <>
-          <CompetitorComparisonTable competitors={selectedCompetitors} />
+          <CompetitorComparisonTable 
+            competitors={selectedCompetitors}
+            sentimentData={sentimentData}
+            analysisData={analysisData}
+          />
 
           {/* Charts */}
           <Card>
@@ -160,7 +202,10 @@ export default function CompetitorsComparePage() {
                   return (
                     <div key={competitor.id}>
                       <h3 className="font-semibold mb-3">{competitor.name}</h3>
-                      <CompetitorMetricsChart competitor={compatibleCompetitor} />
+                      <CompetitorMetricsChart 
+                        competitorId={competitor.id!}
+                        competitor={compatibleCompetitor} 
+                      />
                     </div>
                   );
                 })}
