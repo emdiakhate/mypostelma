@@ -52,6 +52,7 @@ interface SentimentResult {
 
 /**
  * Scrape Instagram posts with comments using Apify
+ * Uses instagram-comment-scraper for better comment depth
  */
 async function scrapeInstagramPostsApify(
   username: string,
@@ -60,15 +61,13 @@ async function scrapeInstagramPostsApify(
   console.log(`[Instagram] Scraping posts for @${username}...`);
 
   try {
-    // Utiliser l'actor Instagram Scraper
-    const actorUrl = 'https://api.apify.com/v2/acts/apify~instagram-scraper/runs';
+    // Utiliser l'actor Instagram Comment Scraper pour avoir plus de commentaires
+    const actorUrl = 'https://api.apify.com/v2/acts/apify~instagram-comment-scraper/runs';
 
     const requestBody = {
       directUrls: [`https://www.instagram.com/${username}/`],
-      resultsType: 'posts',
-      resultsLimit: CONFIG.posts_limit,
-      searchLimit: 1,
-      // Pour chaque post on va récupérer les commentaires séparément
+      resultsLimit: CONFIG.posts_limit * CONFIG.comments_per_post, // On demande beaucoup pour être sûr
+      maxComments: CONFIG.comments_per_post,
     };
 
     console.log('[Instagram] Apify request:', JSON.stringify(requestBody, null, 2));
@@ -83,7 +82,7 @@ async function scrapeInstagramPostsApify(
     });
 
     if (!response.ok) {
-      throw new Error(`Apify Instagram scraper failed: ${response.status}`);
+      throw new Error(`Apify Instagram comment scraper failed: ${response.status}`);
     }
 
     const runData = await response.json();
@@ -99,7 +98,7 @@ async function scrapeInstagramPostsApify(
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
 
       const statusResponse = await fetch(
-        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs/${runId}`,
+        `https://api.apify.com/v2/acts/apify~instagram-comment-scraper/runs/${runId}`,
         {
           headers: { Authorization: `Bearer ${apifyToken}` },
         }
@@ -135,43 +134,51 @@ async function scrapeInstagramPostsApify(
     console.log(`[Instagram] Raw results count: ${results.length}`);
     
     if (results.length > 0) {
-      console.log(`[Instagram] First item structure:`, JSON.stringify(results[0], null, 2).substring(0, 500));
+      console.log(`[Instagram] First comment structure:`, JSON.stringify(results[0], null, 2).substring(0, 500));
     }
 
-    // Transform to our Post format
-    const posts: Post[] = results
-      .slice(0, CONFIG.posts_limit)
-      .map((item: any, idx: number) => {
-        console.log(`[Instagram] Processing post ${idx + 1}/${results.length}`);
-        
-        const post: Post = {
+    // Group comments by post URL
+    const postMap = new Map<string, Post>();
+    
+    for (const comment of results) {
+      const postUrl = comment.postUrl || comment.url;
+      
+      if (!postUrl) continue;
+      
+      if (!postMap.has(postUrl)) {
+        postMap.set(postUrl, {
           platform: 'instagram',
-          post_url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
-          caption: item.caption || '',
-          likes: item.likesCount || 0,
-          comments_count: item.commentsCount || 0,
-          posted_at: item.timestamp || new Date().toISOString(),
-          comments: (item.latestComments || [])
-            .filter((c: any) => {
-              const hasText = c.text && c.text.length >= CONFIG.min_comment_length;
-              if (!hasText) {
-                console.log(`[Instagram] Skipping short comment: ${c.text?.substring(0, 30)}...`);
-              }
-              return hasText;
-            })
-            .slice(0, CONFIG.comments_per_post)
-            .map((c: any) => ({
-              author_username: c.ownerUsername || 'unknown',
-              text: c.text,
-              likes: parseInt(String(c.likesCount || 0)),
-              posted_at: c.timestamp || item.timestamp,
-              is_response_from_brand: c.ownerUsername === username,
-            })),
-        };
-
-        console.log(`[Instagram] Post ${idx + 1}: ${post.comments.length} comments extracted`);
-        return post;
-      });
+          post_url: postUrl,
+          caption: comment.postCaption || comment.caption || '',
+          likes: comment.postLikesCount || 0,
+          comments_count: 0, // Will be updated
+          posted_at: comment.postTimestamp || new Date().toISOString(),
+          comments: [],
+        });
+      }
+      
+      const post = postMap.get(postUrl)!;
+      
+      // Add comment if it meets criteria
+      if (comment.text && comment.text.length >= CONFIG.min_comment_length) {
+        post.comments.push({
+          author_username: comment.ownerUsername || 'unknown',
+          text: comment.text,
+          likes: parseInt(String(comment.likesCount || 0)),
+          posted_at: comment.timestamp || post.posted_at,
+          is_response_from_brand: comment.ownerUsername === username,
+        });
+      }
+    }
+    
+    // Convert map to array and limit comments per post
+    const posts = Array.from(postMap.values())
+      .map(post => ({
+        ...post,
+        comments: post.comments.slice(0, CONFIG.comments_per_post),
+        comments_count: post.comments.length,
+      }))
+      .slice(0, CONFIG.posts_limit);
 
     console.log(`[Instagram] Extracted ${posts.length} posts with comments`);
     const totalComments = posts.reduce((sum, p) => sum + p.comments.length, 0);
