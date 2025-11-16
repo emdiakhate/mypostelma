@@ -67,7 +67,7 @@ interface Statistics {
   positive_percentage: number;
   neutral_percentage: number;
   negative_percentage: number;
-  top_keywords: Record<string, number>;
+  top_keywords: any;
   response_rate: number;
   avg_engagement_rate: number;
 }
