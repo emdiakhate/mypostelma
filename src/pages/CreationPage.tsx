@@ -950,49 +950,6 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
               Ce prompt sera utilisé pour générer vos images. Vous pouvez le modifier si nécessaire.
             </p>
           </div>
-
-          {template.inputs.filter(input => input.type !== 'image').map((input) => (
-            <div key={input.label}>
-              <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
-              
-              {input.type === 'color-picker' && (
-                <ColorPicker
-                  multiple={input.multiple}
-                  onChange={(colors) => {}}
-                />
-              )}
-
-              {input.type === 'text' && (
-                <Input
-                  placeholder={input.placeholder}
-                  onChange={(e) => {}}
-                  className="mt-2"
-                />
-              )}
-
-              {input.type === 'select' && (
-                <Select
-                  onValueChange={(value) => {}}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder={`Choisir ${input.label.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {input.options?.map((option) => (
-                      <SelectItem key={option} value={option}>{option}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {input.type === 'multi-select' && (
-                <MultiSelect
-                  options={input.options || []}
-                  onChange={(values) => {}}
-                />
-              )}
-            </div>
-          ))}
         </div>
 
         {/* Images générées */}

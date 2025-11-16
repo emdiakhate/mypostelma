@@ -217,13 +217,20 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
 
-  // Récupérer l'image depuis localStorage au montage du composant
+  // Récupérer les images depuis localStorage au montage du composant
   useEffect(() => {
-    const savedImage = localStorage.getItem('studioGeneratedImage');
-    if (savedImage && !initialData) {
-      setSelectedImages([savedImage]);
-      localStorage.removeItem('studioGeneratedImage');
-      toast.success('Image du studio importée automatiquement');
+    const savedImages = localStorage.getItem('studioGeneratedImages');
+    if (savedImages && !initialData) {
+      try {
+        const images = JSON.parse(savedImages);
+        if (Array.isArray(images) && images.length > 0) {
+          setSelectedImages(images);
+          localStorage.removeItem('studioGeneratedImages');
+          toast.success(`${images.length} image(s) du studio importée(s) automatiquement`);
+        }
+      } catch (error) {
+        console.error('Erreur lors du parsing des images:', error);
+      }
     }
   }, [initialData]);
   
