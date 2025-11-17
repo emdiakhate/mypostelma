@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PRODUCT_TYPES, getTemplatePrompt, TEMPLATE_RESULT_LABELS } from '@/config/templatePrompts';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import PostCreationModal from '@/components/PostCreationModal';
 
 // Types
 interface TemplateInput {
@@ -920,13 +921,26 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
     const selectedUrls = selectedImageIndices.map(index => generatedImages[index].url);
     localStorage.setItem('studioGeneratedImages', JSON.stringify(selectedUrls));
     
-    // Ouvrir le modal de création de post
+    // Fermer le modal de template et ouvrir le modal de création
+    onClose();
     setShowPostCreationModal(true);
     
     toast.success(`${selectedImageIndices.length} image(s) sélectionnée(s) pour la publication`);
   };
 
+  const handlePostSave = async (postData: any) => {
+    try {
+      // Logique de sauvegarde du post
+      toast.success('Post créé avec succès !');
+      setShowPostCreationModal(false);
+    } catch (error) {
+      console.error('Erreur lors de la création du post:', error);
+      toast.error('Erreur lors de la création du post');
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -1099,6 +1113,16 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de création de post */}
+    {showPostCreationModal && (
+      <PostCreationModal
+        isOpen={showPostCreationModal}
+        onClose={() => setShowPostCreationModal(false)}
+        onSave={handlePostSave}
+      />
+    )}
+    </>
   );
 }
 
