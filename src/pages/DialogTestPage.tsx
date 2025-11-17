@@ -138,7 +138,7 @@ export default function DialogTestPage() {
             <Button
               onClick={() => {
                 setClickCount(clickCount + 1);
-                console.log('Button clicked! Count:', clickCount + 1);
+                
                 toast({
                   title: 'Button Clicked',
                   description: `Click count: ${clickCount + 1}`,

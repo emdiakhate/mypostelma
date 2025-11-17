@@ -25,7 +25,7 @@ export function useAnalytics(username?: string, platforms?: string[]) {
 
   const fetchAnalytics = async () => {
     if (!username || !platforms || platforms.length === 0) {
-      console.log('[useAnalytics] Missing username or platforms');
+      
       return;
     }
 
@@ -33,7 +33,7 @@ export function useAnalytics(username?: string, platforms?: string[]) {
       setLoading(true);
       setError(null);
 
-      console.log('[useAnalytics] Fetching analytics for:', { username, platforms });
+      
 
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -53,7 +53,7 @@ export function useAnalytics(username?: string, platforms?: string[]) {
         throw new Error(response.data?.error || 'Failed to fetch analytics');
       }
 
-      console.log('[useAnalytics] Analytics fetched:', response.data);
+      
       setData(response.data);
 
     } catch (err: any) {

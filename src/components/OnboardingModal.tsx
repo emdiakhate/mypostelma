@@ -48,10 +48,10 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
       try {
         // Formater le nom d'utilisateur pour respecter les règles Upload-Post
         const formattedUsername = formatUsernameForUploadPost(userName, userId);
-        console.log(`[OnboardingModal] Creating Upload-Post profile with username: ${formattedUsername}`);
+        
         
         const result = await UploadPostService.createUserProfile(formattedUsername);
-        console.log('[OnboardingModal] Profile created successfully:', result);
+        
         
         // Stocker le username dans le profil Supabase
         const { error: updateError } = await supabase
@@ -64,7 +64,7 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
           throw new Error(`Impossible de sauvegarder le nom d'utilisateur: ${updateError.message}`);
         }
         
-        console.log('[OnboardingModal] Username saved to profile successfully');
+        
         
         setProfileCreated(true);
         

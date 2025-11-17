@@ -336,14 +336,14 @@ const LeadsPage: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('Webhook response received:', result);
+      
 
       // Fermer le toast de loading
       toast.dismiss('search-loading');
 
       // IMPORTANT : result est un ARRAY, prendre le premier élément
       const data = Array.isArray(result) ? result[0] : result;
-      console.log('Data extracted:', data);
+      
 
       // Parser la string JSON des leads
       if (data.leads && typeof data.leads === 'string') {
