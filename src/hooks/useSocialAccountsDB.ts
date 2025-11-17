@@ -33,17 +33,14 @@ export const useSocialAccountsDB = (): UseSocialAccountsDBResult => {
   // TODO: Implémenter les fonctions quand la table social_accounts sera créée
   const connectAccount = useCallback(async (accountData: any) => {
     // À implémenter
-    console.log('connectAccount not implemented yet', accountData);
   }, []);
 
   const disconnectAccount = useCallback(async (accountId: string) => {
     // À implémenter
-    console.log('disconnectAccount not implemented yet', accountId);
   }, []);
 
   const syncAccount = useCallback(async (accountId: string) => {
     // À implémenter
-    console.log('syncAccount not implemented yet', accountId);
   }, []);
 
   return {

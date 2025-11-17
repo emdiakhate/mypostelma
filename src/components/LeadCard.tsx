@@ -52,7 +52,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
   onAddToLeads,
   className 
 }) => {
-  console.log('LeadCard rendered for:', lead.Titre);
+  
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 

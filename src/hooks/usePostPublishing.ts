@@ -44,8 +44,6 @@ export const usePostPublishing = (): UsePostPublishingResult => {
         })
       };
 
-      console.log('Publishing payload with captions:', payload);
-      console.log('Captions being sent:', params.captions);
 
       const response = await fetch(PUBLISH_WEBHOOK, {
         method: 'POST',

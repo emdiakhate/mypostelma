@@ -71,8 +71,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [previewingPost, setPreviewingPost] = useState<Post | null>(null);
 
   // Debug: Vérifier les posts
-  console.log('CalendarView - Posts loaded:', posts.length, 'posts');
-  console.log('CalendarView - First post:', posts[0]);
 
   // Calculs optimisés avec useMemo pour éviter les recalculs inutiles
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);

@@ -53,7 +53,7 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
   onRetry,
   className
 }) => {
-  console.log('LeadsGrid rendered with:', { leads: leads.length, loading, error });
+  
   
   // Filtres
   const [activeFilters, setActiveFilters] = useState({

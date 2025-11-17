@@ -315,7 +315,7 @@ const ArchivesPage: React.FC = () => {
 
   // Fonction pour sauvegarder un post (simulation)
   const handleSavePost = (postData: any) => {
-    console.log('Post sauvegardé:', postData);
+    
     // Ici, vous pouvez ajouter la logique pour sauvegarder le post
     handleClosePostCreation();
   };
@@ -393,7 +393,7 @@ const ArchivesPage: React.FC = () => {
   };
 
   const handlePreviewMedia = (media: MediaItem) => {
-    console.log('Aperçu média:', media);
+    
   };
 
   const handleRenameMedia = async (mediaItem: MediaItem) => {

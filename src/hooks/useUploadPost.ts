@@ -54,7 +54,7 @@ export function useUploadPost(): UseUploadPostReturn {
       
       // Si pas de username, créer le profil Upload-Post automatiquement
       if (!uploadPostUsername) {
-        console.log('[useUploadPost] No upload_post_username found, creating Upload-Post profile automatically');
+        
         
         // Générer le username depuis le nom de l'utilisateur
         const baseName = (profileData?.name || 'user')
@@ -67,7 +67,7 @@ export function useUploadPost(): UseUploadPostReturn {
         try {
           // Créer le profil dans Upload-Post
           await UploadPostService.createUserProfile(uploadPostUsername);
-          console.log('[useUploadPost] Upload-Post profile created automatically:', uploadPostUsername);
+          
           
           // Sauvegarder le username dans le profil Supabase
           await supabase
@@ -82,14 +82,14 @@ export function useUploadPost(): UseUploadPostReturn {
         }
       }
       
-      console.log('[useUploadPost] Fetching Upload-Post profile for:', uploadPostUsername);
+      
       
       try {
         const data = await UploadPostService.getUserProfile(uploadPostUsername);
         
         // L'API retourne un double nesting: data.profile.profile
         const actualProfile = (data.profile as any)?.profile || data.profile;
-        console.log('[useUploadPost] Profile fetched successfully:', actualProfile);
+        
         setProfile(actualProfile);
         
         // Extraire les comptes connectés
@@ -103,7 +103,7 @@ export function useUploadPost(): UseUploadPostReturn {
               username: (details as SocialAccountDetails).username
             }));
           
-          console.log('[useUploadPost] Connected accounts:', accounts);
+          
           setConnectedAccounts(accounts);
         } else {
           setConnectedAccounts([]);
@@ -118,17 +118,17 @@ export function useUploadPost(): UseUploadPostReturn {
           String(fetchError).includes('Profile not found');
         
         if (isProfileNotFound) {
-          console.log('[useUploadPost] Profile not found in Upload-Post (404), creating it now');
+          
           
           try {
             // Créer le profil
             await UploadPostService.createUserProfile(uploadPostUsername);
-            console.log('[useUploadPost] Upload-Post profile created successfully:', uploadPostUsername);
+            
             
             // Réessayer de récupérer le profil après création
             const retryData = await UploadPostService.getUserProfile(uploadPostUsername);
             const retryProfile = (retryData.profile as any)?.profile || retryData.profile;
-            console.log('[useUploadPost] Profile fetched after creation:', retryProfile);
+            
             setProfile(retryProfile);
             setConnectedAccounts([]);
           } catch (retryError) {
@@ -173,7 +173,7 @@ export function useUploadPost(): UseUploadPostReturn {
       
       // Si pas de username, créer le profil Upload-Post
       if (!uploadPostUsername) {
-        console.log('[useUploadPost] No upload_post_username found, creating Upload-Post profile');
+        
         
         // Générer le username depuis le nom de l'utilisateur (même logique que le trigger)
         const baseName = (profileData?.name || 'user')
@@ -186,7 +186,7 @@ export function useUploadPost(): UseUploadPostReturn {
         try {
           // Créer le profil dans Upload-Post
           await UploadPostService.createUserProfile(uploadPostUsername);
-          console.log('[useUploadPost] Upload-Post profile created:', uploadPostUsername);
+          
           
           // Sauvegarder le username dans le profil Supabase
           await supabase
@@ -195,7 +195,7 @@ export function useUploadPost(): UseUploadPostReturn {
             .eq('id', user.id);
         } catch (createError) {
           // Si le profil existe déjà dans Upload-Post, on continue
-          console.log('[useUploadPost] Profile may already exist in Upload-Post:', createError);
+          
           
           // Sauvegarder quand même le username dans le profil Supabase
           await supabase
@@ -205,10 +205,10 @@ export function useUploadPost(): UseUploadPostReturn {
         }
       }
       
-      console.log('[useUploadPost] Generating connect URL for:', uploadPostUsername);
+      
       const { access_url } = await UploadPostService.generateConnectUrl(uploadPostUsername, options);
       
-      console.log('[useUploadPost] Opening connect URL in new window:', access_url);
+      
       
       // Ouvrir dans une nouvelle fenêtre au lieu de rediriger (évite les problèmes CSP)
       const connectWindow = window.open(access_url, '_blank', 'width=800,height=700,scrollbars=yes,resizable=yes');

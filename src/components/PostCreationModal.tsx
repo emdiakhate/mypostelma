@@ -320,7 +320,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       // Empêcher les appels multiples
       if (isGeneratingImage) {
-        console.log('Génération déjà en cours, appel ignoré');
         return;
       }
 
@@ -328,8 +327,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       try {
         const { supabase } = await import('@/integrations/supabase/client');
 
-        console.log('Appel FAL.ai pour édition avec prompt:', aiPrompt);
-        console.log('Images sources:', aiSourceImages.length);
 
         const { data, error } = await supabase.functions.invoke('fal-image-generation', {
           body: {
@@ -353,7 +350,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           throw error;
         }
 
-        console.log('Réponse FAL.ai:', data);
 
         if (data && data.success && data.imageUrl) {
           setGeneratedImages([data.imageUrl]);
@@ -385,13 +381,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }
 
       if (isGeneratingImage) {
-        console.log('Génération déjà en cours, appel ignoré');
+        
         return;
       }
 
       setIsGeneratingImage(true);
       try {
-        console.log('Appel FAL.ai pour génération simple avec prompt:', aiPrompt);
+        
 
         const { data, error } = await supabase.functions.invoke('fal-image-generation', {
           body: {
@@ -414,7 +410,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           throw error;
         }
 
-        console.log('Réponse FAL.ai:', data);
+        
 
         if (data && data.success && data.imageUrl) {
           setGeneratedImages([data.imageUrl]);
@@ -459,11 +455,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       // Si une URL de vidéo est fournie, arrêter le chargement et sauvegarder
       setGeneratedVideoUrl(videoUrl);
       setIsGeneratingVideo(false);
-      console.log('URL de la vidéo sauvegardée:', videoUrl);
+      
     } else {
       // Activer le chargement
       setIsGeneratingVideo(true);
-      console.log('État de chargement vidéo activé');
+      
     }
   }, []);
 
@@ -540,8 +536,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       }, {} as Record<string, string>);
     
     // Vérifier que les captions sont bien formatées
-    console.log('Generated captions:', generatedCaptions);
-    console.log('Final captions for each platform:', finalCaptions);
     
     try {
       // Appeler le webhook de publication
@@ -556,14 +550,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         captions: finalCaptions
       };
 
-      console.log('Webhook payload:', payload);
-      console.log('Selected images:', selectedImages);
-      console.log('Publish type:', publishType);
-      console.log('Final captions:', finalCaptions);
-      console.log('Captions being sent to N8N:', payload.captions);
 
       const webhookUrl = publishType === 'now' ? WEBHOOK_URLS.PUBLISH : WEBHOOK_URLS.SCHEDULE;
-      console.log('Webhook URL:', webhookUrl);
       
       const response = await callWebhook(webhookUrl, payload);
       
@@ -593,7 +581,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             campaignColor: initialData?.campaignColor
           };
 
-          console.log('Publishing post immediately');
+          
           onSave(publishedPost);
           toast.success('Post publié avec succès !');
           onClose();
@@ -619,7 +607,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             campaignColor: initialData?.campaignColor
           };
 
-          console.log('Updating scheduled post');
+          
           onSave(scheduledPost);
           toast.success('Post modifié avec succès !');
           onClose();
@@ -629,11 +617,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       // Mode création
       if (publishType === 'now') {
-        console.log('Immediate post published via webhook');
+        
         toast.success('Publications envoyées avec succès !');
         onClose();
       } else if (scheduledDateTime) {
-        console.log('Scheduled post created via webhook');
+        
 
         const scheduledPost = {
           id: `post-${Date.now()}`,
@@ -653,8 +641,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           campaignColor: initialData?.campaignColor
         };
 
-        console.log('Saving scheduled post:', scheduledPost);
-        console.log('Post images:', scheduledPost.images);
         
         onSave(scheduledPost);
         toast.success('Post programmé avec succès !');

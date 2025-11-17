@@ -76,21 +76,6 @@ const PostCard: React.FC<PostCardProps> = memo(({
   
   const { imageUrl, isLoading, error } = useImageLoader(mediaUrl);
   
-  // Debug logs
-  console.log('PostCard Debug:', {
-    postId: post.id,
-    hasVideo,
-    hasVideoThumbnail,
-    hasImage,
-    isFirstMediaVideo,
-    videoUrl: videoUrl?.substring(0, 50) + '...',
-    videoThumbnail: videoThumbnail?.substring(0, 50) + '...',
-    firstImage: firstImage?.substring(0, 50) + '...',
-    mediaUrl: mediaUrl?.substring(0, 50) + '...',
-    imageUrl: imageUrl?.substring(0, 50) + '...',
-    isLoading,
-    error
-  });
   
   // Vérification des permissions
   const { hasPermission } = useAuth();
