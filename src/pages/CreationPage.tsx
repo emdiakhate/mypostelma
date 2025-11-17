@@ -89,7 +89,7 @@ const templates: Template[] = [
     category: 'variation',
     description: 'Générez votre produit dans différentes couleurs pour montrer toutes les variantes disponibles',
     icon: Palette,
-    badge: 'Populaire',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'color-picker', label: 'Couleurs souhaitées (3-5)', required: true, multiple: true }
@@ -112,7 +112,7 @@ const templates: Template[] = [
     category: 'variation',
     description: 'Présentez votre produit sous tous les angles comme un showroom professionnel',
     icon: Rotate3D,
-    badge: 'Populaire',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit (vue de face)', required: true },
       { type: 'select', label: 'Nombre d\'angles', options: ['4 angles', '6 angles', '8 angles'], default: '6 angles' }
@@ -135,7 +135,7 @@ const templates: Template[] = [
     category: 'variation',
     description: 'Présentez votre logo sur différents supports de branding',
     icon: Rotate3D,
-    badge: 'Nouveau',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Logo de votre marque', required: true }
     ],
@@ -157,7 +157,7 @@ const templates: Template[] = [
     category: 'contexte',
     description: 'Placez automatiquement votre produit dans des environnements réalistes',
     icon: Home,
-    badge: 'Coup de cœur',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'multi-select', label: 'Environnements', options: ['Salon moderne', 'Chambre cosy', 'Bureau professionnel', 'Extérieur'], default: ['Salon moderne'] }
@@ -173,7 +173,7 @@ const templates: Template[] = [
     category: 'marketing',
     description: 'Créez des visuels publicitaires professionnels avec texte et design',
     icon: Megaphone,
-    badge: 'Populaire',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'text', label: 'Slogan', placeholder: 'Ex: Élégance intemporelle', required: true },
@@ -191,7 +191,7 @@ const templates: Template[] = [
     category: 'marketing',
     description: 'Intégrez votre produit dans des scènes de vie inspirantes',
     icon: Users,
-    badge: 'Tendance',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'multi-select', label: 'Ambiances', options: ['Sport & Fitness', 'Travel & Aventure', 'Cocooning & Détente', 'Bureau & Productivité'], required: true }
@@ -207,7 +207,7 @@ const templates: Template[] = [
     category: 'ecommerce',
     description: 'Montrez vos vêtements/accessoires portés par des mannequins variés',
     icon: User,
-    badge: 'Innovation',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du vêtement (à plat ou sur cintre)', required: true },
       { type: 'multi-select', label: 'Types de mannequins', options: ['Homme casual', 'Femme élégante', 'Style sport', 'Style streetwear', 'Morphologies variées'], required: true }
@@ -222,7 +222,7 @@ const templates: Template[] = [
     category: 'marketing',
     description: 'Créez des visuels UGC où un influenceur présente naturellement votre produit',
     icon: Users,
-    badge: 'UGC',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'image', label: 'Photo de l\'influenceur', required: true }
@@ -245,7 +245,7 @@ const templates: Template[] = [
     category: 'marketing',
     description: 'Fusionnez votre produit avec une photo d\'influenceur pour créer un visuel UGC authentique',
     icon: Users,
-    badge: 'Nouveau',
+    badge: '',
     inputs: [
       { type: 'image', label: 'Photo du produit', required: true },
       { type: 'image', label: 'Photo de l\'influenceur', required: true }
@@ -273,7 +273,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
     categories: ['Immobilier', 'Visite', 'Professionnel'],
     icon: Building,
-    badge: 'Populaire'
+    badge: ''
   },
   {
     id: 'boutique',
@@ -283,7 +283,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: '/presentation-boutique.mp4',
     categories: ['Commerce', 'Boutique', 'Retail'],
     icon: Store,
-    badge: 'Nouveau'
+    badge: ''
   },
   {
     id: 'ferme-avicole',
@@ -293,7 +293,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: 'https://www.youtube.com/watch?v=WFbZtk26KSM',
     categories: ['Agriculture', 'Ferme', 'Élevage'],
     icon: Egg,
-    badge: 'Spécialisé'
+    badge: ''
   },
   {
     id: 'nike-sport',
@@ -303,7 +303,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
     categories: ['Sport', 'Mode', 'Dynamique'],
     icon: Shirt,
-    badge: 'Trending'
+    badge: ''
   },
   {
     id: 'restaurant',
@@ -313,7 +313,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4',
     categories: ['Restaurant', 'Gastronomie', 'Hospitality'],
     icon: Store,
-    badge: 'Populaire'
+    badge: ''
   },
   {
     id: 'salon-beaute',
@@ -323,7 +323,7 @@ const videoTemplates: VideoTemplate[] = [
     videoUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4',
     categories: ['Beauté', 'Salon', 'Services'],
     icon: Store,
-    badge: 'Nouveau'
+    badge: ''
   }
 ];
 
