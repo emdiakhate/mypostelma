@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PRODUCT_TYPES, getTemplatePrompt, TEMPLATE_RESULT_LABELS } from '@/config/templatePrompts';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 // Types
 interface TemplateInput {
@@ -64,6 +65,7 @@ interface Template {
   hasMultipleInputs?: boolean; // Indique si le template nécessite plusieurs images en entrée
   resultCount?: number; // Nombre d'images à afficher
   useCases: string[];
+  disabled?: boolean; // Indique si le template est désactivé
 }
 
 // Interface pour les templates vidéo
@@ -161,7 +163,8 @@ const templates: Template[] = [
     ],
     exampleBefore: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400',
     exampleAfter: 'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800',
-    useCases: ['Meubles', 'Décoration', 'Luminaires', 'Plantes', 'Art']
+    useCases: ['Meubles', 'Décoration', 'Luminaires', 'Plantes', 'Art'],
+    disabled: true
   },
   {
     id: 'pub-reseaux-sociaux',
@@ -178,7 +181,8 @@ const templates: Template[] = [
     ],
     exampleBefore: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
     exampleAfter: 'https://images.unsplash.com/photo-1611923134239-a5011a30d3a1?w=800',
-    useCases: ['Tous produits', 'E-commerce', 'Marques', 'Services']
+    useCases: ['Tous produits', 'E-commerce', 'Marques', 'Services'],
+    disabled: true
   },
   {
     id: 'lifestyle-branding',
@@ -193,7 +197,8 @@ const templates: Template[] = [
     ],
     exampleBefore: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400',
     exampleAfter: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
-    useCases: ['Mode', 'Sport', 'Accessoires', 'Tech', 'Bien-être']
+    useCases: ['Mode', 'Sport', 'Accessoires', 'Tech', 'Bien-être'],
+    disabled: true
   },
   {
     id: 'essayage-virtuel',
@@ -328,13 +333,21 @@ function TemplateCard({ template }: { template: Template }) {
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-all group">
+      <Card className={cn(
+        "overflow-hidden hover:shadow-lg transition-all group",
+        template.disabled && "opacity-60"
+      )}>
         {/* Badge en haut */}
         {template.badge && (
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
             <Badge variant="default" className="bg-gradient-to-r from-blue-600 to-purple-600">
               {template.badge}
             </Badge>
+            {template.disabled && (
+              <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
+                Bientôt
+              </Badge>
+            )}
           </div>
         )}
 
@@ -387,16 +400,18 @@ function TemplateCard({ template }: { template: Template }) {
             variant="outline"
             className="flex-1"
             onClick={() => setShowPreviewModal(true)}
+            disabled={template.disabled}
           >
             <Eye className="w-4 h-4 mr-2" />
             Aperçu
           </Button>
           <Button
             className="flex-1"
-            onClick={() => setShowUseModal(true)}
+            onClick={() => !template.disabled && setShowUseModal(true)}
+            disabled={template.disabled}
           >
             <Wand2 className="w-4 h-4 mr-2" />
-            Utiliser
+            {template.disabled ? 'Bientôt disponible' : 'Utiliser'}
           </Button>
         </CardFooter>
       </Card>
