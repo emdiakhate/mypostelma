@@ -244,6 +244,9 @@ const ArchivesPage: React.FC = () => {
   const [showPostCreationModal, setShowPostCreationModal] = useState(false);
   const [selectedMediaForPost, setSelectedMediaForPost] = useState<any>(null);
   
+  // Vue galerie pour les images générées par IA
+  const [showAiGallery, setShowAiGallery] = useState(false);
+  
   // Convert dbMedia to MediaItem format for compatibility
   const media: MediaItem[] = dbMedia.map(m => ({
     id: m.id,
@@ -256,6 +259,12 @@ const ArchivesPage: React.FC = () => {
     size: m.file_size ? `${(m.file_size / (1024 * 1024)).toFixed(1)} MB` : undefined,
     dimensions: m.dimensions || undefined
   }));
+
+
+  // Filtrer uniquement les images générées par IA
+  const aiGeneratedImages = useMemo(() => {
+    return media.filter(m => m.type === 'image' && m.source === 'ai-generated');
+  }, [media]);
 
   // Fonctions pour l'upload de fichiers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

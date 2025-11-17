@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   Palette, Rotate3D, Home, Megaphone, Users, User,
   Eye, Wand2, ArrowRight, Sparkles, Clock, Loader2,
-  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus, Plus, Check
+  Video, Play, Building, Store, Egg, Shirt, Download, ImagePlus, Plus, Check,
+  Upload, X, Camera, Scale, Box, Calendar, Layers
 } from "lucide-react";
 import sacnoir from '@/assets/sacnoir.png';
 import sacblanc from '@/assets/sacblanc.png';
@@ -764,6 +765,9 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; label: string }>>([]);
   const [selectedImageIndices, setSelectedImageIndices] = useState<number[]>([]);
+  const [showPostCreationModal, setShowPostCreationModal] = useState(false);
+
+  const [showPostCreationModal, setShowPostCreationModal] = useState(false);
   const [productType, setProductType] = useState('other');
   const [prompt, setPrompt] = useState('');
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
@@ -903,10 +907,10 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
     const selectedUrls = selectedImageIndices.map(index => generatedImages[index].url);
     localStorage.setItem('studioGeneratedImages', JSON.stringify(selectedUrls));
     
-    // Naviguer vers la page de création de posts
-    window.location.href = '/app';
+    // Ouvrir le modal de création de post
+    setShowPostCreationModal(true);
     
-    toast.success('Redirection vers la création de posts...');
+    toast.success(`${selectedImageIndices.length} image(s) sélectionnée(s) pour la publication`);
   };
 
   return (
@@ -941,22 +945,47 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
           {template.inputs.filter(input => input.type === 'image').map((input, idx) => (
             <div key={input.label}>
               <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
-              <div className="mt-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file, idx);
-                  }}
-                  className="cursor-pointer"
-                />
-                {uploadedImageUrls[idx] && (
-                  <img 
-                    src={uploadedImageUrls[idx]} 
-                    alt={`Preview ${idx + 1}`} 
-                    className="mt-2 w-32 h-32 object-cover rounded-lg border"
+              <div className="mt-2 space-y-2">
+                <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary/50 transition-colors">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file, idx);
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
+                  <div className="flex flex-col items-center justify-center text-center pointer-events-none">
+                    <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-1">
+                      Cliquez pour sélectionner une image
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      ou glissez-déposez ici
+                    </p>
+                  </div>
+                </div>
+                {uploadedImageUrls[idx] && (
+                  <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                    <img 
+                      src={uploadedImageUrls[idx]} 
+                      alt={`Preview ${idx + 1}`} 
+                      className="w-full h-48 object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        const newUrls = [...uploadedImageUrls];
+                        newUrls[idx] = null;
+                        setUploadedImageUrls(newUrls);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
