@@ -436,6 +436,14 @@ const ArchivesPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <Button 
+                onClick={() => setShowAiGallery(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Wand2 className="w-4 h-4" />
+                Galerie IA ({aiGeneratedImages.length})
+              </Button>
+              <Button 
                 onClick={() => setAiModalOpen(true)}
                 className="flex items-center gap-2"
               >
@@ -459,6 +467,84 @@ const ArchivesPage: React.FC = () => {
             onClose={() => setAiModalOpen(false)}
             onUseImage={handleAddGeneratedImage}
           />
+
+          {/* Modal Galerie IA */}
+          <Dialog open={showAiGallery} onOpenChange={setShowAiGallery}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Wand2 className="w-5 h-5" />
+                  Galerie d'images générées par IA
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                {aiGeneratedImages.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Sparkles className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Aucune image IA générée
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Créez vos premières images avec notre Studio de Création
+                    </p>
+                    <Button onClick={() => {
+                      setShowAiGallery(false);
+                      setAiModalOpen(true);
+                    }}>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Générer avec IA
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      {aiGeneratedImages.length} image{aiGeneratedImages.length > 1 ? 's' : ''} générée{aiGeneratedImages.length > 1 ? 's' : ''}
+                    </p>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      {aiGeneratedImages.map((image) => (
+                        <div key={image.id} className="group relative">
+                          <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                              src={image.url}
+                              alt={image.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                // Enregistrer l'image dans localStorage et ouvrir le modal de création de post
+                                localStorage.setItem('studioGeneratedImages', JSON.stringify([image.url]));
+                                setShowAiGallery(false);
+                                setShowPostCreationModal(true);
+                              }}
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Utiliser
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadMedia(image)}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-2 truncate">{image.title}</p>
+                          <p className="text-xs text-gray-400">
+                            {format(new Date(image.createdAt), 'dd/MM/yyyy', { locale: fr })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Modal Upload de fichiers */}
           <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
