@@ -766,8 +766,6 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
   const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; label: string }>>([]);
   const [selectedImageIndices, setSelectedImageIndices] = useState<number[]>([]);
   const [showPostCreationModal, setShowPostCreationModal] = useState(false);
-
-  const [showPostCreationModal, setShowPostCreationModal] = useState(false);
   const [productType, setProductType] = useState('other');
   const [prompt, setPrompt] = useState('');
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
