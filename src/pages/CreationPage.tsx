@@ -937,6 +937,31 @@ function UseTemplateModal({ open, onClose, template }: { open: boolean; onClose:
             </Select>
           </div>
 
+          {/* Upload d'images */}
+          {template.inputs.filter(input => input.type === 'image').map((input, idx) => (
+            <div key={input.label}>
+              <Label>{input.label} {input.required && <span className="text-red-500">*</span>}</Label>
+              <div className="mt-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file, idx);
+                  }}
+                  className="cursor-pointer"
+                />
+                {uploadedImageUrls[idx] && (
+                  <img 
+                    src={uploadedImageUrls[idx]} 
+                    alt={`Preview ${idx + 1}`} 
+                    className="mt-2 w-32 h-32 object-cover rounded-lg border"
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+
           {/* Prompt pré-rempli */}
           <div>
             <Label>Prompt de génération</Label>
