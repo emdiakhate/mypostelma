@@ -36,22 +36,23 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
   const [creatingProfile, setCreatingProfile] = useState(false);
   const [profileCreated, setProfileCreated] = useState(false);
   const [creationError, setCreationError] = useState<string | null>(null);
+  const [attemptedCreation, setAttemptedCreation] = useState(false);
 
   // Créer le profil Upload-Post avec le nom de l'utilisateur formaté
   useEffect(() => {
     const createProfile = async () => {
-      if (!isOpen || profileCreated || creatingProfile) return;
+      // Éviter les retry en boucle
+      if (!isOpen || profileCreated || creatingProfile || attemptedCreation) return;
 
       setCreatingProfile(true);
       setCreationError(null);
+      setAttemptedCreation(true); // Marquer qu'on a tenté la création
       
       try {
         // Formater le nom d'utilisateur pour respecter les règles Upload-Post
         const formattedUsername = formatUsernameForUploadPost(userName, userId);
         
-        
         const result = await UploadPostService.createUserProfile(formattedUsername);
-        
         
         // Stocker le username dans le profil Supabase
         const { error: updateError } = await supabase
@@ -64,8 +65,6 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
           throw new Error(`Impossible de sauvegarder le nom d'utilisateur: ${updateError.message}`);
         }
         
-        
-        
         setProfileCreated(true);
         
         // Attendre un peu avant de rafraîchir pour que l'API soit à jour
@@ -76,15 +75,24 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
       } catch (error: any) {
         console.error('[OnboardingModal] Error creating Upload-Post profile:', error);
         const errorMessage = error?.message || 'Erreur lors de la création du profil';
-        setCreationError(errorMessage);
-        toast.error(errorMessage);
+        
+        // Détecter les erreurs de quota
+        if (errorMessage.includes('QUOTA_EXCEEDED') || errorMessage.includes('limit') || errorMessage.includes('quota')) {
+          setCreationError('Limite de profils atteinte. Contactez-nous pour augmenter votre quota.');
+          toast.error('Limite de profils Upload-Post atteinte', {
+            description: 'Vous pouvez continuer sans connecter de comptes ou nous contacter pour augmenter votre quota.'
+          });
+        } else {
+          setCreationError(errorMessage);
+          toast.error(errorMessage);
+        }
       } finally {
         setCreatingProfile(false);
       }
     };
 
     createProfile();
-  }, [isOpen, userId, userName, profileCreated, creatingProfile]);
+  }, [isOpen, userId, userName, profileCreated, creatingProfile, attemptedCreation]);
 
   const handleConnectAccounts = async () => {
     if (!profileCreated) {
@@ -125,6 +133,11 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
     navigate('/app/settings/accounts');
   };
 
+  const handleRetry = () => {
+    setAttemptedCreation(false);
+    setCreationError(null);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -153,6 +166,17 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
             <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
               <h4 className="font-medium text-destructive mb-2">Erreur de création du profil</h4>
               <p className="text-sm text-destructive/90">{creationError}</p>
+              
+              {/* Message spécifique pour les erreurs de quota */}
+              {(creationError.includes('limit') || creationError.includes('quota') || creationError.includes('QUOTA_EXCEEDED')) && (
+                <div className="mt-3 p-3 bg-background rounded border">
+                  <p className="text-sm font-medium mb-2">Options disponibles :</p>
+                  <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+                    <li>Continuer sans connecter de comptes Upload-Post</li>
+                    <li>Nous contacter pour augmenter votre quota</li>
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="flex gap-3">
               <Button 
@@ -160,17 +184,16 @@ export function OnboardingModal({ isOpen, userId, userName, onComplete }: Onboar
                 onClick={handleSkip}
                 className="flex-1"
               >
-                Passer cette étape
+                Continuer sans connexion
               </Button>
-              <Button 
-                onClick={() => {
-                  setCreationError(null);
-                  setProfileCreated(false);
-                }}
-                className="flex-1"
-              >
-                Réessayer
-              </Button>
+              {!creationError.includes('limit') && !creationError.includes('quota') && !creationError.includes('QUOTA_EXCEEDED') && (
+                <Button 
+                  onClick={handleRetry}
+                  className="flex-1"
+                >
+                  Réessayer
+                </Button>
+              )}
             </div>
           </div>
         ) : (

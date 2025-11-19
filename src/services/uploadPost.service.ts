@@ -52,12 +52,19 @@ export class UploadPostService {
 
       if (error) {
         console.error('[UploadPostService] Supabase function error:', error);
-        throw new Error(error.message || 'Failed to create profile');
+        const errorMsg = error.message || 'Failed to create profile';
+        throw new Error(errorMsg);
       }
       
       if (!data?.success) {
         const errorMsg = data?.error || data?.message || 'Failed to create profile';
         console.error('[UploadPostService] API returned error:', errorMsg);
+        
+        // Check if it's a quota/limit error
+        if (errorMsg.includes('limit') || errorMsg.includes('quota') || data?.statusCode === 403) {
+          throw new Error(`QUOTA_EXCEEDED: ${errorMsg}`);
+        }
+        
         throw new Error(errorMsg);
       }
 
