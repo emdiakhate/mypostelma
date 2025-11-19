@@ -77,7 +77,16 @@ serve(async (req) => {
 
     if (!response.ok) {
       logStep('Upload-Post API error', { data });
-      throw new Error(data.detail || data.message || 'Failed to create profile');
+      const errorMessage = data.detail || data.message || 'Failed to create profile';
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: errorMessage,
+        statusCode: response.status
+      }), {
+        status: response.status, // Preserve original status code
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     logStep('Profile created successfully', { username: profileUsername });
