@@ -500,7 +500,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
             onClick={handleAddToLeads}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter comme Lead
+            Ajouter client
           </Button>
           <Button 
             size="sm" 
@@ -509,7 +509,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
             onClick={() => onAddToCompetitors?.(lead)}
           >
             <Building className="w-4 h-4 mr-2" />
-            Concurrent
+            Ajouter concurrent
           </Button>
         </div>
       </div>
