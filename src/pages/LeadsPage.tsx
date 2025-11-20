@@ -77,6 +77,7 @@ import { QuickActionsButtons } from '@/components/leads/QuickActionsButtons';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
 import { QuotaDisplay } from '@/components/QuotaDisplay';
 import { createCompetitor } from '@/services/competitorAnalytics';
+import { CompetitorFormModal } from '@/components/CompetitorFormModal';
 
 const LEADS_PER_PAGE = 10;
 
@@ -106,6 +107,10 @@ const LeadsPage: React.FC = () => {
   // États pour le modal de message
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageChannel, setMessageChannel] = useState<'whatsapp' | 'email'>('whatsapp');
+  
+  // États pour le modal concurrent
+  const [competitorModalOpen, setCompetitorModalOpen] = useState(false);
+  const [selectedLeadForCompetitor, setSelectedLeadForCompetitor] = useState<N8NLeadData | null>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -164,24 +169,46 @@ const LeadsPage: React.FC = () => {
     }
   };
 
-  // Fonction pour ajouter un lead (note: cette fonction ne devrait plus ajouter aux competitors)
-  const handleAddToCompetitors = async (n8nLead: N8NLeadData) => {
+  // Fonction pour ouvrir le modal concurrent avec les données pré-remplies
+  const handleAddToCompetitors = (n8nLead: N8NLeadData) => {
+    setSelectedLeadForCompetitor(n8nLead);
+    setCompetitorModalOpen(true);
+  };
+
+  // Fonction pour créer le concurrent depuis le lead
+  const handleCreateCompetitor = async (competitorData: any) => {
     try {
-      // Cette fonctionnalité devrait être supprimée ou redirigée vers l'ajout de leads standards
-      toast.info('Fonctionnalité en développement');
-      // TODO: Implémenter l'ajout correct vers la table leads
-      /*
-      await addLead({
-        name: n8nLead.Titre,
-        category: n8nLead.Categorie,
-        address: n8nLead.Addresse,
-        city: n8nLead.Addresse.split(',').pop()?.trim() || '',
-        phone: n8nLead.Telephone !== 'undefined' ? n8nLead.Telephone : undefined,
-        website: n8nLead.Lien,
-        ...
+      // Parser les réseaux sociaux du lead
+      const parseSocialMedia = (jsonString: string): string[] => {
+        try {
+          const parsed = JSON.parse(jsonString);
+          return Array.isArray(parsed) ? parsed.filter(url => url && url.trim() !== '') : [];
+        } catch {
+          return [];
+        }
+      };
+
+      const linkedinUrls = selectedLeadForCompetitor ? parseSocialMedia(selectedLeadForCompetitor.LinkedIns) : [];
+      const facebookUrls = selectedLeadForCompetitor ? parseSocialMedia(selectedLeadForCompetitor.facebooks) : [];
+      const instagramUrls = selectedLeadForCompetitor ? parseSocialMedia(selectedLeadForCompetitor.instagrams) : [];
+      const twitterUrls = selectedLeadForCompetitor ? parseSocialMedia(selectedLeadForCompetitor.twitters) : [];
+
+      // Créer le concurrent avec les données fusionnées
+      await addCompetitor({
+        name: competitorData.name,
+        industry: competitorData.industry,
+        description: competitorData.description,
+        website_url: competitorData.website_url,
+        instagram_url: competitorData.instagram_url || (instagramUrls.length > 0 ? instagramUrls[0] : undefined),
+        facebook_url: competitorData.facebook_url || (facebookUrls.length > 0 ? facebookUrls[0] : undefined),
+        linkedin_url: competitorData.linkedin_url || (linkedinUrls.length > 0 ? linkedinUrls[0] : undefined),
+        twitter_url: competitorData.twitter_url || (twitterUrls.length > 0 ? twitterUrls[0] : undefined),
+        tiktok_url: competitorData.tiktok_url,
       });
-      */
+
       toast.success('Concurrent ajouté avec succès !');
+      setCompetitorModalOpen(false);
+      setSelectedLeadForCompetitor(null);
     } catch (error) {
       console.error('Erreur ajout concurrent:', error);
       toast.error('Erreur lors de l\'ajout du concurrent');
@@ -935,6 +962,58 @@ const LeadsPage: React.FC = () => {
           }}
           lead={selectedLead}
           channel={messageChannel}
+        />
+      )}
+
+      {/* Modal d'ajout de concurrent */}
+      {selectedLeadForCompetitor && (
+        <CompetitorFormModal
+          open={competitorModalOpen}
+          onOpenChange={(open) => {
+            setCompetitorModalOpen(open);
+            if (!open) {
+              setSelectedLeadForCompetitor(null);
+            }
+          }}
+          onSubmit={handleCreateCompetitor}
+          competitor={{
+            id: '',
+            user_id: '',
+            name: selectedLeadForCompetitor.Titre,
+            industry: selectedLeadForCompetitor.Categorie,
+            description: '',
+            website_url: selectedLeadForCompetitor.Lien || undefined,
+            instagram_url: (() => {
+              try {
+                const parsed = JSON.parse(selectedLeadForCompetitor.instagrams);
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : undefined;
+              } catch { return undefined; }
+            })(),
+            facebook_url: (() => {
+              try {
+                const parsed = JSON.parse(selectedLeadForCompetitor.facebooks);
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : undefined;
+              } catch { return undefined; }
+            })(),
+            linkedin_url: (() => {
+              try {
+                const parsed = JSON.parse(selectedLeadForCompetitor.LinkedIns);
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : undefined;
+              } catch { return undefined; }
+            })(),
+            twitter_url: (() => {
+              try {
+                const parsed = JSON.parse(selectedLeadForCompetitor.twitters);
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : undefined;
+              } catch { return undefined; }
+            })(),
+            tiktok_url: undefined,
+            youtube_url: undefined,
+            added_at: new Date().toISOString(),
+            analysis_count: 0,
+          }}
+          title="Ajouter un concurrent"
+          description="Vérifiez et complétez les informations du concurrent."
         />
       )}
     </div>
