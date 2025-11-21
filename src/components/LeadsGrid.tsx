@@ -42,6 +42,8 @@ interface LeadsGridProps {
   onAddToCompetitors?: (lead: N8NLeadData) => void;
   onRetry?: () => void;
   className?: string;
+  addedLeadNames?: string[];
+  addedCompetitorNames?: string[];
 }
 
 const LeadsGrid: React.FC<LeadsGridProps> = ({
@@ -51,7 +53,9 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
   onAddToLeads,
   onAddToCompetitors,
   onRetry,
-  className
+  className,
+  addedLeadNames = [],
+  addedCompetitorNames = []
 }) => {
   
   
@@ -229,6 +233,8 @@ const LeadsGrid: React.FC<LeadsGridProps> = ({
               lead={lead}
               onAddToLeads={onAddToLeads}
               onAddToCompetitors={onAddToCompetitors}
+              addedAsClient={addedLeadNames.includes(lead.Titre)}
+              addedAsCompetitor={addedCompetitorNames.includes(lead.Titre)}
             />
           ))}
         </div>
@@ -278,13 +284,17 @@ interface LeadCardProps {
   onAddToLeads?: (lead: N8NLeadData) => void;
   onAddToCompetitors?: (lead: N8NLeadData) => void;
   className?: string;
+  addedAsClient?: boolean;
+  addedAsCompetitor?: boolean;
 }
 
 const LeadCard: React.FC<LeadCardProps> = ({ 
   lead, 
   onAddToLeads,
   onAddToCompetitors,
-  className 
+  className,
+  addedAsClient = false,
+  addedAsCompetitor = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -496,20 +506,27 @@ const LeadCard: React.FC<LeadCardProps> = ({
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            className="flex-1"
+            className={cn(
+              "flex-1 transition-colors",
+              addedAsClient ? "bg-green-600 hover:bg-green-700 text-white" : ""
+            )}
             onClick={handleAddToLeads}
+            disabled={addedAsClient}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter client
+            {addedAsClient ? "✓ Client ajouté" : "Ajouter client"}
           </Button>
           <Button 
             size="sm" 
-            variant="secondary"
-            className="flex-1"
+            className={cn(
+              "flex-1 transition-colors",
+              addedAsCompetitor ? "bg-green-600 hover:bg-green-700 text-white" : ""
+            )}
             onClick={() => onAddToCompetitors?.(lead)}
+            disabled={addedAsCompetitor}
           >
             <Building className="w-4 h-4 mr-2" />
-            Ajouter concurrent
+            {addedAsCompetitor ? "✓ Concurrent ajouté" : "Ajouter concurrent"}
           </Button>
         </div>
       </div>
