@@ -78,6 +78,7 @@ import { SendMessageModal } from '@/components/leads/SendMessageModal';
 import { QuotaDisplay } from '@/components/QuotaDisplay';
 import { createCompetitor } from '@/services/competitorAnalytics';
 import { CompetitorFormModal } from '@/components/CompetitorFormModal';
+import { exportLeadsToCSV, exportLeadsToExcel } from '@/utils/exportLeads';
 
 const LEADS_PER_PAGE = 10;
 
@@ -104,6 +105,10 @@ const LeadsPage: React.FC = () => {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   
+  // État pour tracker les leads/concurrents ajoutés
+  const [addedLeadNames, setAddedLeadNames] = useState<string[]>([]);
+  const [addedCompetitorNames, setAddedCompetitorNames] = useState<string[]>([]);
+  
   // États pour le modal de message
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageChannel, setMessageChannel] = useState<'whatsapp' | 'email'>('whatsapp');
@@ -118,6 +123,8 @@ const LeadsPage: React.FC = () => {
   // Filtres
   const [filters, setFilters] = useState({
     status: 'all' as LeadStatus | 'all',
+    category: 'all',
+    city: 'all',
     hasEmail: false,
     hasPhone: false,
     hasSocial: false,
@@ -162,6 +169,7 @@ const LeadsPage: React.FC = () => {
       };
 
       addLead(newLead);
+      setAddedLeadNames(prev => [...prev, n8nLead.Titre]);
       toast.success('Lead ajouté avec succès !');
     } catch (error) {
       console.error('Erreur ajout lead:', error);
@@ -208,6 +216,12 @@ const LeadsPage: React.FC = () => {
 
       toast.success('Concurrent ajouté avec succès !');
       setCompetitorModalOpen(false);
+      
+      // Ajouter à la liste des concurrents ajoutés
+      if (selectedLeadForCompetitor) {
+        setAddedCompetitorNames(prev => [...prev, selectedLeadForCompetitor.Titre]);
+      }
+      
       setSelectedLeadForCompetitor(null);
     } catch (error) {
       console.error('Erreur ajout concurrent:', error);
@@ -229,14 +243,27 @@ const LeadsPage: React.FC = () => {
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
       const matchesStatus = filterStatus === 'all' || lead.status === filterStatus;
+      const matchesCategory = filters.category === 'all' || lead.category === filters.category;
+      const matchesCity = filters.city === 'all' || lead.city === filters.city;
       const matchesSearch = searchQuery === '' || 
         lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.city.toLowerCase().includes(searchQuery.toLowerCase());
       
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesCategory && matchesCity && matchesSearch;
     });
-  }, [leads, filterStatus, searchQuery]);
+  }, [leads, filterStatus, filters.category, filters.city, searchQuery]);
+
+  // Obtenir les catégories et villes uniques
+  const uniqueCategories = useMemo(() => {
+    const categories = [...new Set(leads.map(lead => lead.category))];
+    return categories.sort();
+  }, [leads]);
+
+  const uniqueCities = useMemo(() => {
+    const cities = [...new Set(leads.map(lead => lead.city))];
+    return cities.sort();
+  }, [leads]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLeads.length / LEADS_PER_PAGE);
@@ -267,8 +294,8 @@ const LeadsPage: React.FC = () => {
   };
 
   // Fonctions pour le modal Mes Leads
-  const handleViewLead = (lead: Lead) => {
-    setSelectedLead(lead);
+  const handleViewLead = (leadId: string) => {
+    window.location.href = `/app/leads/${leadId}`;
   };
 
   const handleCallLead = (lead: Lead) => {
@@ -316,6 +343,25 @@ const LeadsPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error marking lead as competitor:', error);
       toast.error(error.message || 'Erreur lors de l\'ajout du concurrent');
+    }
+  };
+
+  // Fonctions d'export
+  const handleExportCSV = () => {
+    try {
+      exportLeadsToCSV(filteredLeads, 'mes-leads');
+      toast.success('Leads exportés en CSV');
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      exportLeadsToExcel(filteredLeads, 'mes-leads');
+      toast.success('Leads exportés en Excel');
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
     }
   };
 
@@ -687,11 +733,11 @@ const LeadsPage: React.FC = () => {
               >
                 <Instagram className="w-4 h-4" /> Réseaux sociaux {filters.hasSocial && <X className="w-3 h-3" />}
               </Button>
-              {(filters.hasEmail || filters.hasPhone || filters.hasSocial || filters.searchTerm) && (
+               {(filters.hasEmail || filters.hasPhone || filters.hasSocial || filters.searchTerm) && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setFilters({ status: 'all', hasEmail: false, hasPhone: false, hasSocial: false, searchTerm: '' })}
+                  onClick={() => setFilters({ status: 'all', category: 'all', city: 'all', hasEmail: false, hasPhone: false, hasSocial: false, searchTerm: '' })}
                 >
                   Réinitialiser
                 </Button>
@@ -743,6 +789,8 @@ const LeadsPage: React.FC = () => {
               onAddToLeads={handleAddToLeads}
               onAddToCompetitors={handleAddToCompetitors}
               onRetry={() => setShowSearchForm(true)}
+              addedLeadNames={addedLeadNames}
+              addedCompetitorNames={addedCompetitorNames}
             />
           </CardContent>
         </Card>
@@ -767,10 +815,33 @@ const LeadsPage: React.FC = () => {
       <Dialog open={showMyLeadsModal} onOpenChange={setShowMyLeadsModal}>
         <DialogContent className="max-w-6xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle>Mes Leads ({filteredLeads.length})</DialogTitle>
-            <DialogDescription>
-              Gérez vos prospects et suivez leur progression
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>Mes Leads ({filteredLeads.length})</DialogTitle>
+                <DialogDescription>
+                  Gérez vos prospects et suivez leur progression
+                </DialogDescription>
+              </div>
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Exporter
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportCSV}>
+                      Exporter en CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportExcel}>
+                      Exporter en Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </DialogHeader>
           
           {/* Barre de recherche et filtres */}
@@ -792,7 +863,8 @@ const LeadsPage: React.FC = () => {
             </div>
             
             {/* Filtres de statut */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-sm font-medium text-muted-foreground">Statut:</span>
               <Button
                 variant={filterStatus === 'all' ? 'default' : 'outline'}
                 size="sm"
@@ -828,6 +900,46 @@ const LeadsPage: React.FC = () => {
               >
                 Clients ({leads.filter(l => l.status === 'client').length})
               </Button>
+            </div>
+
+            {/* Filtres par catégorie et ville */}
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-sm font-medium text-muted-foreground">Filtres:</span>
+              
+              <Select value={filters.category} onValueChange={(value) => setFilters({ ...filters, category: value })}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Toutes catégories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes catégories</SelectItem>
+                  {uniqueCategories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.city} onValueChange={(value) => setFilters({ ...filters, city: value })}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Toutes villes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes villes</SelectItem>
+                  {uniqueCities.map(city => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(filters.category !== 'all' || filters.city !== 'all') && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setFilters({ ...filters, category: 'all', city: 'all' })}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Réinitialiser
+                </Button>
+              )}
             </div>
           </div>
           
@@ -908,7 +1020,7 @@ const LeadsPage: React.FC = () => {
                     <TableCell>
                       <QuickActionsButtons
                         lead={lead}
-                        onViewDetails={() => handleViewLead(lead)}
+                        onViewDetails={() => handleViewLead(lead.id)}
                         onOpenMessageModal={(channel) => handleOpenMessageModal(lead, channel)}
                         onMarkAsCompetitor={() => handleMarkAsCompetitor(lead)}
                       />

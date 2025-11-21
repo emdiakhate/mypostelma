@@ -19,6 +19,7 @@ import CompetitorsComparePage from "./pages/CompetitorsComparePage";
 import AuthPage from "./pages/AuthPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
+import LeadDetailPage from "./pages/LeadDetailPage";
 import PublicationsPage from "./pages/PublicationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreationPage from "./pages/CreationPage";
@@ -47,6 +48,7 @@ function MainLayout() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />
+        <Route path="/leads/:id" element={<LeadDetailPage />} />
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/creation" element={<CreationPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
