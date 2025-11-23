@@ -1094,7 +1094,7 @@ const LeadsPage: React.FC = () => {
             name: selectedLeadForCompetitor.Titre,
             industry: selectedLeadForCompetitor.Categorie,
             description: '',
-            website_url: selectedLeadForCompetitor.Lien || undefined,
+            website_url: undefined, // Lien contains Google Maps URL, not company website
             instagram_url: (() => {
               try {
                 const parsed = JSON.parse(selectedLeadForCompetitor.instagrams);
