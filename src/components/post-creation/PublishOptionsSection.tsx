@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface PublishOptionsSectionProps {
@@ -9,8 +8,6 @@ interface PublishOptionsSectionProps {
   onPublishTypeChange: (type: 'now' | 'scheduled') => void;
   scheduledDateTime: Date | null;
   onScheduledDateTimeChange: (date: Date | null) => void;
-  campaign: string;
-  onCampaignChange: (campaign: string) => void;
   generatedCaptions: any;
   onRegenerateCaptions: () => void;
   onPublish: () => void;
@@ -25,8 +22,6 @@ const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
   onPublishTypeChange,
   scheduledDateTime,
   onScheduledDateTimeChange,
-  campaign,
-  onCampaignChange,
   generatedCaptions,
   onRegenerateCaptions,
   onPublish,
@@ -37,22 +32,6 @@ const PublishOptionsSection: React.FC<PublishOptionsSectionProps> = memo(({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Auteur et Campagne */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">Auteur</label>
-          <Input value="Postelma" readOnly className="bg-muted" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Campagne (optionnel)</label>
-          <Input
-            value={campaign}
-            onChange={(e) => onCampaignChange(e.target.value)}
-            placeholder="Nom de la campagne"
-          />
-        </div>
-      </div>
-
       {/* Options de publication */}
       <div className="space-y-3">
         <label className="block text-sm font-medium">Options de publication</label>

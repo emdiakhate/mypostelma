@@ -854,13 +854,11 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           )}
 
           {/* Section Options de publication */}
-          <PublishOptionsSection 
+          <PublishOptionsSection
             publishType={publishType}
             onPublishTypeChange={setPublishType}
             scheduledDateTime={scheduledDateTime}
             onScheduledDateTimeChange={setScheduledDateTime}
-            campaign={campaign}
-            onCampaignChange={setCampaign}
             generatedCaptions={generatedCaptions}
             onRegenerateCaptions={clearCaptions}
             onPublish={publishPosts}
