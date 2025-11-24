@@ -15,12 +15,16 @@ import {
   RefreshCw,
   ArrowUpDown,
   GitCompare,
+  Building2,
+  Settings,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -30,7 +34,9 @@ import {
 } from '@/components/ui/select';
 import { CompetitorCard } from '@/components/CompetitorCard';
 import { CompetitorFormModal } from '@/components/CompetitorFormModal';
+import { MyBusinessFormModal } from '@/components/competitor/MyBusinessFormModal';
 import { useCompetitors } from '@/hooks/useCompetitors';
+import { useMyBusiness } from '@/hooks/useMyBusiness';
 import { useToast } from '@/hooks/use-toast';
 import type { Competitor } from '@/types/competitor';
 
@@ -39,6 +45,7 @@ type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
 export default function CompetitorsPage() {
   const navigate = useNavigate();
   const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
+  const { business, loading: businessLoading, saveBusiness } = useMyBusiness();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
@@ -46,6 +53,7 @@ export default function CompetitorsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date_added');
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -259,6 +267,88 @@ export default function CompetitorsPage() {
         title={editingCompetitor ? "Modifier le concurrent" : "Ajouter un concurrent"}
         description={editingCompetitor ? "Modifiez les informations du concurrent." : "Renseignez les informations du concurrent à analyser."}
       />
+
+      {/* My Business Form Modal */}
+      <MyBusinessFormModal
+        open={isBusinessModalOpen}
+        onOpenChange={setIsBusinessModalOpen}
+        onSubmit={saveBusiness}
+        business={business}
+      />
+
+      {/* My Business Section */}
+      {!businessLoading && !business && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Building2 className="h-5 w-5 text-blue-600" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-blue-900">
+              <strong>Nouveau !</strong> Configurez votre profil business pour obtenir une comparaison détaillée avec vos concurrents et des recommandations personnalisées.
+            </span>
+            <Button
+              onClick={() => setIsBusinessModalOpen(true)}
+              size="sm"
+              className="ml-4 bg-blue-600 hover:bg-blue-700"
+            >
+              <Building2 className="mr-2 h-4 w-4" />
+              Configurer mon business
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!businessLoading && business && (
+        <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">{business.business_name}</CardTitle>
+                  {business.industry && (
+                    <CardDescription className="mt-1">{business.industry}</CardDescription>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setIsBusinessModalOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Modifier
+                </Button>
+                {competitors.length > 0 && (
+                  <Button
+                    onClick={() => navigate('/app/competitors/compare')}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <GitCompare className="mr-2 h-4 w-4" />
+                    Comparer avec les concurrents
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          {business.description && (
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{business.description}</p>
+              <div className="mt-3 flex gap-2 flex-wrap">
+                {business.website_url && <Badge variant="outline">Site web</Badge>}
+                {business.instagram_url && <Badge variant="outline">Instagram {business.instagram_followers && `• ${business.instagram_followers}`}</Badge>}
+                {business.facebook_url && <Badge variant="outline">Facebook {business.facebook_likes && `• ${business.facebook_likes}`}</Badge>}
+                {business.linkedin_url && <Badge variant="outline">LinkedIn {business.linkedin_followers && `• ${business.linkedin_followers}`}</Badge>}
+                {business.twitter_url && <Badge variant="outline">Twitter</Badge>}
+                {business.tiktok_url && <Badge variant="outline">TikTok</Badge>}
+                {business.youtube_url && <Badge variant="outline">YouTube</Badge>}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
        {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
