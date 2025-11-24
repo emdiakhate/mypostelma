@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.analyze-competitor-sentiment]
 verify_jwt = true
+
+[functions.analyze-my-business]
+verify_jwt = true

@@ -14,24 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      comparative_analysis: {
+        Row: {
+          analysis_date: string
+          competitor_ids: string[]
+          data_insights: Json | null
+          domain_comparisons: Json | null
+          id: string
+          my_business_id: string
+          overall_comparison: Json | null
+          personalized_recommendations: Json | null
+          user_id: string
+        }
+        Insert: {
+          analysis_date?: string
+          competitor_ids: string[]
+          data_insights?: Json | null
+          domain_comparisons?: Json | null
+          id?: string
+          my_business_id: string
+          overall_comparison?: Json | null
+          personalized_recommendations?: Json | null
+          user_id: string
+        }
+        Update: {
+          analysis_date?: string
+          competitor_ids?: string[]
+          data_insights?: Json | null
+          domain_comparisons?: Json | null
+          id?: string
+          my_business_id?: string
+          overall_comparison?: Json | null
+          personalized_recommendations?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparative_analysis_my_business_id_fkey"
+            columns: ["my_business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparative_analysis_my_business_id_fkey"
+            columns: ["my_business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business_latest_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_analysis: {
         Row: {
           analysis_cost: number | null
           analyzed_at: string | null
+          brand_identity: Json | null
+          competitive_analysis: Json | null
           competitor_id: string | null
           content_strategy: string | null
+          context_objectives: Json | null
+          digital_presence: Json | null
           estimated_budget: string | null
           facebook_data: Json | null
           id: string
+          insights_recommendations: Json | null
           instagram_data: Json | null
           key_differentiators: string[] | null
           linkedin_data: Json | null
+          metadata: Json | null
+          offering_positioning: Json | null
           opportunities_for_us: string[] | null
           positioning: string | null
+          raw_data: Json | null
           recommendations: string | null
           social_media_presence: string | null
           strengths: string[] | null
           summary: string | null
+          swot: Json | null
           target_audience: string | null
           tiktok_data: Json | null
           tokens_used: number | null
@@ -44,20 +104,29 @@ export type Database = {
         Insert: {
           analysis_cost?: number | null
           analyzed_at?: string | null
+          brand_identity?: Json | null
+          competitive_analysis?: Json | null
           competitor_id?: string | null
           content_strategy?: string | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
           estimated_budget?: string | null
           facebook_data?: Json | null
           id?: string
+          insights_recommendations?: Json | null
           instagram_data?: Json | null
           key_differentiators?: string[] | null
           linkedin_data?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
           opportunities_for_us?: string[] | null
           positioning?: string | null
+          raw_data?: Json | null
           recommendations?: string | null
           social_media_presence?: string | null
           strengths?: string[] | null
           summary?: string | null
+          swot?: Json | null
           target_audience?: string | null
           tiktok_data?: Json | null
           tokens_used?: number | null
@@ -70,20 +139,29 @@ export type Database = {
         Update: {
           analysis_cost?: number | null
           analyzed_at?: string | null
+          brand_identity?: Json | null
+          competitive_analysis?: Json | null
           competitor_id?: string | null
           content_strategy?: string | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
           estimated_budget?: string | null
           facebook_data?: Json | null
           id?: string
+          insights_recommendations?: Json | null
           instagram_data?: Json | null
           key_differentiators?: string[] | null
           linkedin_data?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
           opportunities_for_us?: string[] | null
           positioning?: string | null
+          raw_data?: Json | null
           recommendations?: string | null
           social_media_presence?: string | null
           strengths?: string[] | null
           summary?: string | null
+          swot?: Json | null
           target_audience?: string | null
           tiktok_data?: Json | null
           tokens_used?: number | null
@@ -461,6 +539,132 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      my_business: {
+        Row: {
+          business_name: string
+          created_at: string
+          description: string | null
+          facebook_likes: string | null
+          facebook_url: string | null
+          id: string
+          industry: string | null
+          instagram_followers: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_followers: string | null
+          linkedin_url: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      my_business_analysis: {
+        Row: {
+          analyzed_at: string
+          brand_identity: Json | null
+          business_id: string
+          competitive_analysis: Json | null
+          context_objectives: Json | null
+          digital_presence: Json | null
+          id: string
+          insights_recommendations: Json | null
+          metadata: Json | null
+          offering_positioning: Json | null
+          raw_data: Json | null
+          swot: Json | null
+          version: number
+        }
+        Insert: {
+          analyzed_at?: string
+          brand_identity?: Json | null
+          business_id: string
+          competitive_analysis?: Json | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
+          id?: string
+          insights_recommendations?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
+          raw_data?: Json | null
+          swot?: Json | null
+          version?: number
+        }
+        Update: {
+          analyzed_at?: string
+          brand_identity?: Json | null
+          business_id?: string
+          competitive_analysis?: Json | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
+          id?: string
+          insights_recommendations?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
+          raw_data?: Json | null
+          swot?: Json | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "my_business_analysis_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "my_business_analysis_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business_latest_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_analytics: {
         Row: {
@@ -1082,6 +1286,39 @@ export type Database = {
           post_text: string | null
           post_url: string | null
           posted_at: string | null
+        }
+        Relationships: []
+      }
+      my_business_latest_analysis: {
+        Row: {
+          analysis_id: string | null
+          analyzed_at: string | null
+          brand_identity: Json | null
+          business_name: string | null
+          competitive_analysis: Json | null
+          context_objectives: Json | null
+          created_at: string | null
+          description: string | null
+          digital_presence: Json | null
+          facebook_likes: string | null
+          facebook_url: string | null
+          id: string | null
+          industry: string | null
+          insights_recommendations: Json | null
+          instagram_followers: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_followers: string | null
+          linkedin_url: string | null
+          metadata: Json | null
+          offering_positioning: Json | null
+          swot: Json | null
+          tiktok_url: string | null
+          twitter_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          website_url: string | null
+          youtube_url: string | null
         }
         Relationships: []
       }
