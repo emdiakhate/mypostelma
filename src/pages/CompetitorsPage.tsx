@@ -37,6 +37,7 @@ import { CompetitorFormModal } from '@/components/CompetitorFormModal';
 import { MyBusinessFormModal } from '@/components/competitor/MyBusinessFormModal';
 import { useCompetitors } from '@/hooks/useCompetitors';
 import { useMyBusiness } from '@/hooks/useMyBusiness';
+import { analyzeMyBusiness } from '@/services/myBusiness';
 import { useToast } from '@/hooks/use-toast';
 import type { Competitor } from '@/types/competitor';
 
@@ -45,7 +46,7 @@ type SortOption = 'name' | 'date_added' | 'last_analyzed' | 'analysis_count';
 export default function CompetitorsPage() {
   const navigate = useNavigate();
   const { competitors, loading, addCompetitor, updateCompetitor, refreshCompetitors } = useCompetitors();
-  const { business, loading: businessLoading, saveBusiness } = useMyBusiness();
+  const { business, loading: businessLoading, saveBusiness, refreshBusiness } = useMyBusiness();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndustry, setFilterIndustry] = useState<string>('all');
@@ -56,6 +57,7 @@ export default function CompetitorsPage() {
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -315,6 +317,33 @@ export default function CompetitorsPage() {
               </div>
               <div className="flex gap-2">
                 <Button
+                  onClick={async () => {
+                    try {
+                      setAnalyzing(true);
+                      await analyzeMyBusiness(business);
+                      toast({
+                        title: "Succès",
+                        description: "Analyse de votre business lancée !",
+                      });
+                      await refreshBusiness();
+                    } catch (error: any) {
+                      toast({
+                        title: "Erreur",
+                        description: error.message || 'Erreur lors de l\'analyse',
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setAnalyzing(false);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  disabled={analyzing}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  {analyzing ? 'Analyse en cours...' : 'Analyser mon business'}
+                </Button>
+                <Button
                   onClick={() => setIsBusinessModalOpen(true)}
                   variant="outline"
                   size="sm"
@@ -324,7 +353,7 @@ export default function CompetitorsPage() {
                 </Button>
                 {competitors.length > 0 && (
                   <Button
-                    onClick={() => navigate('/app/competitors/compare')}
+                    onClick={() => navigate('/comparative-analysis')}
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                   >
