@@ -272,7 +272,9 @@ export default function CompetitorsPage() {
       <MyBusinessFormModal
         open={isBusinessModalOpen}
         onOpenChange={setIsBusinessModalOpen}
-        onSubmit={saveBusiness}
+        onSubmit={async (data) => {
+          await saveBusiness(data);
+        }}
         business={business}
       />
 
