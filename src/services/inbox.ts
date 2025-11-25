@@ -102,18 +102,11 @@ export const getMessages = async (conversationId: string): Promise<Message[]> =>
  * Send a message (reply)
  */
 export const sendMessage = async (payload: SendMessagePayload): Promise<Message> => {
-  // 1. Get the conversation to know which platform
-  const conversation = await getConversation(payload.conversation_id);
-  if (!conversation) {
-    throw new Error('Conversation not found');
-  }
-
-  // 2. Call the appropriate platform API via Supabase Edge Function
-  const { data, error } = await supabase.functions.invoke('send-social-message', {
+  // Call the unified send-message Edge Function
+  // It will handle all platforms: Gmail, Outlook, Telegram, WhatsApp, etc.
+  const { data, error } = await supabase.functions.invoke('send-message', {
     body: {
-      platform: conversation.platform,
-      platform_conversation_id: conversation.platform_conversation_id,
-      participant_id: conversation.participant_id,
+      conversation_id: payload.conversation_id,
       text_content: payload.text_content,
       media_url: payload.media_url,
       media_type: payload.media_type,
@@ -124,39 +117,7 @@ export const sendMessage = async (payload: SendMessagePayload): Promise<Message>
     throw new Error(data?.error || 'Failed to send message');
   }
 
-  // 3. Create the message in our DB
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { data: messageData, error: messageError } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: payload.conversation_id,
-      platform_message_id: data.platform_message_id,
-      direction: 'outbound',
-      message_type: payload.media_url ? 'image' : 'text',
-      text_content: payload.text_content,
-      media_url: payload.media_url,
-      media_type: payload.media_type,
-      sender_id: conversation.platform_conversation_id, // Our brand's ID
-      sent_by_user_id: user?.id,
-      is_read: true,
-      sent_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (messageError) throw messageError;
-
-  // 4. Update conversation status
-  await supabase
-    .from('conversations')
-    .update({
-      status: 'replied',
-      last_brand_reply_at: new Date().toISOString(),
-    })
-    .eq('id', payload.conversation_id);
-
-  return messageData;
+  return data.message;
 };
 
 /**

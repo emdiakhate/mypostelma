@@ -1,8 +1,7 @@
 /**
- * Twilio WhatsApp Webhook (MVP Version)
+ * Twilio WhatsApp Webhook
  *
- * Setup rapide sans Facebook Business
- * Utilise un numéro Twilio temporaire
+ * Receives WhatsApp messages via Twilio and stores them in unified inbox
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -10,7 +9,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -23,72 +21,70 @@ serve(async (req) => {
     const fromNumber = formData.get('From') as string; // whatsapp:+221771234567
     const toNumber = formData.get('To') as string; // whatsapp:+14155238886
     const messageBody = formData.get('Body') as string;
-    const numMedia = parseInt(formData.get('NumMedia') as string || '0');
+    const profileName = formData.get('ProfileName') as string;
+    const numMedia = parseInt((formData.get('NumMedia') as string) || '0');
 
-    console.log('Twilio WhatsApp message:', { messageId, fromNumber, messageBody });
+    console.log('Twilio WhatsApp message:', { messageId, fromNumber, toNumber, messageBody });
 
     // Extract clean phone number
     const cleanFrom = fromNumber.replace('whatsapp:', '');
     const cleanTo = toNumber.replace('whatsapp:', '');
 
-    // Find user (for MVP, you can hardcode or use first user)
-    const { data: users } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1)
-      .single();
+    // Find connected account for this WhatsApp number
+    const { data: accounts } = await supabase
+      .from('connected_accounts')
+      .select('*')
+      .eq('platform', 'whatsapp_twilio')
+      .eq('status', 'active');
 
-    if (!users) {
-      console.log('No user found');
+    if (!accounts || accounts.length === 0) {
+      console.error('No active WhatsApp Twilio account found');
       return new Response('', { status: 200 });
     }
 
-    const userId = users.id;
+    // Find the account that matches this toNumber
+    const connectedAccount = accounts.find(
+      (acc) => acc.config.whatsapp_number === toNumber || acc.config.phone_number === cleanTo
+    );
 
-    // Create or update conversation
-    const conversationId = `whatsapp_${cleanFrom}_${cleanTo}`;
-    const { data: existingConversation } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('platform_conversation_id', conversationId)
-      .eq('user_id', userId)
-      .single();
-
-    let dbConversationId: string;
-
-    if (existingConversation) {
-      dbConversationId = existingConversation.id;
-
-      await supabase
-        .from('conversations')
-        .update({
-          status: 'unread',
-          last_message_at: new Date().toISOString(),
-        })
-        .eq('id', dbConversationId);
-    } else {
-      const { data: newConversation } = await supabase
-        .from('conversations')
-        .insert({
-          user_id: userId,
-          platform: 'whatsapp',
-          platform_conversation_id: conversationId,
-          participant_id: cleanFrom,
-          participant_name: cleanFrom,
-          whatsapp_phone_number: cleanFrom,
-          status: 'unread',
-          priority: 'normal',
-          tags: ['twilio'],
-          message_count: 0,
-          last_message_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-
-      dbConversationId = newConversation!.id;
+    if (!connectedAccount) {
+      console.error('No connected account found for number:', toNumber);
+      return new Response('', { status: 200 });
     }
 
-    // Check if message exists
+    // Create or get conversation
+    const conversationId = `whatsapp_${cleanFrom}`;
+    const participantId = cleanFrom;
+    const participantName = profileName || cleanFrom;
+
+    // Upsert conversation
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .upsert(
+        {
+          user_id: connectedAccount.user_id,
+          connected_account_id: connectedAccount.id,
+          platform: 'whatsapp_twilio',
+          platform_conversation_id: conversationId,
+          participant_id: participantId,
+          participant_name: participantName,
+          status: 'unread',
+          last_message_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,platform,platform_conversation_id',
+          ignoreDuplicates: false,
+        }
+      )
+      .select()
+      .single();
+
+    if (convError) {
+      console.error('Error creating conversation:', convError);
+      return new Response('', { status: 200 });
+    }
+
+    // Check if message already exists (avoid duplicates)
     const { data: existingMessage } = await supabase
       .from('messages')
       .select('id')
@@ -97,24 +93,41 @@ serve(async (req) => {
 
     if (!existingMessage) {
       // Handle media if present
-      let mediaUrl = '';
+      let mediaUrl = null;
+      let mediaType = null;
+      let messageType = 'text';
+
       if (numMedia > 0) {
         mediaUrl = formData.get('MediaUrl0') as string;
+        mediaType = formData.get('MediaContentType0') as string;
+
+        if (mediaType?.startsWith('image/')) {
+          messageType = 'image';
+        } else if (mediaType?.startsWith('video/')) {
+          messageType = 'video';
+        } else if (mediaType?.startsWith('audio/')) {
+          messageType = 'audio';
+        }
       }
 
       // Create message
-      await supabase.from('messages').insert({
-        conversation_id: dbConversationId,
+      const { error: msgError } = await supabase.from('messages').insert({
+        conversation_id: conversation.id,
         platform_message_id: messageId,
-        direction: 'inbound',
-        message_type: numMedia > 0 ? 'image' : 'text',
-        text_content: messageBody,
+        direction: 'incoming',
+        message_type: messageType,
+        text_content: messageBody || '',
         media_url: mediaUrl,
-        sender_id: cleanFrom,
-        sender_name: cleanFrom,
+        media_type: mediaType,
+        sender_id: participantId,
+        sender_name: participantName,
         is_read: false,
         sent_at: new Date().toISOString(),
       });
+
+      if (msgError) {
+        console.error('Error creating message:', msgError);
+      }
     }
 
     // Return TwiML response (empty = success)
@@ -123,7 +136,7 @@ serve(async (req) => {
       headers: { 'Content-Type': 'text/xml' },
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in twilio-whatsapp-webhook:', error);
     return new Response('', { status: 200 }); // Always return 200 to Twilio
   }
 });

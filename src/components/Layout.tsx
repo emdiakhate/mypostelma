@@ -5,9 +5,9 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar, Clock, FolderOpen, Target, Hash, LayoutDashboard, Users, 
-  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2
+import {
+  Calendar, Clock, FolderOpen, Target, Hash, LayoutDashboard, Users,
+  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2, MessageCircle, Link as LinkIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from './UserMenu';
@@ -34,20 +34,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Déterminer la page active basée sur l'URL
   const activePage = useMemo(() => {
     const path = location.pathname;
-    
+
     if (path === '/app/dashboard') return 'dashboard';
     if (path === '/app/calendar') return 'calendar';
     if (path === '/app/analytics') return 'analytics';
+    if (path === '/app/inbox' || path === '/app/messages') return 'inbox';
+    if (path === '/app/connections') return 'connections';
     if (path === '/app/archives') return 'archives';
     if (path === '/app/competitors') return 'competitors';
-    
+
     if (path === '/app/settings') return 'settings';
     if (path === '/app/settings/accounts') return 'accounts';
     if (path === '/app/leads') return 'leads';
     if (path === '/app/admin') return 'admin';
     if (path === '/app/publications') return 'publications';
     if (path === '/app/creation') return 'creation';
-    
+
     return 'dashboard'; // Par défaut sur dashboard
   }, [location.pathname]);
 
@@ -62,6 +64,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         break;
       case 'analytics':
         navigate('/app/analytics');
+        break;
+      case 'inbox':
+        navigate('/app/inbox');
+        break;
+      case 'connections':
+        navigate('/app/connections');
         break;
       case 'archives':
         navigate('/app/archives');
@@ -128,6 +136,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: activePage === 'dashboard' },
       { id: 'calendar', label: 'Calendrier', icon: Calendar, active: activePage === 'calendar' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
+      { id: 'inbox', label: 'Messages', icon: MessageCircle, active: activePage === 'inbox' },
+      { id: 'connections', label: 'Connexions', icon: LinkIcon, active: activePage === 'connections' },
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
