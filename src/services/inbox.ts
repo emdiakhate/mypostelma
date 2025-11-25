@@ -63,7 +63,7 @@ export const getConversations = async (filters?: InboxFilters): Promise<Conversa
   const { data, error } = await query;
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as ConversationWithLastMessage[];
 };
 
 /**
@@ -81,7 +81,7 @@ export const getConversation = async (conversationId: string): Promise<Conversat
     throw error;
   }
 
-  return data;
+  return data as Conversation;
 };
 
 /**
@@ -95,7 +95,7 @@ export const getMessages = async (conversationId: string): Promise<Message[]> =>
     .order('sent_at', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Message[];
 };
 
 /**

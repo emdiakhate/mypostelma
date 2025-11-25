@@ -207,9 +207,8 @@ export default function InboxPage() {
         <div className="flex-1 overflow-y-auto">
           <ConversationList
             conversations={conversations}
-            selectedConversation={selectedConversation}
-            onSelectConversation={setSelectedConversation}
-            loading={loading}
+            selectedId={selectedConversation?.id}
+            onSelect={setSelectedConversation}
           />
         </div>
       </div>
@@ -219,7 +218,7 @@ export default function InboxPage() {
         {selectedConversation ? (
           <ConversationView
             conversation={selectedConversation}
-            onConversationUpdate={loadConversations}
+            onUpdate={loadConversations}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-center p-8">

@@ -116,12 +116,6 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
                     </Badge>
                   )}
 
-                  {conversation.priority === 'high' || conversation.priority === 'urgent' && (
-                    <Badge variant="destructive" className="text-xs">
-                      {conversation.priority === 'urgent' ? '🔥 Urgent' : '⚡ Prioritaire'}
-                    </Badge>
-                  )}
-
                   {conversation.sentiment === 'negative' && (
                     <Badge variant="destructive" className="text-xs">
                       😞 Négatif
