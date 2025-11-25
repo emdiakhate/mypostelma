@@ -9,6 +9,7 @@ const allowedOrigins = [
   'https://www.postelma.com',
   'https://8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovableproject.com',
   'https://id-preview--8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovable.app',
+  'https://preview--mypostelma.lovable.app',
   'http://localhost:8080',
   'http://localhost:5173',
 ];
