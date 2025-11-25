@@ -206,9 +206,16 @@ export function ConversationView({ conversation, onUpdate }: Props) {
           </div>
         ) : (
           <>
-            {messages.map((message, index) => {
+            {messages.filter(Boolean).map((message, index) => {
+              // Sécurité supplémentaire au cas où un message serait null ou mal formé
+              if (!message || !message.direction) {
+                return null;
+              }
+
+              const previousMessage = index > 0 ? messages[index - 1] : null;
               const isOutgoing = message.direction === 'outgoing';
-              const showAvatar = index === 0 || messages[index - 1].direction !== message.direction;
+              const showAvatar =
+                index === 0 || !previousMessage || previousMessage?.direction !== message.direction;
 
               return (
                 <div
