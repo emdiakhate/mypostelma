@@ -33,6 +33,7 @@ import ConnectingAccountPage from "./pages/ConnectingAccountPage";
 import DialogTestPage from "./pages/DialogTestPage";
 import InboxPage from "./pages/InboxPage";
 import ConnectedAccountsPage from "./pages/ConnectedAccountsPage";
+import OAuthCallback from "./pages/OAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,10 @@ const ProtectedRoutes = () => {
       <Route path="/checkout" element={<CheckoutSimulation />} />
       <Route path="/checkout-success" element={<CheckoutSuccess />} />
       <Route path="/connecting-account" element={<ConnectingAccountPage />} />
+      
+      {/* OAuth Callback Routes */}
+      <Route path="/oauth/google/callback" element={<OAuthCallback />} />
+      <Route path="/oauth/microsoft/callback" element={<OAuthCallback />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />
