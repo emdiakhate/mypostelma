@@ -31,6 +31,8 @@ import ConnectSocialAccounts from "./pages/ConnectSocialAccounts";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import ConnectingAccountPage from "./pages/ConnectingAccountPage";
 import DialogTestPage from "./pages/DialogTestPage";
+import InboxPage from "./pages/InboxPage";
+import ConnectedAccountsPage from "./pages/ConnectedAccountsPage";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +44,11 @@ function MainLayout() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calendar" element={<Index />} />
         <Route path="/analytics" element={<Analytics />} />
-        
+
+        <Route path="/inbox" element={<InboxPage />} />
+        <Route path="/messages" element={<InboxPage />} />
+        <Route path="/connections" element={<ConnectedAccountsPage />} />
+
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitorsPage />} />
         <Route path="/competitors/compare" element={<CompetitorsComparePage />} />
