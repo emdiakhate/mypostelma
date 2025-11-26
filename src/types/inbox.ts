@@ -60,7 +60,6 @@ export interface Conversation {
 
   // Metrics
   message_count: number;
-  last_message_at: string;
   last_customer_message_at?: string;
   last_brand_reply_at?: string;
   first_response_time_minutes?: number;

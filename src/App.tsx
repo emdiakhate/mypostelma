@@ -37,6 +37,7 @@ import TeamsPage from "./pages/TeamsPage";
 import ConfigPage from "./pages/crm/ConfigPage";
 import AcquisitionPage from "./pages/crm/AcquisitionPage";
 import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
+import OAuthCallback from "./pages/OAuthCallback";
 
 const queryClient = new QueryClient();
 

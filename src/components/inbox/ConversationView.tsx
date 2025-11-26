@@ -21,12 +21,11 @@ import {
 } from 'lucide-react';
 import type { ConversationWithLastMessage, Message, Platform } from '@/types/inbox';
 import { getMessages, sendMessage, markConversationAsRead } from '@/services/inbox';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   conversation: ConversationWithLastMessage;
