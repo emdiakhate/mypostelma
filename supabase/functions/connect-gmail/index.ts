@@ -1,18 +1,29 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const GOOGLE_CLIENT_ID = Deno.env.get('VITE_GOOGLE_CLIENT_ID')!;
-const GOOGLE_CLIENT_SECRET = Deno.env.get('VITE_GOOGLE_CLIENT_SECRET')!
+const GOOGLE_CLIENT_SECRET = Deno.env.get('VITE_GOOGLE_CLIENT_SECRET')!;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const allowedOrigins = [
+  'https://postelma.com',
+  'https://preview--mypostelma.lovable.app',
+];
+
+const corsHeaders = (origin: string | null) => {
+  const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
 };
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const headers = corsHeaders(origin);
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
   }
 
   try {
@@ -21,7 +32,7 @@ serve(async (req) => {
     if (!code || !redirect_uri) {
       return new Response(JSON.stringify({ error: 'Missing code or redirect_uri' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
       });
     }
 
@@ -42,6 +53,7 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const error = await tokenResponse.text();
+      console.error('Token exchange failed:', error);
       throw new Error(`Token exchange failed: ${error}`);
     }
 
@@ -56,7 +68,9 @@ serve(async (req) => {
     });
 
     if (!userInfoResponse.ok) {
-      throw new Error('Failed to get user info');
+      const errorText = await userInfoResponse.text();
+      console.error('Failed to get user info:', errorText);
+      throw new Error(`Failed to get user info: ${errorText}`);
     }
 
     const userInfo = await userInfoResponse.json();
@@ -75,7 +89,7 @@ serve(async (req) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders,
+          ...headers,
         },
       }
     );
@@ -85,7 +99,7 @@ serve(async (req) => {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        ...corsHeaders,
+        ...headers,
       },
     });
   }
