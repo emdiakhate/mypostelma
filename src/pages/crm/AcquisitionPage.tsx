@@ -484,24 +484,39 @@ const AcquisitionPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="sector">Secteur *</Label>
-              <Select
-                value={selectedSectorId}
-                onValueChange={(value) => {
-                  setSelectedSectorId(value);
-                  setSelectedSegmentId(''); // Reset segment
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez un secteur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {sectors.length === 0 ? (
+                <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    Aucun secteur configuré. Vous devez créer au moins un secteur avant d'importer des leads.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.location.href = '/app/crm/config'}
+                  >
+                    Configurer les secteurs
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value={selectedSectorId}
+                  onValueChange={(value) => {
+                    setSelectedSectorId(value);
+                    setSelectedSegmentId(''); // Reset segment
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez un secteur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map((sector) => (
+                      <SelectItem key={sector.id} value={sector.id}>
+                        {sector.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {selectedSectorId && filteredSegments.length > 0 && (
@@ -562,7 +577,10 @@ const AcquisitionPage: React.FC = () => {
             >
               Annuler
             </Button>
-            <Button onClick={handleImport} disabled={!selectedSectorId}>
+            <Button 
+              onClick={handleImport} 
+              disabled={sectors.length === 0 || !selectedSectorId}
+            >
               <Check className="w-4 h-4 mr-2" />
               Importer
             </Button>
