@@ -30,7 +30,8 @@ export default function ConnectGmailModal({ onClose, onSuccess }: Props) {
       response_type: 'code',
       scope: SCOPES,
       access_type: 'offline',
-      prompt: 'consent',
+      // Force Google to always show the account chooser
+      prompt: 'consent select_account',
       state: user!.id, // Pass user ID for verification
     });
 
