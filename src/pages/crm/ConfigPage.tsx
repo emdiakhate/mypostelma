@@ -384,7 +384,7 @@ const SectorsTab: React.FC = () => {
 const SegmentsTab: React.FC = () => {
   const { sectors } = useSectors();
   const { segments, createSegment, updateSegment, deleteSegment } = useSegments();
-  const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+  const [selectedSectorId, setSelectedSectorId] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<SegmentFormData>({
     sector_id: '',
@@ -418,13 +418,16 @@ const SegmentsTab: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setFormData({
-      sector_id: selectedSectorId || '',
+      sector_id:
+        selectedSectorId && selectedSectorId !== 'all'
+          ? selectedSectorId
+          : sectors[0]?.id || '',
       name: '',
       description: '',
     });
   };
 
-  const filteredSegments = selectedSectorId
+  const filteredSegments = selectedSectorId && selectedSectorId !== 'all'
     ? segments.filter((s) => s.sector_id === selectedSectorId)
     : segments;
 
@@ -445,7 +448,7 @@ const SegmentsTab: React.FC = () => {
                   <SelectValue placeholder="Tous les secteurs" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les secteurs</SelectItem>
+                  <SelectItem value="all">Tous les secteurs</SelectItem>
                   {sectors.map((sector) => (
                     <SelectItem key={sector.id} value={sector.id}>
                       {sector.name}
@@ -456,7 +459,10 @@ const SegmentsTab: React.FC = () => {
               <Button
                 onClick={() => {
                   setFormData({
-                    sector_id: selectedSectorId || (sectors[0]?.id || ''),
+                    sector_id:
+                      selectedSectorId && selectedSectorId !== 'all'
+                        ? selectedSectorId
+                        : sectors[0]?.id || '',
                     name: '',
                     description: '',
                   });
@@ -621,7 +627,7 @@ const SegmentsTab: React.FC = () => {
 const TagsTab: React.FC = () => {
   const { sectors } = useSectors();
   const { tags, createTag, deleteTag } = useTags();
-  const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+  const [selectedSectorId, setSelectedSectorId] = useState<string>('all');
   const [newTagName, setNewTagName] = useState('');
 
   const handleAddTag = async (e: React.FormEvent) => {
@@ -630,7 +636,10 @@ const TagsTab: React.FC = () => {
 
     try {
       await createTag({
-        sector_id: selectedSectorId || undefined,
+        sector_id:
+          selectedSectorId && selectedSectorId !== 'all'
+            ? selectedSectorId
+            : undefined,
         name: newTagName.trim(),
       });
       setNewTagName('');
@@ -649,7 +658,7 @@ const TagsTab: React.FC = () => {
     }
   };
 
-  const filteredTags = selectedSectorId
+  const filteredTags = selectedSectorId && selectedSectorId !== 'all'
     ? tags.filter((t) => t.sector_id === selectedSectorId)
     : tags;
 
@@ -669,7 +678,7 @@ const TagsTab: React.FC = () => {
               <SelectValue placeholder="Tous les secteurs" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous les secteurs</SelectItem>
+              <SelectItem value="all">Tous les secteurs</SelectItem>
               {sectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}
