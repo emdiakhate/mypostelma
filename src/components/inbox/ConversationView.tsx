@@ -16,9 +16,12 @@ import {
   Archive,
   Tag,
   User,
+  Mic,
+  Sparkles,
 } from 'lucide-react';
 import type { ConversationWithLastMessage, Message, Platform } from '@/types/inbox';
 import { getMessages, sendMessage, markConversationAsRead } from '@/services/inbox';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -71,6 +74,8 @@ export function ConversationView({ conversation, onUpdate }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -149,6 +154,71 @@ export function ConversationView({ conversation, onUpdate }: Props) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleVoiceMessage = () => {
+    // TODO: Implement voice recording
+    toast({
+      title: 'Fonctionnalité à venir',
+      description: 'L\'enregistrement vocal sera bientôt disponible',
+    });
+  };
+
+  const handleAISuggestion = async () => {
+    if (messages.length === 0) {
+      toast({
+        title: 'Aucun message',
+        description: 'Attendez de recevoir un message pour obtenir une suggestion',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Get the last incoming message
+    const lastIncomingMessage = [...messages].reverse().find((m) => m.direction === 'incoming');
+
+    if (!lastIncomingMessage) {
+      toast({
+        title: 'Aucun message entrant',
+        description: 'Attendez de recevoir un message pour obtenir une suggestion',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingSuggestion(true);
+
+      // Call Edge Function to generate AI suggestion
+      const { data, error } = await supabase.functions.invoke('generate-reply-suggestion', {
+        body: {
+          message_content: lastIncomingMessage.text_content,
+          conversation_context: messages.slice(-5).map((m) => ({
+            direction: m.direction,
+            content: m.text_content,
+          })),
+          platform: conversation.platform,
+        },
+      });
+
+      if (error) throw error;
+
+      setReplyText(data.suggestion);
+
+      toast({
+        title: '✨ Suggestion générée',
+        description: 'Vous pouvez modifier la réponse avant d\'envoyer',
+      });
+    } catch (error: any) {
+      console.error('Error generating suggestion:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de générer une suggestion',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingSuggestion(false);
     }
   };
 
@@ -287,7 +357,38 @@ export function ConversationView({ conversation, onUpdate }: Props) {
 
       {/* Reply Box */}
       <div className="p-4 border-t bg-white">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-end">
+          {/* AI Suggestion Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleAISuggestion}
+            disabled={isGeneratingSuggestion || messages.length === 0}
+            className="flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 border-0"
+            title="Générer une suggestion de réponse avec l'IA"
+          >
+            {isGeneratingSuggestion ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+          </Button>
+
+          {/* Voice Message Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleVoiceMessage}
+            disabled={isRecording}
+            className="flex-shrink-0"
+            title="Enregistrer un message vocal"
+          >
+            <Mic className={`w-4 h-4 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} />
+          </Button>
+
+          {/* Text Input */}
           <Textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
@@ -296,10 +397,12 @@ export function ConversationView({ conversation, onUpdate }: Props) {
             className="flex-1 resize-none"
             rows={3}
           />
+
+          {/* Send Button */}
           <Button
             onClick={handleSend}
             disabled={!replyText.trim() || sending}
-            className="self-end"
+            className="self-end bg-purple-600 hover:bg-purple-700"
           >
             {sending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -308,8 +411,16 @@ export function ConversationView({ conversation, onUpdate }: Props) {
             )}
           </Button>
         </div>
-        <div className="text-xs text-gray-500 mt-2">
-          Répondre via {platformNames[conversation.platform]}
+
+        <div className="flex items-center justify-between mt-2">
+          <div className="text-xs text-gray-500">
+            Répondre via {platformNames[conversation.platform]}
+          </div>
+          {isGeneratingSuggestion && (
+            <div className="text-xs text-purple-600 animate-pulse">
+              ✨ Génération d'une suggestion...
+            </div>
+          )}
         </div>
       </div>
     </div>

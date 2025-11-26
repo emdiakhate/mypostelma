@@ -32,6 +32,7 @@ import ConnectingAccountPage from "./pages/ConnectingAccountPage";
 import DialogTestPage from "./pages/DialogTestPage";
 import InboxPage from "./pages/InboxPage";
 import ConnectedAccountsPage from "./pages/ConnectedAccountsPage";
+import TeamsPage from "./pages/TeamsPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function MainLayout() {
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/messages" element={<InboxPage />} />
         <Route path="/connections" element={<ConnectedAccountsPage />} />
+        <Route path="/teams" element={<TeamsPage />} />
 
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitorsPage />} />

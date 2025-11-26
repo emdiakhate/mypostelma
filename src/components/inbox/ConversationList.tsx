@@ -134,6 +134,23 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
                     </Badge>
                   )}
 
+                  {/* Team Tags (AI Routing) */}
+                  {conversation.teams && conversation.teams.length > 0 && (
+                    <>
+                      {conversation.teams.map((team) => (
+                        <div
+                          key={team.team_id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white font-medium"
+                          style={{ backgroundColor: team.team_color }}
+                          title={team.auto_assigned ? `Assigné automatiquement par IA (${Math.round((team.confidence_score || 0) * 100)}% de confiance)` : 'Assigné manuellement'}
+                        >
+                          {team.auto_assigned && '🤖 '}
+                          {team.team_name}
+                        </div>
+                      ))}
+                    </>
+                  )}
+
                   {conversation.tags && conversation.tags.length > 0 && (
                     <>
                       {conversation.tags.slice(0, 2).map((tag) => (

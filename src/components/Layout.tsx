@@ -40,6 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/analytics') return 'analytics';
     if (path === '/app/inbox' || path === '/app/messages') return 'inbox';
     if (path === '/app/connections') return 'connections';
+    if (path === '/app/teams') return 'teams';
     if (path === '/app/archives') return 'archives';
     if (path === '/app/competitors') return 'competitors';
 
@@ -70,6 +71,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         break;
       case 'connections':
         navigate('/app/connections');
+        break;
+      case 'teams':
+        navigate('/app/teams');
         break;
       case 'archives':
         navigate('/app/archives');
@@ -138,6 +142,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'analytics', label: 'Analytics', icon: BarChart3, active: activePage === 'analytics' },
       { id: 'inbox', label: 'Messages', icon: MessageCircle, active: activePage === 'inbox' },
       { id: 'connections', label: 'Connexions', icon: LinkIcon, active: activePage === 'connections' },
+      { id: 'teams', label: 'Équipes', icon: Users, active: activePage === 'teams' },
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
