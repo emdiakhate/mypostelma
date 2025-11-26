@@ -7,6 +7,7 @@ const UPLOAD_POST_API_URL = 'https://api.upload-post.com/api';
 const allowedOrigins = [
   'https://postelma.com',
   'https://www.postelma.com',
+  'https://preview--mypostelma.lovable.app',
   'https://8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovableproject.com',
   'https://id-preview--8d78b74c-d99b-412c-b6e5-b9e0cb9a4c8b.lovable.app',
   'http://localhost:8080',
