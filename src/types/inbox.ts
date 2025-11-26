@@ -54,6 +54,15 @@ export interface Conversation {
   // Tags
   tags: string[];
 
+  // Teams (AI routing)
+  teams?: Array<{
+    team_id: string;
+    team_name: string;
+    team_color: string;
+    auto_assigned: boolean;
+    confidence_score?: number;
+  }>;
+
   // Metrics
   message_count: number;
   last_message_at: string;
