@@ -1,0 +1,367 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { account_id } = await req.json();
+
+    if (!account_id) {
+      return new Response(JSON.stringify({ error: 'Missing account_id' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get connected account
+    const { data: account, error: accountError } = await supabase
+      .from('connected_accounts')
+      .select('*')
+      .eq('id', account_id)
+      .single();
+
+    if (accountError || !account) {
+      throw new Error('Account not found');
+    }
+
+    // Check platform and sync accordingly
+    let synced = 0;
+
+    if (account.platform === 'gmail') {
+      synced = await syncGmailMessages(supabase, account);
+    } else if (account.platform === 'outlook') {
+      synced = await syncOutlookMessages(supabase, account);
+    } else {
+      throw new Error(`Unsupported platform: ${account.platform}`);
+    }
+
+    // Update last sync time
+    await supabase
+      .from('connected_accounts')
+      .update({ last_sync_at: new Date().toISOString() })
+      .eq('id', account_id);
+
+    return new Response(
+      JSON.stringify({ synced }),
+      {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      }
+    );
+  } catch (error: any) {
+    console.error('Error in sync-messages:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      }
+    );
+  }
+});
+
+// =====================================================
+// GMAIL SYNC
+// =====================================================
+
+async function syncGmailMessages(supabase: any, account: any): Promise<number> {
+  try {
+    // Get messages from Gmail API
+    const messagesResponse = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX`,
+      {
+        headers: {
+          Authorization: `Bearer ${account.access_token}`,
+        },
+      }
+    );
+
+    if (!messagesResponse.ok) {
+      const error = await messagesResponse.text();
+      throw new Error(`Gmail API error: ${error}`);
+    }
+
+    const messagesData = await messagesResponse.json();
+    const messages = messagesData.messages || [];
+
+    let synced = 0;
+
+    // Fetch full message details for each message
+    for (const msg of messages) {
+      try {
+        const messageResponse = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${account.access_token}`,
+            },
+          }
+        );
+
+        if (!messageResponse.ok) continue;
+
+        const messageData = await messageResponse.json();
+
+        // Parse message headers
+        const headers = messageData.payload.headers;
+        const getHeader = (name: string) =>
+          headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value;
+
+        const from = getHeader('From') || '';
+        const to = getHeader('To') || '';
+        const subject = getHeader('Subject') || '(no subject)';
+        const date = getHeader('Date') || new Date().toISOString();
+
+        // Extract body
+        let body = '';
+        if (messageData.payload.body.data) {
+          body = decodeBase64Url(messageData.payload.body.data);
+        } else if (messageData.payload.parts) {
+          const textPart = messageData.payload.parts.find(
+            (p: any) => p.mimeType === 'text/plain' || p.mimeType === 'text/html'
+          );
+          if (textPart?.body.data) {
+            body = decodeBase64Url(textPart.body.data);
+          }
+        }
+
+        // Determine direction
+        const accountEmail = account.email_address.toLowerCase();
+        const fromEmail = extractEmail(from).toLowerCase();
+        const direction = fromEmail === accountEmail ? 'sent' : 'received';
+
+        // Get or create conversation
+        const contactEmail = direction === 'received' ? fromEmail : extractEmail(to).toLowerCase();
+        const contactName = direction === 'received' ? extractName(from) : extractName(to);
+
+        let conversationId = await getOrCreateConversation(
+          supabase,
+          account.user_id,
+          account.id,
+          'gmail',
+          contactEmail,
+          contactName
+        );
+
+        if (!conversationId) continue;
+
+        // Check if message already exists
+        const { data: existing } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('platform_message_id', msg.id)
+          .eq('conversation_id', conversationId)
+          .single();
+
+        if (existing) continue; // Skip if already synced
+
+        // Insert message
+        const { error: insertError } = await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          platform_message_id: msg.id,
+          direction,
+          message_type: 'text',
+          text_content: body,
+          sender_id: fromEmail,
+          sender_name: extractName(from) || fromEmail,
+          sender_username: fromEmail,
+          is_read: messageData.labelIds?.includes('UNREAD') ? false : true,
+          sent_at: new Date(date).toISOString(),
+        });
+
+        if (!insertError) synced++;
+      } catch (msgError) {
+        console.error('Error syncing message:', msg.id, msgError);
+      }
+    }
+
+    return synced;
+  } catch (error) {
+    console.error('Error syncing Gmail messages:', error);
+    throw error;
+  }
+}
+
+// =====================================================
+// OUTLOOK SYNC
+// =====================================================
+
+async function syncOutlookMessages(supabase: any, account: any): Promise<number> {
+  try {
+    // Get messages from Microsoft Graph API
+    const messagesResponse = await fetch(
+      `https://graph.microsoft.com/v1.0/me/messages?$top=50&$orderby=receivedDateTime desc`,
+      {
+        headers: {
+          Authorization: `Bearer ${account.access_token}`,
+        },
+      }
+    );
+
+    if (!messagesResponse.ok) {
+      const error = await messagesResponse.text();
+      throw new Error(`Outlook API error: ${error}`);
+    }
+
+    const messagesData = await messagesResponse.json();
+    const messages = messagesData.value || [];
+
+    let synced = 0;
+
+    for (const msg of messages) {
+      try {
+        // Determine direction
+        const accountEmail = account.email_address.toLowerCase();
+        const fromEmail = msg.from?.emailAddress?.address?.toLowerCase() || '';
+        const direction = fromEmail === accountEmail ? 'sent' : 'received';
+
+        // Get or create conversation
+        const contactEmail = direction === 'received'
+          ? fromEmail
+          : msg.toRecipients?.[0]?.emailAddress?.address?.toLowerCase() || '';
+        const contactName = direction === 'received'
+          ? msg.from?.emailAddress?.name || ''
+          : msg.toRecipients?.[0]?.emailAddress?.name || '';
+
+        let conversationId = await getOrCreateConversation(
+          supabase,
+          account.user_id,
+          account.id,
+          'outlook',
+          contactEmail,
+          contactName
+        );
+
+        if (!conversationId) continue;
+
+        // Check if message already exists
+        const { data: existing } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('platform_message_id', msg.id)
+          .eq('conversation_id', conversationId)
+          .single();
+
+        if (existing) continue;
+
+        // Insert message
+        const { error: insertError } = await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          platform_message_id: msg.id,
+          direction,
+          message_type: 'text',
+          text_content: msg.bodyPreview || msg.body?.content || '',
+          sender_id: fromEmail,
+          sender_name: msg.from?.emailAddress?.name || fromEmail,
+          sender_username: fromEmail,
+          is_read: msg.isRead || false,
+          sent_at: msg.receivedDateTime,
+        });
+
+        if (!insertError) synced++;
+      } catch (msgError) {
+        console.error('Error syncing message:', msg.id, msgError);
+      }
+    }
+
+    return synced;
+  } catch (error) {
+    console.error('Error syncing Outlook messages:', error);
+    throw error;
+  }
+}
+
+// =====================================================
+// CONVERSATION MANAGEMENT
+// =====================================================
+
+async function getOrCreateConversation(
+  supabase: any,
+  userId: string,
+  accountId: string,
+  platform: string,
+  contactEmail: string,
+  contactName: string
+): Promise<string | null> {
+  try {
+    // Try to find existing conversation
+    const { data: existing } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('connected_account_id', accountId)
+      .eq('platform', platform)
+      .eq('participant_identifier', contactEmail)
+      .single();
+
+    if (existing) {
+      return existing.id;
+    }
+
+    // Create new conversation
+    const { data: newConv, error } = await supabase
+      .from('conversations')
+      .insert({
+        user_id: userId,
+        connected_account_id: accountId,
+        platform,
+        platform_conversation_id: `email_${contactEmail}_${Date.now()}`,
+        participant_identifier: contactEmail,
+        participant_name: contactName || contactEmail,
+        participant_username: contactEmail,
+        status: 'active',
+        last_message_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+
+    return newConv.id;
+  } catch (error) {
+    console.error('Error in getOrCreateConversation:', error);
+    return null;
+  }
+}
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function decodeBase64Url(data: string): string {
+  try {
+    // Gmail uses base64url encoding
+    const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = atob(base64);
+    return decoded;
+  } catch {
+    return '';
+  }
+}
+
+function extractEmail(emailString: string): string {
+  const match = emailString.match(/<(.+?)>/);
+  return match ? match[1] : emailString.trim();
+}
+
+function extractName(emailString: string): string {
+  const match = emailString.match(/^(.+?)\s*</);
+  return match ? match[1].trim().replace(/['"]/g, '') : '';
+}

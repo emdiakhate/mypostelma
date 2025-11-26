@@ -160,7 +160,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
-      { id: 'leads', label: 'Lead Generation (Legacy)', icon: UserPlus, active: activePage === 'leads' },
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
@@ -296,7 +295,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {sidebarItems.slice(9).map((item) => {
                 const getItemUrl = (id: string) => {
                   switch (id) {
-                    case 'leads': return '/app/leads';
                     case 'publications': return '/app/publications';
                     case 'creation': return '/app/creation';
                     case 'settings': return '/app/settings';
@@ -382,7 +380,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'archives' && 'Archives'}
                 {activePage === 'competitors' && 'Concurrents'}
                 {activePage === 'accounts' && 'Comptes Sociaux'}
-                {activePage === 'leads' && 'Lead Generation (Legacy)'}
                 {activePage === 'publications' && 'Mes Publications'}
                 {activePage === 'creation' && 'Studio Création'}
                 {activePage === 'settings' && 'Paramètres'}
