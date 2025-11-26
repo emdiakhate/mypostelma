@@ -570,21 +570,340 @@ export type Database = {
           },
         ]
       }
+      crm_campaigns: {
+        Row: {
+          channel: string
+          completed_at: string | null
+          created_at: string
+          delivered_count: number
+          description: string | null
+          failed_count: number
+          id: string
+          message: string
+          name: string
+          read_count: number
+          replied_count: number
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number
+          status: string
+          subject: string | null
+          target_cities: string[] | null
+          target_sector_ids: string[] | null
+          target_segment_ids: string[] | null
+          target_status: string[] | null
+          target_tags: string[] | null
+          total_leads: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          completed_at?: string | null
+          created_at?: string
+          delivered_count?: number
+          description?: string | null
+          failed_count?: number
+          id?: string
+          message: string
+          name: string
+          read_count?: number
+          replied_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          target_cities?: string[] | null
+          target_sector_ids?: string[] | null
+          target_segment_ids?: string[] | null
+          target_status?: string[] | null
+          target_tags?: string[] | null
+          total_leads?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          completed_at?: string | null
+          created_at?: string
+          delivered_count?: number
+          description?: string | null
+          failed_count?: number
+          id?: string
+          message?: string
+          name?: string
+          read_count?: number
+          replied_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          target_cities?: string[] | null
+          target_sector_ids?: string[] | null
+          target_segment_ids?: string[] | null
+          target_status?: string[] | null
+          target_tags?: string[] | null
+          total_leads?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_lead_interactions: {
+        Row: {
+          campaign_id: string | null
+          channel: string | null
+          content: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          metadata: Json | null
+          status: string | null
+          subject: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          metadata?: Json | null
+          status?: string | null
+          subject?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json | null
+          status?: string | null
+          subject?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_interactions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sectors: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_segments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sector_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sector_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sector_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_segments_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads_by_sector"
+            referencedColumns: ["sector_id"]
+          },
+          {
+            foreignKeyName: "crm_segments_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_tags: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          sector_id: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          sector_id?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          sector_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tags_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads_by_sector"
+            referencedColumns: ["sector_id"]
+          },
+          {
+            foreignKeyName: "crm_tags_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_id: string | null
+          priority: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           added_at: string
           address: string
+          business_hours: Json | null
           category: string
           city: string
           created_at: string
           email: string | null
+          google_maps_url: string | null
+          google_rating: number | null
+          google_reviews_count: number | null
           id: string
+          image_url: string | null
           last_contacted_at: string | null
           metrics: Json | null
           name: string
           notes: string | null
           phone: string | null
           postal_code: string | null
+          score: number | null
+          sector_id: string | null
+          segment_id: string | null
           social_media: Json | null
           source: string
           status: Database["public"]["Enums"]["lead_status"]
@@ -592,21 +911,30 @@ export type Database = {
           updated_at: string
           user_id: string
           website: string | null
+          whatsapp: string | null
         }
         Insert: {
           added_at?: string
           address: string
+          business_hours?: Json | null
           category: string
           city: string
           created_at?: string
           email?: string | null
+          google_maps_url?: string | null
+          google_rating?: number | null
+          google_reviews_count?: number | null
           id?: string
+          image_url?: string | null
           last_contacted_at?: string | null
           metrics?: Json | null
           name: string
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          score?: number | null
+          sector_id?: string | null
+          segment_id?: string | null
           social_media?: Json | null
           source?: string
           status?: Database["public"]["Enums"]["lead_status"]
@@ -614,21 +942,30 @@ export type Database = {
           updated_at?: string
           user_id: string
           website?: string | null
+          whatsapp?: string | null
         }
         Update: {
           added_at?: string
           address?: string
+          business_hours?: Json | null
           category?: string
           city?: string
           created_at?: string
           email?: string | null
+          google_maps_url?: string | null
+          google_rating?: number | null
+          google_reviews_count?: number | null
           id?: string
+          image_url?: string | null
           last_contacted_at?: string | null
           metrics?: Json | null
           name?: string
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          score?: number | null
+          sector_id?: string | null
+          segment_id?: string | null
           social_media?: Json | null
           source?: string
           status?: Database["public"]["Enums"]["lead_status"]
@@ -636,8 +973,31 @@ export type Database = {
           updated_at?: string
           user_id?: string
           website?: string | null
+          whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads_by_sector"
+            referencedColumns: ["sector_id"]
+          },
+          {
+            foreignKeyName: "leads_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_archives: {
         Row: {
@@ -1654,6 +2014,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_leads_by_sector: {
+        Row: {
+          avg_score: number | null
+          client_leads: number | null
+          contacted_leads: number | null
+          interested_leads: number | null
+          new_leads: number | null
+          sector_id: string | null
+          sector_name: string | null
+          total_leads: number | null
+          user_id: string | null
+        }
+        Relationships: []
       }
       inbox_stats: {
         Row: {
