@@ -16,6 +16,7 @@ import Analytics from "./pages/Analytics";
 import ArchivesPage from "./pages/ArchivesPage";
 import CompetitorsPage from "./pages/CompetitorsPage";
 import CompetitorsComparePage from "./pages/CompetitorsComparePage";
+import ComparativeAnalysisPage from "./pages/ComparativeAnalysisPage";
 import AuthPage from "./pages/AuthPage";
 import SocialAccountsPage from "./pages/SocialAccountsPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -56,6 +57,7 @@ function MainLayout() {
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitorsPage />} />
         <Route path="/competitors/compare" element={<CompetitorsComparePage />} />
+        <Route path="/comparative-analysis" element={<ComparativeAnalysisPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />
@@ -91,6 +93,10 @@ const ProtectedRoutes = () => {
       <Route path="/checkout" element={<CheckoutSimulation />} />
       <Route path="/checkout-success" element={<CheckoutSuccess />} />
       <Route path="/connecting-account" element={<ConnectingAccountPage />} />
+      
+      {/* OAuth Callback Routes */}
+      <Route path="/oauth/google/callback" element={<OAuthCallback />} />
+      <Route path="/oauth/microsoft/callback" element={<OAuthCallback />} />
       
       {/* Redirection pour /calendar vers /app/calendar */}
       <Route path="/calendar" element={<Navigate to="/app/calendar" replace />} />

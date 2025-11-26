@@ -2,7 +2,7 @@
  * Service for managing connected accounts (Gmail, Outlook, Telegram, WhatsApp)
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   ConnectedAccount,
   ConnectedAccountWithStats,
@@ -25,7 +25,7 @@ export async function getConnectedAccounts(userId: string): Promise<ConnectedAcc
     .order('connected_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as ConnectedAccount[];
 }
 
 export async function getConnectedAccountsWithStats(
@@ -38,7 +38,7 @@ export async function getConnectedAccountsWithStats(
     .order('connected_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as ConnectedAccountWithStats[];
 }
 
 export async function getConnectedAccountById(
@@ -51,7 +51,7 @@ export async function getConnectedAccountById(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 export async function getConnectedAccountByPlatform(
@@ -68,7 +68,7 @@ export async function getConnectedAccountByPlatform(
     .single();
 
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
-  return data;
+  return data as ConnectedAccount | null;
 }
 
 // =====================================================
@@ -106,7 +106,7 @@ export async function connectGmail(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 export async function connectOutlook(
@@ -143,7 +143,7 @@ export async function connectOutlook(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 export async function connectTelegram(
@@ -178,7 +178,7 @@ export async function connectTelegram(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 export async function connectWhatsAppTwilio(
@@ -218,7 +218,7 @@ export async function connectWhatsAppTwilio(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 // =====================================================
@@ -237,7 +237,7 @@ export async function updateConnectedAccount(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ConnectedAccount;
 }
 
 export async function updateAccountStatus(

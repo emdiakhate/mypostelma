@@ -385,9 +385,9 @@ async function scrapeWebsite(url: string): Promise<string> {
   }
 }
 
-// Analyze with OpenAI (updated prompt for richer data)
-async function analyzeWithOpenAI(competitorName: string, scrapedData: any, openaiKey: string): Promise<any> {
-  logStep('Starting OpenAI analysis with enriched data');
+// Analyze with Lovable AI (updated to use extended framework)
+async function analyzeWithLovableAI(competitorName: string, scrapedData: any, lovableApiKey: string): Promise<any> {
+  logStep('Starting Lovable AI analysis with extended framework');
 
   // Build enriched context
   let context = `CONCURRENT: ${competitorName}\n\nDONNÉES COLLECTÉES:\n`;
@@ -405,8 +405,6 @@ async function analyzeWithOpenAI(competitorName: string, scrapedData: any, opena
         `"${p.caption?.substring(0, 100)}" (${p.likes} likes, ${p.comments} comments)`
       ).join('; ')}\n`;
     }
-  } else {
-    context += '\nINSTAGRAM: Non disponible\n';
   }
 
   if (scrapedData.twitter && !scrapedData.twitter.error) {
@@ -415,13 +413,6 @@ async function analyzeWithOpenAI(competitorName: string, scrapedData: any, opena
     context += `- Followers: ${tw.followers?.toLocaleString() || 'N/A'}\n`;
     context += `- Tweets: ${tw.tweets || 'N/A'}\n`;
     context += `- Bio: ${tw.description || 'N/A'}\n`;
-    if (tw.recent_tweets?.length > 0) {
-      context += `- Recent Tweets: ${tw.recent_tweets.slice(0, 3).map((t: any) =>
-        `"${t.text?.substring(0, 100)}" (${t.likes} likes, ${t.retweets} RT)`
-      ).join('; ')}\n`;
-    }
-  } else {
-    context += '\nTWITTER: Non disponible\n';
   }
 
   if (scrapedData.facebook && !scrapedData.facebook.error) {
@@ -429,95 +420,145 @@ async function analyzeWithOpenAI(competitorName: string, scrapedData: any, opena
     context += `\nFACEBOOK (${fb.name}):\n`;
     context += `- Likes: ${fb.likes?.toLocaleString() || 'N/A'}\n`;
     context += `- Followers: ${fb.followers?.toLocaleString() || 'N/A'}\n`;
-    context += `- About: ${fb.about || 'N/A'}\n`;
-  } else {
-    context += '\nFACEBOOK: Non disponible\n';
   }
 
   if (scrapedData.tiktok && !scrapedData.tiktok.error) {
     const tt = scrapedData.tiktok;
     context += `\nTIKTOK (@${tt.username}):\n`;
     context += `- Followers: ${tt.followers?.toLocaleString() || 'N/A'}\n`;
-    context += `- Hearts: ${tt.hearts?.toLocaleString() || 'N/A'}\n`;
-    context += `- Videos: ${tt.videos || 'N/A'}\n`;
-  } else {
-    context += '\nTIKTOK: Non disponible\n';
   }
 
   if (scrapedData.website) {
     context += `\nWEBSITE:\n${scrapedData.website.substring(0, 3000)}\n`;
-  } else {
-    context += '\nWEBSITE: Non disponible\n';
   }
 
-  const prompt = `Tu es un expert en analyse concurrentielle et stratégie digitale. Analyse ces données d'un concurrent et fournis un rapport structuré.
+  const systemPrompt = `You are a business analysis expert. Analyze the provided competitor data and return a comprehensive analysis in JSON format following this structure:
 
-${context}
-
-Fournis ton analyse sous forme d'un objet JSON avec cette structure exacte:
 {
-  "positioning": "En 1-2 phrases, décris leur positionnement marketing",
-  "content_strategy": "Décris leur stratégie de contenu (fréquence, formats, thèmes)",
-  "tone": "Qualifie leur ton de communication (ex: professionnel, casual, inspirant, éducatif)",
-  "target_audience": "Identifie leur audience cible",
-  "strengths": ["Force 1", "Force 2", "Force 3"],
-  "weaknesses": ["Faiblesse 1", "Faiblesse 2"],
-  "opportunities_for_us": ["Opportunité 1 pour nous différencier", "Opportunité 2", "Opportunité 3"],
-  "social_media_presence": "Évalue leur présence sociale (forte/moyenne/faible) et pourquoi",
-  "estimated_budget": "Estime leur budget marketing approximatif (petit/moyen/important) selon la qualité du contenu",
-  "key_differentiators": ["Ce qui les rend uniques 1", "Ce qui les rend uniques 2"],
-  "recommendations": "3 recommandations stratégiques pour les concurrencer",
-  "summary": "Résumé exécutif en 3-4 phrases"
-}
+  "context_objectives": {
+    "brand_presentation": "Brief brand presentation",
+    "target_audience": "Main target audience",
+    "main_offering": "Primary offering/products",
+    "analysis_objectives": ["Objective 1", "Objective 2"]
+  },
+  "brand_identity": {
+    "visual_universe": {
+      "logo_style": "Description",
+      "primary_colors": ["#color1"],
+      "typography": "Description",
+      "image_style": "Description",
+      "visual_consistency": "Assessment"
+    },
+    "tone_and_messages": {
+      "communication_tone": "formal/fun/expert",
+      "main_promise": "Main brand promise",
+      "core_values": ["Value 1"],
+      "storytelling": "Brand story"
+    }
+  },
+  "offering_positioning": {
+    "products_services": {
+      "product_range": ["Product 1"],
+      "price_levels": "entry/premium/luxury",
+      "differentiators": ["Differentiator 1"],
+      "business_model": "subscription/one-time"
+    },
+    "positioning": {
+      "segment": "market segment",
+      "target_personas": ["Persona 1"],
+      "value_proposition": "Value prop",
+      "vs_competitors": "Competitive positioning"
+    }
+  },
+  "digital_presence": {
+    "website": {
+      "ux_quality": 8,
+      "user_journey_clarity": "Assessment",
+      "content_quality": "Assessment",
+      "loading_speed": "fast/medium/slow",
+      "seo_basics": {
+        "structure": "Assessment",
+        "keywords": ["keyword1"],
+        "has_blog": true
+      }
+    },
+    "social_media": {
+      "platforms_used": ["instagram"],
+      "posting_frequency": {"instagram": "2-3/day"},
+      "engagement_metrics": {
+        "instagram": {
+          "likes_avg": 500,
+          "comments_avg": 50,
+          "engagement_rate": 3.2
+        }
+      },
+      "content_types": ["photos"],
+      "brand_consistency": "Assessment"
+    }
+  },
+  "swot": {
+    "strengths": ["Strength 1"],
+    "weaknesses": ["Weakness 1"],
+    "opportunities": ["Opportunity 1"],
+    "threats": ["Threat 1"]
+  },
+  "competitive_analysis": {
+    "advantages": ["Advantage 1"],
+    "disadvantages": ["Disadvantage 1"],
+    "market_position": "leader/challenger",
+    "market_share_estimate": "Estimate"
+  },
+  "insights_recommendations": {
+    "key_insights": ["Insight 1"],
+    "actionable_recommendations": {
+      "short_term": ["Action 1"],
+      "medium_term": ["Action 1"],
+      "long_term": ["Action 1"]
+    },
+    "priority_actions": ["Priority 1"]
+  }
+}`;
 
-Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
+  const userPrompt = `Analyze this competitor:\n\n${context}`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        response_format: { type: 'json_object' }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      throw new Error(`Lovable AI error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     const content = data.choices[0].message.content;
 
-    logStep('OpenAI analysis complete');
+    logStep('Lovable AI analysis complete');
 
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Could not parse JSON from OpenAI response');
-    }
-
-    const analysis = JSON.parse(jsonMatch[0]);
+    const analysis = JSON.parse(content);
 
     return {
       ...analysis,
-      tokens_used: data.usage.total_tokens,
-      analysis_cost: (data.usage.total_tokens / 1000000) * 0.15, // GPT-4o-mini pricing
+      tokens_used: data.usage?.total_tokens || 0,
+      analysis_cost: (data.usage?.total_tokens || 0) * 0.000001,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logStep('Error in OpenAI analysis', { error: errorMessage });
+    logStep('Error in Lovable AI analysis', { error: errorMessage });
     throw error;
   }
 }
@@ -572,16 +613,8 @@ serve(async (req) => {
     }
 
     // Get API keys from Supabase secrets
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
     const apifyToken = Deno.env.get('APIFY_TOKEN');
     const twitterBearerToken = Deno.env.get('TWITTER_BEARER_TOKEN');
-
-    if (!openaiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Scrape all platforms (in parallel)
     const scrapedData: any = {};
@@ -626,30 +659,51 @@ serve(async (req) => {
     await Promise.all(scrapePromises);
     logStep('All scraping complete');
 
-    // Analyze with OpenAI
-    const analysis = await analyzeWithOpenAI(name, scrapedData, openaiKey);
+    // Get Lovable API key
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Lovable API key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Save to Supabase - competitor_analysis table
+    // Analyze with Lovable AI
+    const analysis = await analyzeWithLovableAI(name, scrapedData, lovableApiKey);
+
+    // Save to Supabase - competitor_analysis table with new extended columns
     const { data: savedAnalysis, error: analysisError } = await supabaseClient
       .from('competitor_analysis')
       .insert({
         competitor_id,
-        positioning: analysis.positioning,
-        content_strategy: analysis.content_strategy,
-        tone: analysis.tone,
-        target_audience: analysis.target_audience,
-        strengths: analysis.strengths,
-        weaknesses: analysis.weaknesses,
-        opportunities_for_us: analysis.opportunities_for_us,
-        social_media_presence: analysis.social_media_presence,
-        estimated_budget: analysis.estimated_budget,
-        key_differentiators: analysis.key_differentiators,
-        recommendations: analysis.recommendations,
-        summary: analysis.summary,
-        instagram_data: scrapedData.instagram || null,
-        facebook_data: scrapedData.facebook || null,
-        linkedin_data: scrapedData.linkedin || null,
-        website_data: scrapedData.website ? { raw: scrapedData.website.substring(0, 1000) } : null,
+        // New JSONB columns
+        context_objectives: analysis.context_objectives,
+        brand_identity: analysis.brand_identity,
+        offering_positioning: analysis.offering_positioning,
+        digital_presence: analysis.digital_presence,
+        swot: analysis.swot,
+        competitive_analysis: analysis.competitive_analysis,
+        insights_recommendations: analysis.insights_recommendations,
+        raw_data: scrapedData,
+        metadata: {
+          tokens_used: analysis.tokens_used,
+          analysis_cost: analysis.analysis_cost,
+          data_sources: Object.keys(scrapedData).filter(k => scrapedData[k] && !scrapedData[k].error),
+          confidence_score: 85
+        },
+        // Keep old columns for backward compatibility
+        positioning: analysis.offering_positioning?.positioning?.segment || '',
+        content_strategy: JSON.stringify(analysis.digital_presence?.social_media || {}),
+        tone: analysis.brand_identity?.tone_and_messages?.communication_tone || '',
+        target_audience: analysis.context_objectives?.target_audience || '',
+        strengths: analysis.swot?.strengths || [],
+        weaknesses: analysis.swot?.weaknesses || [],
+        opportunities_for_us: analysis.swot?.opportunities || [],
+        social_media_presence: JSON.stringify(analysis.digital_presence?.social_media || {}),
+        estimated_budget: 'medium',
+        key_differentiators: analysis.offering_positioning?.products_services?.differentiators || [],
+        recommendations: JSON.stringify(analysis.insights_recommendations || {}),
+        summary: analysis.insights_recommendations?.key_insights?.join('. ') || '',
         tokens_used: analysis.tokens_used,
         analysis_cost: analysis.analysis_cost,
       })

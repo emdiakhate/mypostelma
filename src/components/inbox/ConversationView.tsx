@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   conversation: ConversationWithLastMessage;
@@ -87,6 +88,33 @@ export function ConversationView({ conversation, onUpdate }: Props) {
     scrollToBottom();
   }, [messages]);
 
+  // Subscribe to realtime updates for messages in this conversation
+  useEffect(() => {
+    const channel = supabase
+      .channel(`conversation-${conversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          const newMessage = payload.new as Message;
+          setMessages((prev) => [...prev, newMessage]);
+          scrollToBottom();
+          onUpdate?.(); // Update conversation list
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation.id]);
+
   const loadMessages = async () => {
     try {
       setLoading(true);
@@ -130,7 +158,7 @@ export function ConversationView({ conversation, onUpdate }: Props) {
         text_content: replyText.trim(),
       });
 
-      setMessages([...messages, newMessage]);
+      // Le message sera ajouté automatiquement via la subscription realtime
       setReplyText('');
       onUpdate?.();
 
@@ -276,9 +304,16 @@ export function ConversationView({ conversation, onUpdate }: Props) {
           </div>
         ) : (
           <>
-            {messages.map((message, index) => {
+            {messages.filter(Boolean).map((message, index) => {
+              // Sécurité supplémentaire au cas où un message serait null ou mal formé
+              if (!message || !message.direction) {
+                return null;
+              }
+
+              const previousMessage = index > 0 ? messages[index - 1] : null;
               const isOutgoing = message.direction === 'outgoing';
-              const showAvatar = index === 0 || messages[index - 1].direction !== message.direction;
+              const showAvatar =
+                index === 0 || !previousMessage || previousMessage?.direction !== message.direction;
 
               return (
                 <div

@@ -207,6 +207,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'dashboard': return '/app/dashboard';
                     case 'calendar': return '/app/calendar';
                     case 'analytics': return '/app/analytics';
+                    case 'inbox': return '/app/messages';
+                    case 'connections': return '/app/connections';
                     case 'publications': return '/app/publications';
                     case 'creation': return '/app/creation';
                     case 'logout': return '/logout';

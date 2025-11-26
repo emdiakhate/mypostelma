@@ -10,7 +10,7 @@ import type { MyBusiness, CompetitorAnalysisExtended } from '@/types/competitor'
 /**
  * Get user's business profile
  */
-export const getMyBusiness = async (): Promise<MyBusiness | null> => {
+export const getMyBusiness = async (): Promise<any> => {
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData.user) {
@@ -18,7 +18,7 @@ export const getMyBusiness = async (): Promise<MyBusiness | null> => {
   }
 
   const { data, error } = await supabase
-    .from('my_business')
+    .from('my_business' as any)
     .select('*')
     .eq('user_id', userData.user.id)
     .maybeSingle();
@@ -34,7 +34,7 @@ export const getMyBusiness = async (): Promise<MyBusiness | null> => {
 /**
  * Create or update business profile
  */
-export const upsertMyBusiness = async (business: Omit<MyBusiness, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<MyBusiness> => {
+export const upsertMyBusiness = async (business: Omit<MyBusiness, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<any> => {
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData.user) {
@@ -47,7 +47,7 @@ export const upsertMyBusiness = async (business: Omit<MyBusiness, 'id' | 'user_i
   if (existing) {
     // Update existing
     const { data, error } = await supabase
-      .from('my_business')
+      .from('my_business' as any)
       .update({
         ...business,
         updated_at: new Date().toISOString(),
@@ -61,7 +61,7 @@ export const upsertMyBusiness = async (business: Omit<MyBusiness, 'id' | 'user_i
   } else {
     // Create new
     const { data, error } = await supabase
-      .from('my_business')
+      .from('my_business' as any)
       .insert({
         ...business,
         user_id: userData.user.id,
@@ -79,7 +79,7 @@ export const upsertMyBusiness = async (business: Omit<MyBusiness, 'id' | 'user_i
  */
 export const deleteMyBusiness = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('my_business')
+    .from('my_business' as any)
     .delete()
     .eq('id', id);
 
@@ -89,7 +89,7 @@ export const deleteMyBusiness = async (id: string): Promise<void> => {
 /**
  * Get latest analysis for my business
  */
-export const getMyBusinessLatestAnalysis = async (businessId: string): Promise<CompetitorAnalysisExtended | null> => {
+export const getMyBusinessLatestAnalysis = async (businessId: string): Promise<any> => {
   const { data, error } = await supabase
     .from('my_business_analysis')
     .select('*')
@@ -108,7 +108,7 @@ export const getMyBusinessLatestAnalysis = async (businessId: string): Promise<C
 /**
  * Analyze my business (similar to competitor analysis)
  */
-export const analyzeMyBusiness = async (business: MyBusiness): Promise<void> => {
+export const analyzeMyBusiness = async (business: any): Promise<void> => {
   try {
     const { data, error } = await supabase.functions.invoke('analyze-my-business', {
       body: {

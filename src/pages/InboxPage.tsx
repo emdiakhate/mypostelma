@@ -32,6 +32,7 @@ import { ConversationView } from '@/components/inbox/ConversationView';
 import type { ConversationWithLastMessage, InboxFilters, Platform } from '@/types/inbox';
 import { getConversations, getInboxStats } from '@/services/inbox';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const platformIcons = {
   instagram: Instagram,
@@ -68,6 +69,31 @@ export default function InboxPage() {
   useEffect(() => {
     loadConversations();
     loadStats();
+  }, [filters]);
+
+  // Subscribe to realtime updates for conversations
+  useEffect(() => {
+    const channel = supabase
+      .channel('inbox-conversations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+        },
+        (payload) => {
+          console.log('Conversation change detected:', payload);
+          // Reload conversations when changes occur
+          loadConversations();
+          loadStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [filters]);
 
   const loadConversations = async () => {
@@ -207,9 +233,8 @@ export default function InboxPage() {
         <div className="flex-1 overflow-y-auto">
           <ConversationList
             conversations={conversations}
-            selectedConversation={selectedConversation}
-            onSelectConversation={setSelectedConversation}
-            loading={loading}
+            selectedId={selectedConversation?.id}
+            onSelect={setSelectedConversation}
           />
         </div>
       </div>
@@ -219,7 +244,7 @@ export default function InboxPage() {
         {selectedConversation ? (
           <ConversationView
             conversation={selectedConversation}
-            onConversationUpdate={loadConversations}
+            onUpdate={loadConversations}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-center p-8">

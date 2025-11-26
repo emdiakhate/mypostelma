@@ -38,13 +38,8 @@ export interface Conversation {
   participant_name?: string;
   participant_avatar_url?: string;
 
-  // Context
-  post_id?: string;
-  platform_post_id?: string;
-
   // Status
   status: ConversationStatus;
-  priority: Priority;
   sentiment?: Sentiment;
 
   // Assignment
@@ -71,6 +66,7 @@ export interface Conversation {
   first_response_time_minutes?: number;
 
   // Timestamps
+  last_message_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -80,7 +76,7 @@ export interface Message {
   conversation_id: string;
 
   // External identifier
-  platform_message_id: string;
+  platform_message_id?: string;
 
   // Direction
   direction: MessageDirection;
@@ -92,16 +88,13 @@ export interface Message {
   media_type?: string;
 
   // Metadata
-  sender_id: string;
+  sender_id?: string;
   sender_username?: string;
   sender_name?: string;
 
-  // If sent from Postelma
-  sent_by_user_id?: string;
-
   // State
   is_read: boolean;
-  is_hidden: boolean;
+  is_starred?: boolean;
 
   // Timestamps
   sent_at: string;

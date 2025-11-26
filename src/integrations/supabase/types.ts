@@ -14,24 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      comparative_analysis: {
+        Row: {
+          analysis_date: string
+          competitor_ids: string[]
+          data_insights: Json | null
+          domain_comparisons: Json | null
+          id: string
+          my_business_id: string
+          overall_comparison: Json | null
+          personalized_recommendations: Json | null
+          user_id: string
+        }
+        Insert: {
+          analysis_date?: string
+          competitor_ids: string[]
+          data_insights?: Json | null
+          domain_comparisons?: Json | null
+          id?: string
+          my_business_id: string
+          overall_comparison?: Json | null
+          personalized_recommendations?: Json | null
+          user_id: string
+        }
+        Update: {
+          analysis_date?: string
+          competitor_ids?: string[]
+          data_insights?: Json | null
+          domain_comparisons?: Json | null
+          id?: string
+          my_business_id?: string
+          overall_comparison?: Json | null
+          personalized_recommendations?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparative_analysis_my_business_id_fkey"
+            columns: ["my_business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparative_analysis_my_business_id_fkey"
+            columns: ["my_business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business_latest_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_analysis: {
         Row: {
           analysis_cost: number | null
           analyzed_at: string | null
+          brand_identity: Json | null
+          competitive_analysis: Json | null
           competitor_id: string | null
           content_strategy: string | null
+          context_objectives: Json | null
+          digital_presence: Json | null
           estimated_budget: string | null
           facebook_data: Json | null
           id: string
+          insights_recommendations: Json | null
           instagram_data: Json | null
           key_differentiators: string[] | null
           linkedin_data: Json | null
+          metadata: Json | null
+          offering_positioning: Json | null
           opportunities_for_us: string[] | null
           positioning: string | null
+          raw_data: Json | null
           recommendations: string | null
           social_media_presence: string | null
           strengths: string[] | null
           summary: string | null
+          swot: Json | null
           target_audience: string | null
           tiktok_data: Json | null
           tokens_used: number | null
@@ -44,20 +104,29 @@ export type Database = {
         Insert: {
           analysis_cost?: number | null
           analyzed_at?: string | null
+          brand_identity?: Json | null
+          competitive_analysis?: Json | null
           competitor_id?: string | null
           content_strategy?: string | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
           estimated_budget?: string | null
           facebook_data?: Json | null
           id?: string
+          insights_recommendations?: Json | null
           instagram_data?: Json | null
           key_differentiators?: string[] | null
           linkedin_data?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
           opportunities_for_us?: string[] | null
           positioning?: string | null
+          raw_data?: Json | null
           recommendations?: string | null
           social_media_presence?: string | null
           strengths?: string[] | null
           summary?: string | null
+          swot?: Json | null
           target_audience?: string | null
           tiktok_data?: Json | null
           tokens_used?: number | null
@@ -70,20 +139,29 @@ export type Database = {
         Update: {
           analysis_cost?: number | null
           analyzed_at?: string | null
+          brand_identity?: Json | null
+          competitive_analysis?: Json | null
           competitor_id?: string | null
           content_strategy?: string | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
           estimated_budget?: string | null
           facebook_data?: Json | null
           id?: string
+          insights_recommendations?: Json | null
           instagram_data?: Json | null
           key_differentiators?: string[] | null
           linkedin_data?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
           opportunities_for_us?: string[] | null
           positioning?: string | null
+          raw_data?: Json | null
           recommendations?: string | null
           social_media_presence?: string | null
           strengths?: string[] | null
           summary?: string | null
+          swot?: Json | null
           target_audience?: string | null
           tiktok_data?: Json | null
           tokens_used?: number | null
@@ -354,6 +432,144 @@ export type Database = {
         }
         Relationships: []
       }
+      connected_accounts: {
+        Row: {
+          access_token: string | null
+          account_name: string | null
+          avatar_url: string | null
+          config: Json | null
+          connected_at: string | null
+          error_message: string | null
+          id: string
+          last_sync_at: string | null
+          messages_received: number | null
+          messages_sent: number | null
+          platform: string
+          platform_account_id: string
+          refresh_token: string | null
+          status: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_name?: string | null
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform: string
+          platform_account_id: string
+          refresh_token?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          account_name?: string | null
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform?: string
+          platform_account_id?: string
+          refresh_token?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          connected_account_id: string | null
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          notes: string | null
+          participant_avatar_url: string | null
+          participant_id: string
+          participant_name: string | null
+          participant_username: string | null
+          platform: string
+          platform_conversation_id: string
+          sentiment: string | null
+          status: string | null
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          connected_account_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          notes?: string | null
+          participant_avatar_url?: string | null
+          participant_id: string
+          participant_name?: string | null
+          participant_username?: string | null
+          platform: string
+          platform_conversation_id: string
+          sentiment?: string | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          connected_account_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          notes?: string | null
+          participant_avatar_url?: string | null
+          participant_id?: string
+          participant_name?: string | null
+          participant_username?: string | null
+          platform?: string
+          platform_conversation_id?: string
+          sentiment?: string | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           added_at: string
@@ -461,6 +677,201 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          direction: string
+          id: string
+          is_read: boolean | null
+          is_starred: boolean | null
+          media_type: string | null
+          media_url: string | null
+          message_type: string | null
+          platform_message_id: string | null
+          sender_id: string | null
+          sender_name: string | null
+          sender_username: string | null
+          sent_at: string | null
+          text_content: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          direction: string
+          id?: string
+          is_read?: boolean | null
+          is_starred?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          platform_message_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_username?: string | null
+          sent_at?: string | null
+          text_content?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          direction?: string
+          id?: string
+          is_read?: boolean | null
+          is_starred?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          platform_message_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          sender_username?: string | null
+          sent_at?: string | null
+          text_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_last_message"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      my_business: {
+        Row: {
+          business_name: string
+          created_at: string
+          description: string | null
+          facebook_likes: string | null
+          facebook_url: string | null
+          id: string
+          industry: string | null
+          instagram_followers: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_followers: string | null
+          linkedin_url: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          description?: string | null
+          facebook_likes?: string | null
+          facebook_url?: string | null
+          id?: string
+          industry?: string | null
+          instagram_followers?: string | null
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_followers?: string | null
+          linkedin_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      my_business_analysis: {
+        Row: {
+          analyzed_at: string
+          brand_identity: Json | null
+          business_id: string
+          competitive_analysis: Json | null
+          context_objectives: Json | null
+          digital_presence: Json | null
+          id: string
+          insights_recommendations: Json | null
+          metadata: Json | null
+          offering_positioning: Json | null
+          raw_data: Json | null
+          swot: Json | null
+          version: number
+        }
+        Insert: {
+          analyzed_at?: string
+          brand_identity?: Json | null
+          business_id: string
+          competitive_analysis?: Json | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
+          id?: string
+          insights_recommendations?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
+          raw_data?: Json | null
+          swot?: Json | null
+          version?: number
+        }
+        Update: {
+          analyzed_at?: string
+          brand_identity?: Json | null
+          business_id?: string
+          competitive_analysis?: Json | null
+          context_objectives?: Json | null
+          digital_presence?: Json | null
+          id?: string
+          insights_recommendations?: Json | null
+          metadata?: Json | null
+          offering_positioning?: Json | null
+          raw_data?: Json | null
+          swot?: Json | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "my_business_analysis_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "my_business_analysis_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "my_business_latest_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_analytics: {
         Row: {
@@ -700,6 +1111,36 @@ export type Database = {
           posts_unlimited?: boolean | null
           quota_reset_date?: string | null
           upload_post_username?: string | null
+        }
+        Relationships: []
+      }
+      quick_replies: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1034,6 +1475,69 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_logs: {
+        Row: {
+          body: Json | null
+          connected_account_id: string | null
+          error_message: string | null
+          headers: Json | null
+          id: string
+          method: string | null
+          platform: string
+          processed: boolean | null
+          processed_at: string | null
+          query_params: Json | null
+          received_at: string | null
+          response_body: Json | null
+          status_code: number | null
+        }
+        Insert: {
+          body?: Json | null
+          connected_account_id?: string | null
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          method?: string | null
+          platform: string
+          processed?: boolean | null
+          processed_at?: string | null
+          query_params?: Json | null
+          received_at?: string | null
+          response_body?: Json | null
+          status_code?: number | null
+        }
+        Update: {
+          body?: Json | null
+          connected_account_id?: string | null
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          method?: string | null
+          platform?: string
+          processed?: boolean | null
+          processed_at?: string | null
+          query_params?: Json | null
+          received_at?: string | null
+          response_body?: Json | null
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_logs_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       competitor_comparison: {
@@ -1085,6 +1589,116 @@ export type Database = {
         }
         Relationships: []
       }
+      connected_accounts_with_stats: {
+        Row: {
+          access_token: string | null
+          account_name: string | null
+          active_conversations: number | null
+          avatar_url: string | null
+          config: Json | null
+          connected_at: string | null
+          error_message: string | null
+          id: string | null
+          last_sync_at: string | null
+          messages_received: number | null
+          messages_sent: number | null
+          platform: string | null
+          platform_account_id: string | null
+          refresh_token: string | null
+          status: string | null
+          token_expires_at: string | null
+          unread_conversations: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      conversations_with_last_message: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          connected_account_id: string | null
+          created_at: string | null
+          id: string | null
+          last_message_at: string | null
+          last_message_direction: string | null
+          last_message_sent_at: string | null
+          last_message_text: string | null
+          notes: string | null
+          participant_avatar_url: string | null
+          participant_id: string | null
+          participant_name: string | null
+          participant_username: string | null
+          platform: string | null
+          platform_conversation_id: string | null
+          sentiment: string | null
+          status: string | null
+          tags: string[] | null
+          unread_count: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_stats: {
+        Row: {
+          avg_response_time_minutes: number | null
+          negative_sentiment_count: number | null
+          read_count: number | null
+          unassigned_count: number | null
+          unread_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      my_business_latest_analysis: {
+        Row: {
+          analysis_id: string | null
+          analyzed_at: string | null
+          brand_identity: Json | null
+          business_name: string | null
+          competitive_analysis: Json | null
+          context_objectives: Json | null
+          created_at: string | null
+          description: string | null
+          digital_presence: Json | null
+          facebook_likes: string | null
+          facebook_url: string | null
+          id: string | null
+          industry: string | null
+          insights_recommendations: Json | null
+          instagram_followers: string | null
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_followers: string | null
+          linkedin_url: string | null
+          metadata: Json | null
+          offering_positioning: Json | null
+          swot: Json | null
+          tiktok_url: string | null
+          twitter_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          website_url: string | null
+          youtube_url: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_quotas: { Args: { p_user_id: string }; Returns: Json }
@@ -1104,6 +1718,10 @@ export type Database = {
         Returns: Json
       }
       increment_lead_generation: { Args: { p_user_id: string }; Returns: Json }
+      increment_quick_reply_usage: {
+        Args: { reply_id: string }
+        Returns: undefined
+      }
       reset_user_quotas: { Args: { p_user_id: string }; Returns: Json }
     }
     Enums: {
