@@ -18,6 +18,11 @@ import {
   Tag as TagIcon,
   Filter,
   Download,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  MessageCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +67,10 @@ const AcquisitionPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<EnrichedLead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 12; // 3 rows x 4 columns
+
   // Modal d'import
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedSectorId, setSelectedSectorId] = useState<string>('');
@@ -78,6 +87,12 @@ const AcquisitionPage: React.FC = () => {
     ? tags.filter((t) => t.sector_id === selectedSectorId)
     : tags;
 
+  // Calcul pagination
+  const totalPages = Math.ceil(searchResults.length / resultsPerPage);
+  const startIndex = (currentPage - 1) * resultsPerPage;
+  const endIndex = startIndex + resultsPerPage;
+  const paginatedResults = searchResults.slice(startIndex, endIndex);
+
   // Recherche de leads
   const handleSearch = async () => {
     if (!query.trim() || !city.trim()) {
@@ -89,6 +104,7 @@ const AcquisitionPage: React.FC = () => {
       setIsSearching(true);
       setSearchResults([]);
       setSelectedLeads(new Set());
+      setCurrentPage(1); // Reset to first page
 
       const params: ScrapingParams = {
         query: query.trim(),
@@ -334,120 +350,289 @@ const AcquisitionPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {searchResults.map((lead, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {paginatedResults.map((lead, index) => {
+                const absoluteIndex = startIndex + index;
+                return (
                 <Card
-                  key={index}
+                  key={absoluteIndex}
                   className={`transition-all ${
-                    selectedLeads.has(index)
+                    selectedLeads.has(absoluteIndex)
                       ? 'ring-2 ring-green-500 bg-green-50'
-                      : 'hover:shadow-md'
+                      : 'hover:shadow-lg'
                   }`}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      {/* Checkbox */}
+                  <CardContent className="p-4 space-y-3">
+                    {/* Checkbox + Image */}
+                    <div className="flex items-start gap-3">
                       <Checkbox
-                        checked={selectedLeads.has(index)}
-                        onCheckedChange={() => handleToggleLead(index)}
+                        checked={selectedLeads.has(absoluteIndex)}
+                        onCheckedChange={() => handleToggleLead(absoluteIndex)}
                         className="mt-1"
                       />
-
-                      {/* Image */}
                       {lead.image_url && (
                         <img
                           src={lead.image_url}
                           alt={lead.name}
-                          className="w-16 h-16 rounded-lg object-cover"
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                         />
                       )}
-
-                      {/* Infos */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">
-                              {lead.name}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{lead.address || lead.city}</span>
-                            </div>
-                          </div>
-
-                          {/* Score et Rating */}
-                          <div className="flex flex-col items-end gap-1">
-                            {lead.google_rating && (
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-sm font-medium">
-                                  {lead.google_rating.toFixed(1)}
-                                </span>
-                                {lead.google_reviews_count && (
-                                  <span className="text-xs text-muted-foreground">
-                                    ({lead.google_reviews_count})
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {lead.score && (
-                              <Badge variant="secondary">
-                                Score: {lead.score}/5
-                              </Badge>
-                            )}
-                            <Badge
-                              variant={
-                                lead.source === 'apify' ? 'default' : 'secondary'
-                              }
-                            >
-                              {lead.source === 'apify' ? 'Maps' : 'Search'}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {/* Contacts */}
-                        <div className="flex flex-wrap gap-3 mt-3">
-                          {lead.phone && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span>{lead.phone}</span>
-                            </div>
-                          )}
-                          {lead.email && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span>{lead.email}</span>
-                            </div>
-                          )}
-                          {lead.website && (
-                            <a
-                              href={lead.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                            >
-                              <Globe className="w-3.5 h-3.5" />
-                              <span>Site web</span>
-                            </a>
-                          )}
-                        </div>
-
-                        {/* Tags */}
-                        {lead.tags && lead.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {lead.tags.map((tag, tagIndex) => (
-                              <Badge key={tagIndex} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                        <h3 className="font-semibold text-base line-clamp-2">
+                          {lead.name}
+                        </h3>
+                        <Badge
+                          variant={lead.source === 'apify' ? 'default' : 'secondary'}
+                          className="text-xs mt-1"
+                        >
+                          {lead.source === 'apify' ? 'Maps' : 'Search'}
+                        </Badge>
                       </div>
                     </div>
+
+                    {/* Google Rating avec étoiles stylisées */}
+                    {lead.google_rating && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => {
+                            const rating = lead.google_rating || 0;
+                            const isFilled = star <= Math.floor(rating);
+                            const isHalf = star === Math.ceil(rating) && rating % 1 !== 0;
+
+                            return (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  isFilled
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : isHalf
+                                    ? 'fill-yellow-200 text-yellow-400'
+                                    : 'fill-gray-200 text-gray-300'
+                                }`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <span className="text-sm font-medium">
+                          {lead.google_rating.toFixed(1)}
+                        </span>
+                        {lead.google_reviews_count && (
+                          <span className="text-xs text-muted-foreground">
+                            ({lead.google_reviews_count.toLocaleString()})
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Adresse + Google Maps */}
+                    <div className="space-y-1">
+                      {(lead.address || lead.city) && (
+                        <div className="flex items-start gap-1 text-sm text-muted-foreground">
+                          <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">{lead.address || lead.city}</span>
+                        </div>
+                      )}
+                      {lead.google_maps_url && (
+                        <a
+                          href={lead.google_maps_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MapPin className="w-3 h-3" />
+                          Voir sur Maps
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Contacts rapides */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {lead.phone && (
+                        <a
+                          href={`tel:${lead.phone}`}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          title={lead.phone}
+                        >
+                          <Phone className="w-3 h-3" />
+                        </a>
+                      )}
+                      {lead.whatsapp && (
+                        <a
+                          href={`https://wa.me/${lead.whatsapp.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 hover:bg-green-200 rounded text-xs transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MessageCircle className="w-3 h-3 text-green-700" />
+                        </a>
+                      )}
+                      {lead.email && (
+                        <a
+                          href={`mailto:${lead.email}`}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded text-xs transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          title={lead.email}
+                        >
+                          <Mail className="w-3 h-3 text-blue-700" />
+                        </a>
+                      )}
+                      {lead.website && (
+                        <a
+                          href={lead.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 rounded text-xs transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Globe className="w-3 h-3 text-purple-700" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Réseaux sociaux */}
+                    {lead.social_media && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {lead.social_media.facebook && (
+                          <a
+                            href={lead.social_media.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded text-xs transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Facebook"
+                          >
+                            <Facebook className="w-3 h-3 text-blue-600" />
+                          </a>
+                        )}
+                        {lead.social_media.instagram && (
+                          <a
+                            href={lead.social_media.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-pink-100 hover:bg-pink-200 rounded text-xs transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Instagram"
+                          >
+                            <Instagram className="w-3 h-3 text-pink-600" />
+                          </a>
+                        )}
+                        {lead.social_media.linkedin && (
+                          <a
+                            href={lead.social_media.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded text-xs transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="LinkedIn"
+                          >
+                            <Linkedin className="w-3 h-3 text-blue-700" />
+                          </a>
+                        )}
+                        {lead.social_media.twitter && (
+                          <a
+                            href={lead.social_media.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-sky-100 hover:bg-sky-200 rounded text-xs transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Twitter"
+                          >
+                            <Twitter className="w-3 h-3 text-sky-600" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Score */}
+                    {lead.score && (
+                      <Badge variant="secondary" className="text-xs">
+                        Score: {lead.score}/5
+                      </Badge>
+                    )}
+
+                    {/* Tags */}
+                    {lead.tags && lead.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {lead.tags.slice(0, 2).map((tag, tagIndex) => (
+                          <Badge key={tagIndex} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {lead.tags.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{lead.tags.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Affichage {startIndex + 1}-{Math.min(endIndex, searchResults.length)} sur {searchResults.length} résultats
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Précédent
+                  </Button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        // Show first page, last page, current page, and pages around current
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((page, index, array) => {
+                        // Add ellipsis if there's a gap
+                        const prevPage = array[index - 1];
+                        const showEllipsis = prevPage && page - prevPage > 1;
+
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && (
+                              <span className="px-2 text-muted-foreground">...</span>
+                            )}
+                            <Button
+                              variant={currentPage === page ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          </React.Fragment>
+                        );
+                      })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
