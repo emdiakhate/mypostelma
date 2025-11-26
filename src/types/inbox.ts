@@ -46,9 +46,24 @@ export interface Conversation {
   assigned_to?: string;
   assigned_at?: string;
 
-  // Tags and notes
-  tags?: string[];
-  notes?: string;
+  // Tags
+  tags: string[];
+
+  // Teams (AI routing)
+  teams?: Array<{
+    team_id: string;
+    team_name: string;
+    team_color: string;
+    auto_assigned: boolean;
+    confidence_score?: number;
+  }>;
+
+  // Metrics
+  message_count: number;
+  last_message_at: string;
+  last_customer_message_at?: string;
+  last_brand_reply_at?: string;
+  first_response_time_minutes?: number;
 
   // Timestamps
   last_message_at: string;
