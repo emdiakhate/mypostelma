@@ -30,6 +30,9 @@ verify_jwt = true
 [functions.send-social-message]
 verify_jwt = true
 
+[functions.get-google-oauth-config]
+verify_jwt = false
+
 [functions.connect-gmail]
 verify_jwt = true
 
@@ -50,3 +53,4 @@ verify_jwt = false
 
 [functions.inbox-webhook-handler]
 verify_jwt = false
+
