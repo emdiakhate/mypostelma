@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Calendar, Clock, FolderOpen, Target, Hash, LayoutDashboard, Users,
-  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2, MessageCircle, Link as LinkIcon
+  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2, MessageCircle, Link as LinkIcon, Bot, ChevronDown, ChevronRight, BarChart2, ListTodo, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from './UserMenu';
@@ -50,6 +50,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/admin') return 'admin';
     if (path === '/app/publications') return 'publications';
     if (path === '/app/creation') return 'creation';
+
+    // CRM IA pages
+    if (path === '/app/crm/config') return 'crm-config';
+    if (path === '/app/crm/acquisition') return 'crm-acquisition';
+    if (path === '/app/crm/leads') return 'crm-leads';
+    if (path.startsWith('/app/crm')) return 'crm'; // Fallback pour autres pages CRM
 
     return 'dashboard'; // Par défaut sur dashboard
   }, [location.pathname]);
@@ -117,21 +123,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }>(({ sidebarCollapsed, activePage, onPageChange, onToggleCollapse }) => {
     const { user } = useAuth();
     const [isBetaUser, setIsBetaUser] = React.useState(false);
+    const [crmExpanded, setCrmExpanded] = React.useState(false);
+
+    // Ouvrir automatiquement le menu CRM si on est sur une page CRM
+    React.useEffect(() => {
+      if (activePage.startsWith('crm')) {
+        setCrmExpanded(true);
+      }
+    }, [activePage]);
 
     // Charger le statut beta_user
     React.useEffect(() => {
       const loadBetaStatus = async () => {
         if (!user) return;
-        
+
         const { data } = await supabase
           .from('profiles')
           .select('beta_user')
           .eq('id', user.id)
           .single();
-        
+
         setIsBetaUser(data?.beta_user || false);
       };
-      
+
       loadBetaStatus();
     }, [user]);
 
@@ -146,12 +160,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'archives', label: 'Archives', icon: FolderOpen, active: activePage === 'archives' },
       { id: 'competitors', label: 'Concurrents', icon: Target, active: activePage === 'competitors' },
       { id: 'accounts', label: 'Comptes Sociaux', icon: Users, active: activePage === 'accounts' },
-      { id: 'leads', label: 'Lead Generation', icon: UserPlus, active: activePage === 'leads' },
+      { id: 'leads', label: 'Lead Generation (Legacy)', icon: UserPlus, active: activePage === 'leads' },
       { id: 'publications', label: 'Mes Publications', icon: FileText, active: activePage === 'publications' },
       { id: 'creation', label: 'Studio Création', icon: Wand2, active: activePage === 'creation' },
       { id: 'settings', label: 'Paramètres', icon: Settings, active: activePage === 'settings' },
       { id: 'admin', label: 'Administration', icon: Shield, active: activePage === 'admin', adminOnly: true },
       { id: 'logout', label: 'Déconnexion', icon: LogOut, active: false },
+    ];
+
+    // Sous-pages CRM IA
+    const crmSubPages = [
+      { id: 'crm-acquisition', label: 'Acquisition', icon: Search, active: activePage === 'crm-acquisition', url: '/app/crm/acquisition' },
+      { id: 'crm-leads', label: 'Leads', icon: UserPlus, active: activePage === 'crm-leads', url: '/app/crm/leads' },
+      { id: 'crm-config', label: 'Configuration', icon: Settings, active: activePage === 'crm-config', url: '/app/crm/config' },
     ];
 
     // Filtrer les items : masquer Administration pour les beta users
@@ -176,10 +197,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             <div className="space-y-1">
-              {sidebarItems.map((item) => {
+              {sidebarItems.slice(0, 9).map((item) => {
                 // Déterminer l'URL basée sur l'ID de l'item
                 const getItemUrl = (id: string) => {
                   switch (id) {
@@ -195,10 +216,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'users': return '/app/users';
                     case 'team': return '/app/team';
                     case 'accounts': return '/app/settings/accounts';
+                    case 'inbox': return '/app/inbox';
+                    case 'connections': return '/app/connections';
+                    case 'teams': return '/app/teams';
                     case 'leads': return '/app/leads';
-                    case 'leads-analytics': return '/app/leads/analytics';
                     case 'admin': return '/app/admin';
-                    case 'leads-search': return '/app/leads/search';
                     default: return '/app/dashboard';
                   }
                 };
@@ -209,8 +231,87 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     to={getItemUrl(item.id)}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                      item.active 
-                        ? "bg-green-500 text-white" 
+                      item.active
+                        ? "bg-green-500 text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    )}
+                  >
+                    <item.icon className="w-4 h-4 flex-shrink-0" />
+                    {!sidebarCollapsed && (
+                      <span className="flex-1 text-left">{item.label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+
+              {/* Menu CRM IA Expandable */}
+              <div>
+                <button
+                  onClick={() => setCrmExpanded(!crmExpanded)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    activePage.startsWith('crm')
+                      ? "bg-green-500 text-white"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  )}
+                >
+                  <Bot className="w-4 h-4 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">CRM IA</span>
+                      {crmExpanded ? (
+                        <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                      )}
+                    </>
+                  )}
+                </button>
+
+                {/* Sous-pages CRM */}
+                {crmExpanded && !sidebarCollapsed && (
+                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-600 pl-2">
+                    {crmSubPages.map((subPage) => (
+                      <Link
+                        key={subPage.id}
+                        to={subPage.url}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                          subPage.active
+                            ? "bg-green-500 text-white"
+                            : "text-gray-400 hover:bg-gray-700 hover:text-white"
+                        )}
+                      >
+                        <subPage.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="flex-1 text-left text-xs">{subPage.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reste des items */}
+              {sidebarItems.slice(9).map((item) => {
+                const getItemUrl = (id: string) => {
+                  switch (id) {
+                    case 'leads': return '/app/leads';
+                    case 'publications': return '/app/publications';
+                    case 'creation': return '/app/creation';
+                    case 'settings': return '/app/settings';
+                    case 'admin': return '/app/admin';
+                    case 'logout': return '/logout';
+                    default: return '/app/dashboard';
+                  }
+                };
+
+                return (
+                  <Link
+                    key={item.id}
+                    to={getItemUrl(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                      item.active
+                        ? "bg-green-500 text-white"
                         : "text-gray-300 hover:bg-gray-700 hover:text-white"
                     )}
                   >
@@ -222,7 +323,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 );
               })}
             </div>
-
           </div>
         </div>
 
@@ -281,14 +381,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'dashboard' && 'Dashboard'}
                 {activePage === 'calendar' && 'Calendrier'}
                 {activePage === 'analytics' && 'Analytics'}
+                {activePage === 'inbox' && 'Messages'}
+                {activePage === 'connections' && 'Connexions'}
+                {activePage === 'teams' && 'Équipes'}
                 {activePage === 'archives' && 'Archives'}
                 {activePage === 'competitors' && 'Concurrents'}
                 {activePage === 'accounts' && 'Comptes Sociaux'}
-                {activePage === 'leads' && 'Lead Generation'}
+                {activePage === 'leads' && 'Lead Generation (Legacy)'}
                 {activePage === 'publications' && 'Mes Publications'}
                 {activePage === 'creation' && 'Studio Création'}
                 {activePage === 'settings' && 'Paramètres'}
                 {activePage === 'admin' && 'Administration'}
+                {activePage === 'crm-config' && 'CRM IA - Configuration'}
+                {activePage === 'crm-acquisition' && 'CRM IA - Acquisition'}
+                {activePage === 'crm-leads' && 'CRM IA - Leads'}
+                {activePage === 'crm' && 'CRM IA'}
               </h1>
             </div>
             
