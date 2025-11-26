@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, ExternalLink, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { connectGmail } from '@/services/connectedAccounts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   onClose: () => void;
@@ -11,24 +12,46 @@ interface Props {
 export default function ConnectGmailModal({ onClose, onSuccess }: Props) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [googleClientId, setGoogleClientId] = useState<string>('');
+  const [scopes, setScopes] = useState<string[]>([]);
 
-  // Google OAuth config (you need to set these up in Google Cloud Console)
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
   const REDIRECT_URI = `${window.location.origin}/oauth/google/callback`;
-  const SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/gmail.modify',
-  ].join(' ');
+
+  // Fetch Google OAuth config from edge function
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        setConfigLoading(true);
+        const { data, error } = await supabase.functions.invoke('get-google-oauth-config');
+        
+        if (error) throw error;
+        
+        setGoogleClientId(data.clientId);
+        setScopes(data.scopes);
+      } catch (err: any) {
+        console.error('Error fetching Google OAuth config:', err);
+        setError('Configuration Google non disponible. Contactez l\'administrateur.');
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, []);
 
   const handleConnect = () => {
+    if (!googleClientId) {
+      setError('Configuration Google non chargée');
+      return;
+    }
     // Build OAuth URL
     const params = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
+      client_id: googleClientId,
       redirect_uri: REDIRECT_URI,
       response_type: 'code',
-      scope: SCOPES,
+      scope: scopes.join(' '),
       access_type: 'offline',
       prompt: 'select_account consent', // Force account selection screen
       state: user!.id, // Pass user ID for verification
@@ -139,16 +162,22 @@ export default function ConnectGmailModal({ onClose, onSuccess }: Props) {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={loading || configLoading}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Annuler
           </button>
           <button
             onClick={handleConnect}
-            disabled={loading}
+            disabled={loading || configLoading || !googleClientId}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {configLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Chargement...
+              </>
+            ) : loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Connexion...
