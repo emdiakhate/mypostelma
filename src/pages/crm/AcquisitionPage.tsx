@@ -530,7 +530,7 @@ const AcquisitionPage: React.FC = () => {
                     <SelectValue placeholder="Sélectionnez un segment" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun segment</SelectItem>
+                    <SelectItem value="none">Aucun segment</SelectItem>
                     {filteredSegments.map((segment) => (
                       <SelectItem key={segment.id} value={segment.id}>
                         {segment.name}
