@@ -1,8 +1,9 @@
 /**
  * Service for managing teams and team routing
+ * TEMPORARILY DISABLED - The teams tables don't exist yet in the database
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   Team,
   TeamWithStats,
@@ -16,240 +17,113 @@ import type {
 } from '@/types/teams';
 
 // =====================================================
-// TEAMS
+// TEAMS - TEMPORARILY DISABLED
 // =====================================================
 
 export async function getTeams(userId: string): Promise<Team[]> {
-  const { data, error } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+  console.warn('Teams tables not yet created - returning empty array');
+  return [];
 }
 
 export async function getTeamsWithStats(userId: string): Promise<TeamWithStats[]> {
-  const { data, error } = await supabase
-    .from('teams_with_stats')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+  console.warn('Teams tables not yet created - returning empty array');
+  return [];
 }
 
 export async function getTeamById(teamId: string): Promise<Team | null> {
-  const { data, error } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('id', teamId)
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error;
-  return data;
+  console.warn('Teams tables not yet created - returning null');
+  return null;
 }
 
 export async function createTeam(
   userId: string,
   payload: CreateTeamPayload
 ): Promise<Team> {
-  const { data, error } = await supabase
-    .from('teams')
-    .insert({
-      user_id: userId,
-      ...payload,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function updateTeam(
   teamId: string,
   payload: UpdateTeamPayload
 ): Promise<Team> {
-  const { data, error } = await supabase
-    .from('teams')
-    .update(payload)
-    .eq('id', teamId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function deleteTeam(teamId: string): Promise<void> {
-  const { error } = await supabase.from('teams').delete().eq('id', teamId);
-
-  if (error) throw error;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 // =====================================================
-// TEAM MEMBERS
+// TEAM MEMBERS - TEMPORARILY DISABLED
 // =====================================================
 
 export async function getTeamMembers(teamId: string): Promise<TeamMemberWithDetails[]> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .select(`
-      *,
-      profiles:user_id (
-        full_name,
-        avatar_url
-      )
-    `)
-    .eq('team_id', teamId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-
-  // Flatten the profiles data
-  return (data || []).map((member: any) => ({
-    ...member,
-    full_name: member.profiles?.full_name,
-    avatar_url: member.profiles?.avatar_url,
-  }));
+  console.warn('Teams tables not yet created - returning empty array');
+  return [];
 }
 
 export async function inviteTeamMember(
   payload: InviteTeamMemberPayload,
   invitedBy: string
 ): Promise<TeamMember> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .insert({
-      team_id: payload.team_id,
-      email: payload.email.toLowerCase(),
-      role: payload.role || 'member',
-      invited_by: invitedBy,
-      status: 'pending',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  // TODO: Send invitation email
-
-  return data;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function removeTeamMember(memberId: string): Promise<void> {
-  const { error } = await supabase.from('team_members').delete().eq('id', memberId);
-
-  if (error) throw error;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function updateTeamMemberRole(
   memberId: string,
   role: 'admin' | 'member'
 ): Promise<TeamMember> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .update({ role })
-    .eq('id', memberId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function acceptTeamInvitation(memberId: string, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('team_members')
-    .update({
-      status: 'accepted',
-      user_id: userId,
-      accepted_at: new Date().toISOString(),
-    })
-    .eq('id', memberId);
-
-  if (error) throw error;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 // =====================================================
-// CONVERSATION TEAMS (routing)
+// CONVERSATION TEAMS (routing) - TEMPORARILY DISABLED
 // =====================================================
 
 export async function getConversationTeams(
   conversationId: string
 ): Promise<ConversationTeam[]> {
-  const { data, error } = await supabase
-    .from('conversation_teams')
-    .select('*')
-    .eq('conversation_id', conversationId);
-
-  if (error) throw error;
-  return data || [];
+  console.warn('Teams tables not yet created - returning empty array');
+  return [];
 }
 
 export async function assignTeamToConversation(
   payload: AssignTeamToConversationPayload,
   assignedBy?: string
 ): Promise<ConversationTeam> {
-  const { data, error } = await supabase
-    .from('conversation_teams')
-    .upsert({
-      conversation_id: payload.conversation_id,
-      team_id: payload.team_id,
-      auto_assigned: payload.auto_assigned ?? false,
-      assigned_by: assignedBy,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 export async function removeTeamFromConversation(
   conversationId: string,
   teamId: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from('conversation_teams')
-    .delete()
-    .eq('conversation_id', conversationId)
-    .eq('team_id', teamId);
-
-  if (error) throw error;
+  throw new Error('Teams functionality not yet implemented');
 }
 
 // =====================================================
-// AI ROUTING
+// AI ROUTING - TEMPORARILY DISABLED
 // =====================================================
 
 export async function requestAIRouting(conversationId: string, messageId: string): Promise<void> {
-  // Call Edge Function to analyze message and assign team
-  const { error } = await supabase.functions.invoke('analyze-message-routing', {
-    body: {
-      conversation_id: conversationId,
-      message_id: messageId,
-    },
-  });
-
-  if (error) throw error;
+  console.warn('AI routing not yet implemented');
 }
 
 // =====================================================
-// STATS
+// STATS - TEMPORARILY DISABLED
 // =====================================================
 
 export async function getTeamConversations(
   teamId: string
 ): Promise<{ conversation_id: string }[]> {
-  const { data, error } = await supabase
-    .from('conversation_teams')
-    .select('conversation_id')
-    .eq('team_id', teamId);
-
-  if (error) throw error;
-  return data || [];
+  console.warn('Teams tables not yet created - returning empty array');
+  return [];
 }

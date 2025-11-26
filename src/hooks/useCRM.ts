@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/UserContext';
+import { useAuth } from '@/hooks/useAuth';
 import {
   SectorService,
   SegmentService,

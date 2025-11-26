@@ -63,7 +63,13 @@ export const getConversations = async (filters?: InboxFilters): Promise<Conversa
   const { data, error } = await query;
 
   if (error) throw error;
-  return (data || []) as ConversationWithLastMessage[];
+  
+  // Map data with defaults
+  return (data || []).map((conv: any) => ({
+    ...conv,
+    message_count: 0,
+    tags: conv.tags || [],
+  })) as ConversationWithLastMessage[];
 };
 
 /**
@@ -81,7 +87,12 @@ export const getConversation = async (conversationId: string): Promise<Conversat
     throw error;
   }
 
-  return data as Conversation;
+  // Add defaults
+  return {
+    ...data,
+    message_count: 0,
+    tags: data.tags || [],
+  } as Conversation;
 };
 
 /**
