@@ -34,6 +34,8 @@ import InboxPage from "./pages/InboxPage";
 import ConnectedAccountsPage from "./pages/ConnectedAccountsPage";
 import TeamsPage from "./pages/TeamsPage";
 import ConfigPage from "./pages/crm/ConfigPage";
+import AcquisitionPage from "./pages/crm/AcquisitionPage";
+import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
 
 const queryClient = new QueryClient();
 
@@ -61,8 +63,8 @@ function MainLayout() {
 
         {/* CRM IA Routes */}
         <Route path="/crm/config" element={<ConfigPage />} />
-        <Route path="/crm/acquisition" element={<LeadsPage />} /> {/* Temporary, will create dedicated page */}
-        <Route path="/crm/leads" element={<LeadsPage />} />
+        <Route path="/crm/acquisition" element={<AcquisitionPage />} />
+        <Route path="/crm/leads" element={<CRMLeadsPage />} />
 
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/creation" element={<CreationPage />} />
