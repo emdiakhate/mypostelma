@@ -107,7 +107,6 @@ serve(async (req) => {
         media_url,
         media_type,
         sender_id: connectedAccount.user_id,
-        sent_by_user_id: connectedAccount.user_id,
         is_read: true,
         sent_at: new Date().toISOString(),
       })
@@ -124,7 +123,6 @@ serve(async (req) => {
       .update({
         status: 'replied',
         last_message_at: new Date().toISOString(),
-        last_brand_reply_at: new Date().toISOString(),
       })
       .eq('id', conversation_id);
 
