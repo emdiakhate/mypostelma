@@ -184,11 +184,11 @@ const CRMLeadsPage: React.FC = () => {
 
             {/* Secteur */}
             <Select
-              value={filters.sector_ids?.[0] || ''}
+              value={filters.sector_ids?.[0] || 'all'}
               onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  sector_ids: value ? [value] : [],
+                  sector_ids: value !== 'all' ? [value] : [],
                   segment_ids: [], // Reset segments
                 })
               }
@@ -197,7 +197,7 @@ const CRMLeadsPage: React.FC = () => {
                 <SelectValue placeholder="Tous secteurs" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous secteurs</SelectItem>
+                <SelectItem value="all">Tous secteurs</SelectItem>
                 {sectors.map((sector) => (
                   <SelectItem key={sector.id} value={sector.id}>
                     {sector.name}
@@ -209,11 +209,11 @@ const CRMLeadsPage: React.FC = () => {
             {/* Segment */}
             {filters.sector_ids && filters.sector_ids.length > 0 && (
               <Select
-                value={filters.segment_ids?.[0] || ''}
+                value={filters.segment_ids?.[0] || 'all'}
                 onValueChange={(value) =>
                   setFilters({
                     ...filters,
-                    segment_ids: value ? [value] : [],
+                    segment_ids: value !== 'all' ? [value] : [],
                   })
                 }
               >
@@ -221,7 +221,7 @@ const CRMLeadsPage: React.FC = () => {
                   <SelectValue placeholder="Tous segments" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous segments</SelectItem>
+                  <SelectItem value="all">Tous segments</SelectItem>
                   {segments
                     .filter((s) => s.sector_id === filters.sector_ids?.[0])
                     .map((segment) => (
@@ -235,11 +235,11 @@ const CRMLeadsPage: React.FC = () => {
 
             {/* Ville */}
             <Select
-              value={filters.cities?.[0] || ''}
+              value={filters.cities?.[0] || 'all'}
               onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  cities: value ? [value] : [],
+                  cities: value !== 'all' ? [value] : [],
                 })
               }
             >
@@ -247,7 +247,7 @@ const CRMLeadsPage: React.FC = () => {
                 <SelectValue placeholder="Toutes villes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes villes</SelectItem>
+                <SelectItem value="all">Toutes villes</SelectItem>
                 {uniqueCities.map((city) => (
                   <SelectItem key={city} value={city}>
                     {city}
