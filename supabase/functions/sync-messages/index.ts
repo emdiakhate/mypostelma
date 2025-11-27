@@ -96,7 +96,8 @@ serve(async (req) => {
 
 async function syncGmailMessages(supabase: any, account: any): Promise<number> {
   try {
-    console.log('Starting Gmail sync for account:', account.id, account.email_address);
+    const accountEmail = account.config?.email || account.platform_account_id;
+    console.log('Starting Gmail sync for account:', account.id, accountEmail);
 
     // Get messages from Gmail API - both INBOX and SENT
     const messagesResponse = await fetch(
@@ -167,9 +168,8 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
         }
 
         // Determine direction
-        const accountEmail = account.email_address.toLowerCase();
         const fromEmail = extractEmail(from).toLowerCase();
-        const direction = fromEmail === accountEmail ? 'sent' : 'received';
+        const direction = fromEmail === accountEmail.toLowerCase() ? 'sent' : 'received';
 
         console.log('Direction:', direction);
 
@@ -271,8 +271,8 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
 
     for (const msg of messages) {
       try {
+        const accountEmail = (account.config?.email || account.platform_account_id).toLowerCase();
         // Determine direction
-        const accountEmail = account.email_address.toLowerCase();
         const fromEmail = msg.from?.emailAddress?.address?.toLowerCase() || '';
         const direction = fromEmail === accountEmail ? 'sent' : 'received';
 
