@@ -492,6 +492,75 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_teams: {
+        Row: {
+          ai_reasoning: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          auto_assigned: boolean | null
+          confidence_score: number | null
+          conversation_id: string
+          id: string
+          team_id: string
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          auto_assigned?: boolean | null
+          confidence_score?: number | null
+          conversation_id: string
+          id?: string
+          team_id: string
+        }
+        Update: {
+          ai_reasoning?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          auto_assigned?: boolean | null
+          confidence_score?: number | null
+          conversation_id?: string
+          id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_teams_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_teams_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_last_message"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_teams_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           assigned_at: string | null
@@ -1038,6 +1107,80 @@ export type Database = {
         }
         Relationships: []
       }
+      message_ai_analysis: {
+        Row: {
+          analyzed_at: string | null
+          analyzed_content: string | null
+          confidence_scores: Json | null
+          conversation_id: string
+          detected_intent: string | null
+          detected_language: string | null
+          id: string
+          message_id: string
+          model_used: string | null
+          processing_time_ms: number | null
+          suggested_team_ids: string[] | null
+          tokens_used: number | null
+        }
+        Insert: {
+          analyzed_at?: string | null
+          analyzed_content?: string | null
+          confidence_scores?: Json | null
+          conversation_id: string
+          detected_intent?: string | null
+          detected_language?: string | null
+          id?: string
+          message_id: string
+          model_used?: string | null
+          processing_time_ms?: number | null
+          suggested_team_ids?: string[] | null
+          tokens_used?: number | null
+        }
+        Update: {
+          analyzed_at?: string | null
+          analyzed_content?: string | null
+          confidence_scores?: Json | null
+          conversation_id?: string
+          detected_intent?: string | null
+          detected_language?: string | null
+          id?: string
+          message_id?: string
+          model_used?: string | null
+          processing_time_ms?: number | null
+          suggested_team_ids?: string[] | null
+          tokens_used?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_ai_analysis_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_ai_analysis_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_last_message"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_ai_analysis_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_ai_analysis_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           conversation_id: string
@@ -1103,6 +1246,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations_with_last_message"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_with_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1626,6 +1776,96 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          id: string
+          invited_at: string | null
+          invited_by: string
+          role: string | null
+          status: string | null
+          team_id: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string | null
+          invited_by: string
+          role?: string | null
+          status?: string | null
+          team_id: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string
+          role?: string | null
+          status?: string | null
+          team_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          color: string
+          conversation_count: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          member_count: number | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color: string
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_count?: number | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_count?: number | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_custom_hashtags: {
         Row: {
           created_at: string | null
@@ -2015,6 +2255,45 @@ export type Database = {
           },
         ]
       }
+      conversations_with_teams: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          connected_account_id: string | null
+          created_at: string | null
+          id: string | null
+          last_message_at: string | null
+          notes: string | null
+          participant_avatar_url: string | null
+          participant_id: string | null
+          participant_name: string | null
+          participant_username: string | null
+          platform: string | null
+          platform_conversation_id: string | null
+          sentiment: string | null
+          status: string | null
+          tags: string[] | null
+          teams: Json[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_leads_by_sector: {
         Row: {
           avg_score: number | null
@@ -2070,6 +2349,22 @@ export type Database = {
           user_id: string | null
           website_url: string | null
           youtube_url: string | null
+        }
+        Relationships: []
+      }
+      teams_with_stats: {
+        Row: {
+          active_members: number | null
+          assigned_conversations: number | null
+          color: string | null
+          conversation_count: number | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          member_count: number | null
+          name: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Relationships: []
       }
