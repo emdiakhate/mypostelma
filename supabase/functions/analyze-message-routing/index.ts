@@ -59,14 +59,28 @@ serve(async (req) => {
       .select('*')
       .eq('user_id', conversation.user_id);
 
+    // Handle case where teams table doesn't exist yet (migration not applied)
     if (teamsError) {
-      throw new Error('Failed to load teams');
+      console.log('Teams table not available yet (migration pending):', teamsError.message);
+      return new Response(JSON.stringify({
+        success: true,
+        routed: false,
+        message: 'Teams feature not yet enabled. Please apply database migration first.'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
     }
 
     if (!teams || teams.length === 0) {
       console.log('No teams found, skipping routing');
       return new Response(JSON.stringify({ success: true, routed: false }), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
       });
     }
 

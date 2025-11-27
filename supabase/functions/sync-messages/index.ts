@@ -424,7 +424,7 @@ async function getOrCreateConversation(
       .eq('user_id', userId)
       .eq('connected_account_id', accountId)
       .eq('platform', platform)
-      .eq('participant_identifier', contactEmail)
+      .eq('participant_id', contactEmail)
       .single();
 
     if (existing) {
@@ -439,7 +439,7 @@ async function getOrCreateConversation(
         connected_account_id: accountId,
         platform,
         platform_conversation_id: `email_${contactEmail}_${Date.now()}`,
-        participant_identifier: contactEmail,
+        participant_id: contactEmail,
         participant_name: contactName || contactEmail,
         participant_username: contactEmail,
         status: 'active',
