@@ -107,6 +107,9 @@ serve(async (req) => {
 
     // Assign to team if confidence is high enough
     if (analysis.suggested_team_id && analysis.confidence_score >= 0.6) {
+      // Get the team name
+      const assignedTeam = teams.find(t => t.id === analysis.suggested_team_id);
+      
       await supabase.from('conversation_teams').upsert({
         conversation_id: conversation.id,
         team_id: analysis.suggested_team_id,
@@ -115,7 +118,18 @@ serve(async (req) => {
         ai_reasoning: analysis.reasoning,
       });
 
-      console.log('Assigned to team:', analysis.suggested_team_id);
+      // Add team name to conversation tags
+      if (assignedTeam) {
+        const currentTags = conversation.tags || [];
+        const newTags = [...new Set([...currentTags, assignedTeam.name])]; // Avoid duplicates
+        
+        await supabase
+          .from('conversations')
+          .update({ tags: newTags })
+          .eq('id', conversation.id);
+        
+        console.log('Assigned to team and added tag:', assignedTeam.name);
+      }
     }
 
     return new Response(
