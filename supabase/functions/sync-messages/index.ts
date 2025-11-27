@@ -80,9 +80,11 @@ serve(async (req) => {
 
 async function syncGmailMessages(supabase: any, account: any): Promise<number> {
   try {
-    // Get messages from Gmail API
+    console.log('Starting Gmail sync for account:', account.id, account.email_address);
+
+    // Get messages from Gmail API - both INBOX and SENT
     const messagesResponse = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox OR in:sent`,
       {
         headers: {
           Authorization: `Bearer ${account.access_token}`,
@@ -92,17 +94,21 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
 
     if (!messagesResponse.ok) {
       const error = await messagesResponse.text();
+      console.error('Gmail API error:', error);
       throw new Error(`Gmail API error: ${error}`);
     }
 
     const messagesData = await messagesResponse.json();
     const messages = messagesData.messages || [];
+    console.log(`Found ${messages.length} messages to sync`);
 
     let synced = 0;
 
     // Fetch full message details for each message
     for (const msg of messages) {
       try {
+        console.log('Processing message:', msg.id);
+
         const messageResponse = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
           {
@@ -112,12 +118,15 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           }
         );
 
-        if (!messageResponse.ok) continue;
+        if (!messageResponse.ok) {
+          console.error('Failed to fetch message:', msg.id);
+          continue;
+        }
 
         const messageData = await messageResponse.json();
 
         // Parse message headers
-        const headers = messageData.payload.headers;
+        const headers = messageData.payload?.headers || [];
         const getHeader = (name: string) =>
           headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value;
 
@@ -126,15 +135,17 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
         const subject = getHeader('Subject') || '(no subject)';
         const date = getHeader('Date') || new Date().toISOString();
 
+        console.log('Message from:', from, 'to:', to);
+
         // Extract body
         let body = '';
-        if (messageData.payload.body.data) {
+        if (messageData.payload?.body?.data) {
           body = decodeBase64Url(messageData.payload.body.data);
-        } else if (messageData.payload.parts) {
+        } else if (messageData.payload?.parts) {
           const textPart = messageData.payload.parts.find(
             (p: any) => p.mimeType === 'text/plain' || p.mimeType === 'text/html'
           );
-          if (textPart?.body.data) {
+          if (textPart?.body?.data) {
             body = decodeBase64Url(textPart.body.data);
           }
         }
@@ -144,9 +155,13 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
         const fromEmail = extractEmail(from).toLowerCase();
         const direction = fromEmail === accountEmail ? 'sent' : 'received';
 
+        console.log('Direction:', direction);
+
         // Get or create conversation
         const contactEmail = direction === 'received' ? fromEmail : extractEmail(to).toLowerCase();
         const contactName = direction === 'received' ? extractName(from) : extractName(to);
+
+        console.log('Contact:', contactEmail, contactName);
 
         let conversationId = await getOrCreateConversation(
           supabase,
@@ -157,7 +172,12 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           contactName
         );
 
-        if (!conversationId) continue;
+        if (!conversationId) {
+          console.error('Failed to create conversation for:', contactEmail);
+          continue;
+        }
+
+        console.log('Conversation ID:', conversationId);
 
         // Check if message already exists
         const { data: existing } = await supabase
@@ -167,7 +187,10 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           .eq('conversation_id', conversationId)
           .single();
 
-        if (existing) continue; // Skip if already synced
+        if (existing) {
+          console.log('Message already synced:', msg.id);
+          continue; // Skip if already synced
+        }
 
         // Insert message
         const { error: insertError } = await supabase.from('messages').insert({
@@ -175,20 +198,26 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           platform_message_id: msg.id,
           direction,
           message_type: 'text',
-          text_content: body,
+          text_content: body || subject,
           sender_id: fromEmail,
           sender_name: extractName(from) || fromEmail,
           sender_username: fromEmail,
-          is_read: messageData.labelIds?.includes('UNREAD') ? false : true,
+          is_read: messageData.labelIds && !messageData.labelIds.includes('UNREAD'),
           sent_at: new Date(date).toISOString(),
         });
 
-        if (!insertError) synced++;
+        if (insertError) {
+          console.error('Error inserting message:', insertError);
+        } else {
+          synced++;
+          console.log('Message synced successfully:', msg.id);
+        }
       } catch (msgError) {
         console.error('Error syncing message:', msg.id, msgError);
       }
     }
 
+    console.log(`Sync completed: ${synced} messages synced`);
     return synced;
   } catch (error) {
     console.error('Error syncing Gmail messages:', error);
@@ -202,9 +231,11 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
 
 async function syncOutlookMessages(supabase: any, account: any): Promise<number> {
   try {
+    console.log('Starting Outlook sync for account:', account.id, account.email_address);
+
     // Get messages from Microsoft Graph API
     const messagesResponse = await fetch(
-      `https://graph.microsoft.com/v1.0/me/messages?$top=50&$orderby=receivedDateTime desc`,
+      `https://graph.microsoft.com/v1.0/me/messages?$top=10&$orderby=receivedDateTime desc`,
       {
         headers: {
           Authorization: `Bearer ${account.access_token}`,
