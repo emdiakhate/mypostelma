@@ -102,33 +102,24 @@ export async function deleteTeam(teamId: string): Promise<void> {
 export async function getTeamMembers(teamId: string): Promise<TeamMemberWithDetails[]> {
   const { data, error } = await supabase
     .from('team_members')
-    .select('*')
+    .select(`
+      *,
+      profiles:user_id (
+        name,
+        avatar
+      )
+    `)
     .eq('team_id', teamId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
-  // Fetch profile info for members who have accepted
-  const membersWithDetails = await Promise.all(
-    (data || []).map(async (member) => {
-      if (member.user_id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('name, avatar')
-          .eq('id', member.user_id)
-          .single();
-
-        return {
-          ...member,
-          full_name: profile?.name,
-          avatar_url: profile?.avatar,
-        } as TeamMemberWithDetails;
-      }
-      return member as TeamMemberWithDetails;
-    })
-  );
-
-  return membersWithDetails;
+  // Map profiles data to expected format
+  return (data || []).map((member: any) => ({
+    ...member,
+    full_name: member.profiles?.name || null,
+    avatar_url: member.profiles?.avatar || null,
+  }));
 }
 
 export async function inviteTeamMember(
@@ -148,7 +139,7 @@ export async function inviteTeamMember(
     .single();
 
   if (error) throw error;
-  return data as TeamMember;
+  return data;
 }
 
 export async function removeTeamMember(memberId: string): Promise<void> {
@@ -172,7 +163,7 @@ export async function updateTeamMemberRole(
     .single();
 
   if (error) throw error;
-  return data as TeamMember;
+  return data;
 }
 
 export async function acceptTeamInvitation(memberId: string, userId: string): Promise<void> {
@@ -210,7 +201,7 @@ export async function assignTeamToConversation(
 ): Promise<ConversationTeam> {
   const { data, error } = await supabase
     .from('conversation_teams')
-    .insert({
+    .upsert({
       conversation_id: payload.conversation_id,
       team_id: payload.team_id,
       auto_assigned: payload.auto_assigned || false,
@@ -241,8 +232,24 @@ export async function removeTeamFromConversation(
 // =====================================================
 
 export async function requestAIRouting(conversationId: string, messageId: string): Promise<void> {
-  // TODO: Call analyze-message-routing edge function
-  console.log('AI routing requested for conversation:', conversationId, 'message:', messageId);
+  try {
+    const response = await supabase.functions.invoke('analyze-message-routing', {
+      body: {
+        conversation_id: conversationId,
+        message_id: messageId,
+      },
+    });
+
+    if (response.error) {
+      console.error('AI routing error:', response.error);
+      throw response.error;
+    }
+
+    console.log('AI routing result:', response.data);
+  } catch (error) {
+    console.error('Failed to request AI routing:', error);
+    // Don't throw - we don't want to block message sync if AI routing fails
+  }
 }
 
 // =====================================================
