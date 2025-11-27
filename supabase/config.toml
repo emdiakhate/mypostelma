@@ -57,3 +57,6 @@ verify_jwt = false
 [functions.inbox-webhook-handler]
 verify_jwt = false
 
+[functions.analyze-message-routing]
+verify_jwt = false
+

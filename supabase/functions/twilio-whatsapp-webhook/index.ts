@@ -111,22 +111,47 @@ serve(async (req) => {
       }
 
       // Create message
-      const { error: msgError } = await supabase.from('messages').insert({
-        conversation_id: conversation.id,
-        platform_message_id: messageId,
-        direction: 'incoming',
-        message_type: messageType,
-        text_content: messageBody || '',
-        media_url: mediaUrl,
-        media_type: mediaType,
-        sender_id: participantId,
-        sender_name: participantName,
-        is_read: false,
-        sent_at: new Date().toISOString(),
-      });
+      const { data: insertedMessage, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversation.id,
+          platform_message_id: messageId,
+          direction: 'incoming',
+          message_type: messageType,
+          text_content: messageBody || '',
+          media_url: mediaUrl,
+          media_type: mediaType,
+          sender_id: participantId,
+          sender_name: participantName,
+          is_read: false,
+          sent_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
       if (msgError) {
         console.error('Error creating message:', msgError);
+      } else if (insertedMessage) {
+        // Trigger AI routing asynchronously
+        try {
+          console.log('Triggering AI routing for WhatsApp message:', insertedMessage.id);
+          supabase.functions.invoke('analyze-message-routing', {
+            body: {
+              conversation_id: conversation.id,
+              message_id: insertedMessage.id,
+            },
+          }).then((response: any) => {
+            if (response.error) {
+              console.error('AI routing error:', response.error);
+            } else {
+              console.log('AI routing completed:', response.data);
+            }
+          }).catch((error: any) => {
+            console.error('AI routing failed:', error);
+          });
+        } catch (routingError) {
+          console.error('Error triggering AI routing:', routingError);
+        }
       }
     }
 

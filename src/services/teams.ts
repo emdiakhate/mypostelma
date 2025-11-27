@@ -139,7 +139,11 @@ export async function inviteTeamMember(
     .single();
 
   if (error) throw error;
-  return data;
+  return {
+    ...data,
+    role: data.role as 'admin' | 'member',
+    status: data.status as 'pending' | 'accepted' | 'declined'
+  };
 }
 
 export async function removeTeamMember(memberId: string): Promise<void> {
@@ -163,7 +167,11 @@ export async function updateTeamMemberRole(
     .single();
 
   if (error) throw error;
-  return data;
+  return {
+    ...data,
+    role: data.role as 'admin' | 'member',
+    status: data.status as 'pending' | 'accepted' | 'declined'
+  };
 }
 
 export async function acceptTeamInvitation(memberId: string, userId: string): Promise<void> {

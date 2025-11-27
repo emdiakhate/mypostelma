@@ -247,13 +247,13 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
                     conversation_id: conversationId,
                     message_id: insertedMessage.id,
                   },
-                }).then((response) => {
+                }).then((response: any) => {
                   if (response.error) {
                     console.error('AI routing error:', response.error);
                   } else {
                     console.log('AI routing completed:', response.data);
                   }
-                }).catch((error) => {
+                }).catch((error: any) => {
                   console.error('AI routing failed:', error);
                 });
               }
@@ -376,13 +376,13 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
                     conversation_id: conversationId,
                     message_id: insertedMessage.id,
                   },
-                }).then((response) => {
+                }).then((response: any) => {
                   if (response.error) {
                     console.error('AI routing error:', response.error);
                   } else {
                     console.log('AI routing completed:', response.data);
                   }
-                }).catch((error) => {
+                }).catch((error: any) => {
                   console.error('AI routing failed:', error);
                 });
               }

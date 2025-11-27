@@ -104,23 +104,48 @@ serve(async (req) => {
     }
 
     // Insert message
-    const { error: msgError } = await supabase.from('messages').insert({
-      conversation_id: conversation.id,
-      platform_message_id: message_id.toString(),
-      direction: 'incoming',
-      message_type: messageType,
-      text_content: textContent,
-      media_url: mediaUrl,
-      media_type: mediaType,
-      sender_id: participantId,
-      sender_name: participantName,
-      sender_username: participantUsername,
-      is_read: false,
-      sent_at: new Date(date * 1000).toISOString(),
-    });
+    const { data: insertedMessage, error: msgError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversation.id,
+        platform_message_id: message_id.toString(),
+        direction: 'incoming',
+        message_type: messageType,
+        text_content: textContent,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        sender_id: participantId,
+        sender_name: participantName,
+        sender_username: participantUsername,
+        is_read: false,
+        sent_at: new Date(date * 1000).toISOString(),
+      })
+      .select()
+      .single();
 
     if (msgError) {
       console.error('Error creating message:', msgError);
+    } else if (insertedMessage) {
+      // Trigger AI routing asynchronously
+      try {
+        console.log('Triggering AI routing for Telegram message:', insertedMessage.id);
+        supabase.functions.invoke('analyze-message-routing', {
+          body: {
+            conversation_id: conversation.id,
+            message_id: insertedMessage.id,
+          },
+        }).then((response: any) => {
+          if (response.error) {
+            console.error('AI routing error:', response.error);
+          } else {
+            console.log('AI routing completed:', response.data);
+          }
+        }).catch((error: any) => {
+          console.error('AI routing failed:', error);
+        });
+      } catch (routingError) {
+        console.error('Error triggering AI routing:', routingError);
+      }
     }
 
     return new Response('OK', { status: 200 });
