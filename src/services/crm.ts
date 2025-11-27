@@ -699,6 +699,15 @@ export class CampaignService {
     return this.mapCampaign(data);
   }
 
+  static async deleteCampaign(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('crm_campaigns')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
   private static mapCampaign(row: any): CRMCampaign {
     return {
       id: row.id,

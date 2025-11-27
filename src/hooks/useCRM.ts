@@ -10,6 +10,7 @@ import {
   TagService,
   CRMLeadService,
   CRMStatsService,
+  CampaignService,
 } from '@/services/crm';
 import {
   CRMSector,
@@ -17,11 +18,13 @@ import {
   CRMTag,
   EnrichedLead,
   CRMStats,
+  CRMCampaign,
   LeadFilters,
   SectorFormData,
   SegmentFormData,
   TagFormData,
   LeadFormData,
+  CampaignFormData,
   LeadStatus,
 } from '@/types/crm';
 import { toast } from 'sonner';
@@ -394,5 +397,61 @@ export function useLeadStatusHelpers() {
     getStatusColor,
     getStatusLabel,
     getStatusIcon,
+  };
+}
+
+// ==============================================
+// Hook: useCampaigns
+// ==============================================
+
+export function useCampaigns() {
+  const { user } = useAuth();
+  const [campaigns, setCampaigns] = useState<CRMCampaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCampaigns = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await CampaignService.getCampaigns(user.id);
+      setCampaigns(data);
+    } catch (err: any) {
+      console.error('Error loading campaigns:', err);
+      setError(err.message);
+      toast.error('Erreur lors du chargement des campagnes');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  const createCampaign = async (formData: CampaignFormData) => {
+    if (!user?.id) throw new Error('User not authenticated');
+
+    const newCampaign = await CampaignService.createCampaign(user.id, formData);
+    setCampaigns((prev) => [newCampaign, ...prev]);
+    toast.success('Campagne créée avec succès');
+    return newCampaign;
+  };
+
+  const deleteCampaign = async (id: string) => {
+    await CampaignService.deleteCampaign(id);
+    setCampaigns((prev) => prev.filter((c) => c.id !== id));
+    toast.success('Campagne supprimée');
+  };
+
+  useEffect(() => {
+    loadCampaigns();
+  }, [loadCampaigns]);
+
+  return {
+    campaigns,
+    loading,
+    error,
+    loadCampaigns,
+    createCampaign,
+    deleteCampaign,
   };
 }
