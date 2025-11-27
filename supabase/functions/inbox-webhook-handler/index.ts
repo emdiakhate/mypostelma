@@ -200,7 +200,7 @@ async function handleMessage(
     }
 
     // Create message
-    await supabase.from('messages').insert({
+    const { data: newMessage, error: insertError } = await supabase.from('messages').insert({
       conversation_id: dbConversationId,
       platform_message_id: messageId,
       direction: 'inbound',
@@ -213,9 +213,39 @@ async function handleMessage(
       sender_name: senderProfile.name,
       is_read: false,
       sent_at: timestamp.toISOString(),
-    });
+    }).select('id').single();
+
+    if (insertError) {
+      console.error('Error inserting message:', insertError);
+      throw insertError;
+    }
 
     console.log('Message created successfully for conversation:', dbConversationId);
+
+    // Trigger AI routing for incoming messages
+    if (newMessage && messageText) {
+      try {
+        console.log('Triggering AI routing for message:', newMessage.id);
+        // Call AI routing function asynchronously (don't await to avoid blocking)
+        supabase.functions.invoke('analyze-message-routing', {
+          body: {
+            conversation_id: dbConversationId,
+            message_id: newMessage.id,
+          },
+        }).then((response) => {
+          if (response.error) {
+            console.error('AI routing error:', response.error);
+          } else {
+            console.log('AI routing completed:', response.data);
+          }
+        }).catch((error) => {
+          console.error('AI routing failed:', error);
+        });
+      } catch (routingError) {
+        console.error('Error triggering AI routing:', routingError);
+        // Don't throw - we don't want to block webhook if AI routing fails
+      }
+    }
   } catch (error) {
     console.error('Error handling message:', error);
     throw error;
@@ -321,7 +351,7 @@ async function handleComment(
     }
 
     // Create message
-    await supabase.from('messages').insert({
+    const { data: newComment, error: insertError } = await supabase.from('messages').insert({
       conversation_id: dbConversationId,
       platform_message_id: commentId,
       direction: 'inbound',
@@ -332,9 +362,39 @@ async function handleComment(
       sender_name: senderUsername,
       is_read: false,
       sent_at: timestamp.toISOString(),
-    });
+    }).select('id').single();
+
+    if (insertError) {
+      console.error('Error inserting comment:', insertError);
+      throw insertError;
+    }
 
     console.log('Comment created successfully for conversation:', dbConversationId);
+
+    // Trigger AI routing for incoming comments
+    if (newComment && commentText) {
+      try {
+        console.log('Triggering AI routing for comment:', newComment.id);
+        // Call AI routing function asynchronously (don't await to avoid blocking)
+        supabase.functions.invoke('analyze-message-routing', {
+          body: {
+            conversation_id: dbConversationId,
+            message_id: newComment.id,
+          },
+        }).then((response) => {
+          if (response.error) {
+            console.error('AI routing error:', response.error);
+          } else {
+            console.log('AI routing completed:', response.data);
+          }
+        }).catch((error) => {
+          console.error('AI routing failed:', error);
+        });
+      } catch (routingError) {
+        console.error('Error triggering AI routing:', routingError);
+        // Don't throw - we don't want to block webhook if AI routing fails
+      }
+    }
   } catch (error) {
     console.error('Error handling comment:', error);
     throw error;

@@ -227,6 +227,41 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
         } else {
           synced++;
           console.log('Message synced successfully:', msg.id);
+
+          // Trigger AI routing for incoming messages
+          if (direction === 'received') {
+            try {
+              // Get the message ID
+              const { data: insertedMessage } = await supabase
+                .from('messages')
+                .select('id')
+                .eq('platform_message_id', msg.id)
+                .eq('conversation_id', conversationId)
+                .single();
+
+              if (insertedMessage) {
+                console.log('Triggering AI routing for message:', insertedMessage.id);
+                // Call AI routing function asynchronously (don't await to avoid blocking)
+                supabase.functions.invoke('analyze-message-routing', {
+                  body: {
+                    conversation_id: conversationId,
+                    message_id: insertedMessage.id,
+                  },
+                }).then((response) => {
+                  if (response.error) {
+                    console.error('AI routing error:', response.error);
+                  } else {
+                    console.log('AI routing completed:', response.data);
+                  }
+                }).catch((error) => {
+                  console.error('AI routing failed:', error);
+                });
+              }
+            } catch (routingError) {
+              console.error('Error triggering AI routing:', routingError);
+              // Don't throw - we don't want to block sync if AI routing fails
+            }
+          }
         }
       } catch (msgError) {
         console.error('Error syncing message:', msg.id, msgError);
@@ -319,7 +354,44 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
           sent_at: msg.receivedDateTime,
         });
 
-        if (!insertError) synced++;
+        if (!insertError) {
+          synced++;
+
+          // Trigger AI routing for incoming messages
+          if (direction === 'received') {
+            try {
+              // Get the message ID
+              const { data: insertedMessage } = await supabase
+                .from('messages')
+                .select('id')
+                .eq('platform_message_id', msg.id)
+                .eq('conversation_id', conversationId)
+                .single();
+
+              if (insertedMessage) {
+                console.log('Triggering AI routing for Outlook message:', insertedMessage.id);
+                // Call AI routing function asynchronously (don't await to avoid blocking)
+                supabase.functions.invoke('analyze-message-routing', {
+                  body: {
+                    conversation_id: conversationId,
+                    message_id: insertedMessage.id,
+                  },
+                }).then((response) => {
+                  if (response.error) {
+                    console.error('AI routing error:', response.error);
+                  } else {
+                    console.log('AI routing completed:', response.data);
+                  }
+                }).catch((error) => {
+                  console.error('AI routing failed:', error);
+                });
+              }
+            } catch (routingError) {
+              console.error('Error triggering AI routing:', routingError);
+              // Don't throw - we don't want to block sync if AI routing fails
+            }
+          }
+        }
       } catch (msgError) {
         console.error('Error syncing message:', msg.id, msgError);
       }
