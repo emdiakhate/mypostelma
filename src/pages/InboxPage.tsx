@@ -61,7 +61,7 @@ export default function InboxPage() {
         filters.assigned_to = user.id;
       }
 
-      const data = await getConversations(user.id, filters);
+      const data = await getConversations(filters);
 
       // Filter by team if selected
       let filteredData = data;
@@ -142,8 +142,10 @@ export default function InboxPage() {
         selectedConversation={selectedConversation}
         loading={loading}
         searchQuery={searchQuery}
+        selectedFilter={selectedFilter}
         onSearchChange={setSearchQuery}
         onConversationSelect={setSelectedConversation}
+        onFilterSelect={setSelectedFilter}
         onRefresh={loadConversations}
       />
 
