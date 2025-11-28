@@ -102,23 +102,40 @@ export async function deleteTeam(teamId: string): Promise<void> {
 export async function getTeamMembers(teamId: string): Promise<TeamMemberWithDetails[]> {
   const { data, error } = await supabase
     .from('team_members')
-    .select(`
-      *,
-      profiles:user_id (
-        name,
-        avatar
-      )
-    `)
+    .select('*')
     .eq('team_id', teamId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Get profile info for members who have user_id
+  const userIds = data.filter(m => m.user_id).map(m => m.user_id);
+
+  let profilesMap: Record<string, any> = {};
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name, avatar')
+      .in('id', userIds);
+
+    if (profiles) {
+      profilesMap = profiles.reduce((acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      }, {} as Record<string, any>);
+    }
+  }
+
   // Map profiles data to expected format
-  return (data || []).map((member: any) => ({
+  return data.map((member: any) => ({
     ...member,
-    full_name: member.profiles?.name || null,
-    avatar_url: member.profiles?.avatar || null,
+    full_name: member.user_id ? profilesMap[member.user_id]?.name || null : null,
+    avatar_url: member.user_id ? profilesMap[member.user_id]?.avatar || null : null,
   }));
 }
 
