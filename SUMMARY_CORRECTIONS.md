@@ -121,55 +121,63 @@ Documentation sur RESEND API :
 
 ---
 
+### 5. Page CRM Leads - Fonctionnalités Complètes
+**Problème :** Drag & drop, import CSV et ajout manuel non implémentés
+
+**Solution :**
+
+#### Drag & Drop Kanban
+- Implémenté drag & drop HTML5 natif sur les cartes de leads
+- Déplacement fluide entre colonnes (new → contacted → interested → qualified → client)
+- Mise à jour automatique du statut après drop
+- Feedback visuel : opacité 50% pendant le drag, curseur "move"
+- Aucun rechargement nécessaire
+
+#### Import CSV de Leads (ImportCSVModal.tsx - 419 lignes)
+- Parser CSV custom avec support guillemets et virgules dans les valeurs
+- Mapping automatique des colonnes :
+  * nom/name/entreprise/company → name
+  * ville/city → city
+  * adresse/address → address
+  * telephone/phone/tel → phone
+  * email/mail → email
+  * site/website/web → website
+  * notes/note → notes
+- Aperçu des 3 premières lignes avant import
+- Validation ligne par ligne (nom, ville, adresse obligatoires)
+- Rapport détaillé : X leads importés, Y erreurs avec détails
+- Auto-fermeture après 3 secondes si succès complet
+
+#### Ajout Manuel de Lead (AddLeadModal.tsx - 467 lignes)
+- Formulaire complet avec tous les champs :
+  * **Informations de base** : Nom*, Secteur, Segment
+  * **Localisation** : Adresse*, Ville*, Code postal, URL Google Maps
+  * **Contact** : Téléphone, WhatsApp, Email, Site web
+  * **Réseaux sociaux** : Instagram, Facebook, LinkedIn, Twitter
+  * **Google Business** : Note (0-5), Nombre d'avis
+  * **CRM** : Statut (new par default), Score (1-5), Notes
+- Validation des champs obligatoires (nom, ville, adresse)
+- Secteur/Segment : Sélection en cascade (segments filtrés par secteur)
+- Source automatique : "manual" pour traçabilité
+- Toast de confirmation après création
+
+**Fichiers créés :**
+- `src/components/crm/AddLeadModal.tsx` (467 lignes)
+- `src/components/crm/ImportCSVModal.tsx` (419 lignes)
+
+**Fichiers modifiés :**
+- `src/pages/crm/CRMLeadsPage.tsx` (+60 lignes)
+  * Ajout handlers drag & drop
+  * Boutons "Ajouter un Lead" et "Importer CSV" dans header
+  * Intégration des deux modals
+
+**Status :** ✅ RÉSOLU
+
+---
+
 ## ⏳ Problèmes Restants (À Faire)
 
-### 1. Drag & Drop Leads (Page CRM Leads)
-**Problème :** Le drag & drop n'est pas implémenté sur la vue Kanban
-
-**À faire :**
-- Implémenter drag & drop HTML5 natif
-- Permettre de glisser les leads d'une colonne à l'autre
-- Mettre à jour le statut automatiquement après drop
-- Ajouter feedback visuel pendant le drag
-
-**Complexité :** Moyenne (2-3h de développement)
-
----
-
-### 2. Import CSV de Leads
-**Problème :** Pas de bouton pour importer des leads depuis un fichier CSV
-
-**À faire :**
-- Créer un composant `ImportLeadsModal`
-- Parser le CSV (avec papa parse ou library similaire)
-- Valider les données
-- Mapper les colonnes du CSV aux champs de la BDD
-- Insérer en batch dans `crm_leads`
-- Afficher résumé (X leads importés, Y erreurs)
-
-**Complexité :** Moyenne-Élevée (3-4h de développement)
-
----
-
-### 3. Ajout Manuel de Lead
-**Problème :** Pas de formulaire pour ajouter manuellement un lead
-
-**À faire :**
-- Créer un composant `AddLeadModal`
-- Formulaire avec tous les champs :
-  * Nom (requis)
-  * Email, Phone, WhatsApp
-  * Adresse, Ville, Code postal
-  * Secteur, Segment
-  * Tags
-  * Google Business (rating, reviews, URL maps)
-  * Réseaux sociaux (Instagram, Facebook, etc.)
-  * Notes
-  * Score initial
-- Validation Zod
-- Insertion dans `crm_leads`
-
-**Complexité :** Moyenne (2-3h de développement)
+*Aucun problème en attente pour le moment.*
 
 ---
 
@@ -210,11 +218,11 @@ Documentation sur RESEND API :
 
 | Métrique | Valeur |
 |----------|--------|
-| **Problèmes résolus** | 4 |
-| **Fichiers modifiés** | 7 |
-| **Fichiers créés** | 7 |
-| **Lignes ajoutées** | +1,635 |
-| **Commits** | 6 |
+| **Problèmes résolus** | 5 |
+| **Fichiers modifiés** | 8 |
+| **Fichiers créés** | 9 |
+| **Lignes ajoutées** | +2,583 |
+| **Commits** | 7 |
 | **Documentation** | 3 fichiers |
 
 ---
@@ -245,6 +253,25 @@ Documentation sur RESEND API :
 2. Sync messages
 3. **Attendu :** Message tagué "RH" avec couleur de l'équipe
 
+### ✅ Test 6 : Drag & Drop Leads
+1. Page CRM Leads → Vue Kanban
+2. Glisser un lead de "Nouveau" vers "Contacté"
+3. **Attendu :** Lead déplacé, statut mis à jour automatiquement
+
+### ✅ Test 7 : Ajout Manuel de Lead
+1. Page CRM Leads → "Ajouter un Lead"
+2. Remplir : Nom "Test Restaurant", Ville "Dakar", Adresse "123 Rue Test"
+3. Sélectionner secteur "Restauration"
+4. Cliquer "Ajouter"
+5. **Attendu :** Lead apparaît dans colonne "Nouveau"
+
+### ✅ Test 8 : Import CSV de Leads
+1. Page CRM Leads → "Importer CSV"
+2. Uploader un CSV avec colonnes : nom,ville,adresse,telephone,email
+3. Vérifier l'aperçu
+4. Cliquer "Importer"
+5. **Attendu :** X leads importés, rapport de succès/erreurs
+
 ---
 
 ## 🔄 Prochaines Étapes
@@ -253,16 +280,17 @@ Documentation sur RESEND API :
 1. **Déployer les migrations via Lovable** (CRITIQUE)
 2. Tester sync Gmail
 3. Tester création équipe + invitation
+4. Tester drag & drop, ajout manuel et import CSV Leads
 
 ### Priorité MOYENNE
-4. Implémenter drag & drop Leads
-5. Créer formulaire ajout manuel Lead
-6. Implémenter import CSV Leads
+5. Améliorer la modal de détails de lead (page CRM Leads)
+6. Ajouter filtres avancés sur page Leads
+7. Implémenter système de tâches CRM
 
 ### Priorité BASSE
-7. Configurer RESEND API (optionnel)
-8. Ajouter tests unitaires
-9. Optimiser performances
+8. Configurer RESEND API (optionnel)
+9. Ajouter tests unitaires
+10. Optimiser performances
 
 ---
 
@@ -285,5 +313,5 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
 ---
 
 **Créé le :** 2025-11-27
-**Dernière mise à jour :** 2025-11-27
+**Dernière mise à jour :** 2025-11-28
 **Statut :** 📌 En attente de déploiement migrations
