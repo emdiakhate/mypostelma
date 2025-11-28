@@ -22,6 +22,8 @@ import {
   Globe,
   TrendingUp,
   X,
+  Upload,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,8 +43,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCRMLeads, useSectors, useSegments, useLeadStatusHelpers } from '@/hooks/useCRM';
-import { EnrichedLead, LeadStatus, LeadFilters } from '@/types/crm';
+import { EnrichedLead, LeadStatus, LeadFilters, LeadFormData } from '@/types/crm';
 import { cn } from '@/lib/utils';
+import AddLeadModal from '@/components/crm/AddLeadModal';
+import ImportCSVModal from '@/components/crm/ImportCSVModal';
 
 const CRMLeadsPage: React.FC = () => {
   const { getStatusColor, getStatusLabel, getStatusIcon } = useLeadStatusHelpers();
@@ -60,13 +64,20 @@ const CRMLeadsPage: React.FC = () => {
   });
 
   // Charger les leads avec filtres
-  const { leads, loading, updateLeadStatus, deleteLead } = useCRMLeads(filters);
+  const { leads, loading, createLead, updateLeadStatus, deleteLead } = useCRMLeads(filters);
 
   // Vue sélectionnée
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   // Lead sélectionné pour détails
   const [selectedLead, setSelectedLead] = useState<EnrichedLead | null>(null);
+
+  // Modals
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  // Drag & Drop state
+  const [draggedLead, setDraggedLead] = useState<EnrichedLead | null>(null);
 
   // Grouper les leads par statut pour la vue Kanban
   const leadsByStatus = useMemo(() => {
@@ -107,6 +118,58 @@ const CRMLeadsPage: React.FC = () => {
     }
   };
 
+  // Drag & Drop handlers
+  const handleDragStart = (e: React.DragEvent, lead: EnrichedLead) => {
+    setDraggedLead(lead);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: LeadStatus) => {
+    e.preventDefault();
+
+    if (!draggedLead) return;
+
+    // Ne rien faire si on drop sur la même colonne
+    if (draggedLead.status === newStatus) {
+      setDraggedLead(null);
+      return;
+    }
+
+    // Mettre à jour le statut
+    try {
+      await handleStatusChange(draggedLead.id, newStatus);
+    } catch (error) {
+      console.error('Error during drop:', error);
+    } finally {
+      setDraggedLead(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLead(null);
+  };
+
+  // Modal handlers
+  const handleAddLead = async (leadData: LeadFormData) => {
+    await createLead(leadData);
+  };
+
+  const handleImportLeads = async (leads: LeadFormData[]) => {
+    // Import leads one by one
+    for (const leadData of leads) {
+      try {
+        await createLead(leadData);
+      } catch (error) {
+        console.error('Error importing lead:', error);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -118,11 +181,23 @@ const CRMLeadsPage: React.FC = () => {
   return (
     <div className="container max-w-full mx-auto py-8 px-4 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Gestion des Leads</h1>
-        <p className="text-gray-600">
-          Suivez et qualifiez vos prospects jusqu'à la conversion
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Gestion des Leads</h1>
+          <p className="text-gray-600">
+            Suivez et qualifiez vos prospects jusqu'à la conversion
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImportModal(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer CSV
+          </Button>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter un Lead
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -288,7 +363,12 @@ const CRMLeadsPage: React.FC = () => {
         {/* Colonnes par statut */}
         {(['new', 'contacted', 'interested', 'qualified', 'client'] as LeadStatus[]).map(
           (status) => (
-            <Card key={status} className="flex flex-col">
+            <Card
+              key={status}
+              className="flex flex-col"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, status)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -308,7 +388,13 @@ const CRMLeadsPage: React.FC = () => {
                 {leadsByStatus[status]?.map((lead) => (
                   <Card
                     key={lead.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, lead)}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      "hover:shadow-md transition-shadow cursor-move",
+                      draggedLead?.id === lead.id && "opacity-50"
+                    )}
                     onClick={() => setSelectedLead(lead)}
                   >
                     <CardContent className="p-3 space-y-2">
@@ -489,6 +575,20 @@ const CRMLeadsPage: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* Add Lead Modal */}
+      <AddLeadModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddLead}
+      />
+
+      {/* Import CSV Modal */}
+      <ImportCSVModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportLeads}
+      />
     </div>
   );
 };
