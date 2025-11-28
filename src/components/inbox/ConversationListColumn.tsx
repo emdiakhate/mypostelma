@@ -17,8 +17,10 @@ interface ConversationListColumnProps {
   selectedConversation: ConversationWithLastMessage | null;
   loading: boolean;
   searchQuery: string;
+  selectedFilter: 'all' | 'unread' | 'assigned';
   onSearchChange: (query: string) => void;
   onConversationSelect: (conversation: ConversationWithLastMessage) => void;
+  onFilterSelect: (filter: 'all' | 'unread' | 'assigned') => void;
   onRefresh: () => void;
 }
 
@@ -27,8 +29,10 @@ export function ConversationListColumn({
   selectedConversation,
   loading,
   searchQuery,
+  selectedFilter,
   onSearchChange,
   onConversationSelect,
+  onFilterSelect,
   onRefresh,
 }: ConversationListColumnProps) {
   const [refreshing, setRefreshing] = useState(false);
@@ -64,6 +68,49 @@ export function ConversationListColumn({
           >
             <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
           </Button>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={() => {
+              onFilterSelect('all');
+            }}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-lg transition-colors',
+              selectedFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            )}
+          >
+            Tous
+          </button>
+          <button
+            onClick={() => {
+              onFilterSelect('unread');
+            }}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-lg transition-colors',
+              selectedFilter === 'unread'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            )}
+          >
+            Non lus
+          </button>
+          <button
+            onClick={() => {
+              onFilterSelect('assigned');
+            }}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-lg transition-colors',
+              selectedFilter === 'assigned'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            )}
+          >
+            Assignés
+          </button>
         </div>
 
         {/* Search */}

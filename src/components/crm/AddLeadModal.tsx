@@ -165,9 +165,9 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
               <div>
                 <Label htmlFor="sector">Secteur</Label>
                 <Select
-                  value={formData.sector_id || ''}
+                  value={formData.sector_id || 'none'}
                   onValueChange={(value) => {
-                    handleChange('sector_id', value);
+                    handleChange('sector_id', value === 'none' ? undefined : value);
                     handleChange('segment_id', undefined); // Reset segment
                   }}
                 >
@@ -175,7 +175,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
                     <SelectValue placeholder="Sélectionner un secteur" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun secteur</SelectItem>
+                    <SelectItem value="none">Aucun secteur</SelectItem>
                     {sectors.map((sector) => (
                       <SelectItem key={sector.id} value={sector.id}>
                         {sector.name}
@@ -188,15 +188,15 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
               <div>
                 <Label htmlFor="segment">Segment</Label>
                 <Select
-                  value={formData.segment_id || ''}
-                  onValueChange={(value) => handleChange('segment_id', value)}
+                  value={formData.segment_id || 'none'}
+                  onValueChange={(value) => handleChange('segment_id', value === 'none' ? undefined : value)}
                   disabled={!formData.sector_id}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un segment" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun segment</SelectItem>
+                    <SelectItem value="none">Aucun segment</SelectItem>
                     {filteredSegments.map((segment) => (
                       <SelectItem key={segment.id} value={segment.id}>
                         {segment.name}

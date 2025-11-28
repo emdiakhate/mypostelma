@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, Loader2, MoreVertical } from 'lucide-react';
+import { Send, Mic, Sparkles, Loader2, MoreVertical, Paperclip, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -285,7 +285,7 @@ export function MessageViewColumn({
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Écrivez votre message... (Ctrl+Entrée pour envoyer)"
-            className="min-h-[80px] pr-24 resize-none"
+            className="min-h-[80px] pr-40 resize-none"
             disabled={sending}
           />
 
@@ -294,12 +294,32 @@ export function MessageViewColumn({
             <Button
               variant="ghost"
               size="sm"
+              disabled={sending}
+              className="h-8 w-8 p-0 hover:bg-gray-100"
+              title="Pièce jointe"
+            >
+              <Paperclip className="w-4 h-4 text-gray-600" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleVoiceInput}
               disabled={recording || sending}
               className="h-8 w-8 p-0 hover:bg-gray-100"
               title="Enregistrement vocal"
             >
-              <Mic className={cn('w-4 h-4', recording && 'text-red-500 animate-pulse')} />
+              <Mic className={cn('w-4 h-4 text-gray-600', recording && 'text-red-500 animate-pulse')} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={sending}
+              className="h-8 w-8 p-0 hover:bg-gray-100"
+              title="Émojis"
+            >
+              <Smile className="w-4 h-4 text-gray-600" />
             </Button>
 
             <Button
@@ -317,7 +337,7 @@ export function MessageViewColumn({
               size="sm"
               onClick={handleSend}
               disabled={!messageText.trim() || sending}
-              className="h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700"
+              className="h-8 px-3 bg-blue-600 hover:bg-blue-700"
               title="Envoyer (Ctrl+Entrée)"
             >
               {sending ? (
