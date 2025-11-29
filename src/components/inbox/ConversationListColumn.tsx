@@ -74,42 +74,42 @@ export function ConversationListColumn({
         <div className="flex items-center gap-2 mb-3">
           <button
             onClick={() => {
-              onFilterSelect('all');
+              onFilterSelect('assigned');
             }}
             className={cn(
-              'px-3 py-1.5 text-sm rounded-lg transition-colors',
-              selectedFilter === 'all'
+              'px-3 py-1.5 text-sm rounded-lg transition-colors font-medium',
+              selectedFilter === 'assigned'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'text-gray-700 hover:bg-gray-100'
             )}
           >
-            Tous
+            Mine <span className="ml-1 text-xs">6</span>
           </button>
           <button
             onClick={() => {
               onFilterSelect('unread');
             }}
             className={cn(
-              'px-3 py-1.5 text-sm rounded-lg transition-colors',
+              'px-3 py-1.5 text-sm rounded-lg transition-colors font-medium',
               selectedFilter === 'unread'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'text-gray-700 hover:bg-gray-100'
             )}
           >
-            Non lus
+            Unassigned <span className="ml-1 text-xs">10</span>
           </button>
           <button
             onClick={() => {
-              onFilterSelect('assigned');
+              onFilterSelect('all');
             }}
             className={cn(
-              'px-3 py-1.5 text-sm rounded-lg transition-colors',
-              selectedFilter === 'assigned'
+              'px-3 py-1.5 text-sm rounded-lg transition-colors font-medium',
+              selectedFilter === 'all'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'text-gray-700 hover:bg-gray-100'
             )}
           >
-            Assignés
+            All <span className="ml-1 text-xs">16</span>
           </button>
         </div>
 
@@ -188,38 +188,24 @@ export function ConversationListColumn({
                 )}
 
                 {/* Tags & Status */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Unread badge */}
-                  {conversation.status === 'unread' && (
-                    <Badge variant="default" className="bg-blue-600 text-xs h-5">
-                      Non lu
-                    </Badge>
-                  )}
-
-                  {/* Team tags */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Team tags - colored badges like in reference */}
                   {conversation.teams && conversation.teams.length > 0 && (
                     <>
                       {conversation.teams.map((team: any, idx: number) => (
-                        <Badge
+                        <span
                           key={idx}
-                          variant="outline"
-                          className="text-xs h-5"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
                           style={{
-                            borderColor: team.team_color,
-                            backgroundColor: `${team.team_color}15`,
-                            color: team.team_color,
+                            backgroundColor: team.team_color,
+                            color: 'white',
                           }}
                         >
                           {team.team_name}
-                        </Badge>
+                        </span>
                       ))}
                     </>
                   )}
-
-                  {/* Platform badge */}
-                  <Badge variant="secondary" className="text-xs h-5">
-                    {conversation.platform}
-                  </Badge>
                 </div>
               </button>
             ))}

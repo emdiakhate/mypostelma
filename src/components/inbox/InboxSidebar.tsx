@@ -33,12 +33,6 @@ export function InboxSidebar({
   onTeamSelect,
   onFilterSelect,
 }: InboxSidebarProps) {
-  const filters = [
-    { id: 'all', label: 'Toutes les conversations', icon: Inbox, count: null },
-    { id: 'unread', label: 'Non lus', icon: Mail, count: null },
-    { id: 'assigned', label: 'Assignés à moi', icon: UserCheck, count: null },
-  ] as const;
-
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
       {/* Header */}
@@ -51,93 +45,54 @@ export function InboxSidebar({
 
       {/* Filters & Sections */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-4">
-          {/* Inbox Filters Section */}
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2 flex items-center gap-2">
-              <Filter className="w-3 h-3" />
-              Filtres
-            </p>
-            <div className="space-y-1">
-              {filters.map((filter) => {
-                const Icon = filter.icon;
-                const isSelected = selectedFilter === filter.id;
+        <div className="p-2 space-y-1">
+          {/* All Conversations */}
+          <button
+            onClick={() => {
+              onFilterSelect('all');
+              onTeamSelect(null);
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              selectedFilter === 'all' && !selectedTeam
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            )}
+          >
+            <Inbox className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left truncate">All Conversations</span>
+          </button>
 
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => {
-                      onFilterSelect(filter.id);
-                      onTeamSelect(null);
-                    }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                      isSelected
-                        ? 'bg-purple-50 text-purple-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-left truncate">{filter.label}</span>
-                    {filter.count !== null && (
-                      <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
-                        {filter.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Mentions */}
+          <button
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <Mail className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left truncate">Mentions</span>
+          </button>
 
-          {/* Status Section */}
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2">
-              Statut
-            </p>
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <CheckCircle className="w-4 h-4 flex-shrink-0 text-green-500" />
-                <span className="flex-1 text-left truncate">Répondus</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <Clock className="w-4 h-4 flex-shrink-0 text-yellow-500" />
-                <span className="flex-1 text-left truncate">En attente</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <Archive className="w-4 h-4 flex-shrink-0 text-gray-500" />
-                <span className="flex-1 text-left truncate">Archivés</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Sentiment Section */}
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2">
-              Sentiment
-            </p>
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <Smile className="w-4 h-4 flex-shrink-0 text-green-500" />
-                <span className="flex-1 text-left truncate">Positif</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <Meh className="w-4 h-4 flex-shrink-0 text-gray-500" />
-                <span className="flex-1 text-left truncate">Neutre</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <Frown className="w-4 h-4 flex-shrink-0 text-red-500" />
-                <span className="flex-1 text-left truncate">Négatif</span>
-              </button>
-            </div>
-          </div>
+          {/* Unattended */}
+          <button
+            onClick={() => {
+              onFilterSelect('unread');
+              onTeamSelect(null);
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              selectedFilter === 'unread' && !selectedTeam
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            )}
+          >
+            <UserCheck className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left truncate">Unattended</span>
+          </button>
 
           {/* Teams Section */}
           {teams.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2 flex items-center gap-2">
-                <Tag className="w-3 h-3" />
-                Équipes
+            <div className="pt-4">
+              <p className="text-xs font-semibold text-gray-900 px-3 py-2">
+                Teams
               </p>
               <div className="space-y-1">
                 {teams.map((team) => (
