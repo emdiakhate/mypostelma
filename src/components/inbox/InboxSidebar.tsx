@@ -13,24 +13,33 @@ import {
   Frown,
   Meh,
   Tag,
-  Filter
+  Filter,
+  Link2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Team } from '@/types/teams';
+import type { ConnectedAccountWithStats } from '@/types/inbox';
+import { PLATFORM_LABELS, PLATFORM_ICON_COMPONENTS } from '@/config/inboxPlatforms';
 
 interface InboxSidebarProps {
   teams: Team[];
+  connectedAccounts: ConnectedAccountWithStats[];
   selectedTeam: string | null;
+  selectedAccount: string | null;
   selectedFilter: 'all' | 'unread' | 'assigned';
   onTeamSelect: (teamId: string | null) => void;
+  onAccountSelect: (accountId: string | null) => void;
   onFilterSelect: (filter: 'all' | 'unread' | 'assigned') => void;
 }
 
 export function InboxSidebar({
   teams,
+  connectedAccounts,
   selectedTeam,
+  selectedAccount,
   selectedFilter,
   onTeamSelect,
+  onAccountSelect,
   onFilterSelect,
 }: InboxSidebarProps) {
   const filters = [
@@ -69,6 +78,7 @@ export function InboxSidebar({
                     onClick={() => {
                       onFilterSelect(filter.id);
                       onTeamSelect(null);
+                      onAccountSelect(null);
                     }}
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
@@ -132,6 +142,49 @@ export function InboxSidebar({
             </div>
           </div>
 
+          {/* Connected Accounts Section */}
+          {connectedAccounts.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2 flex items-center gap-2">
+                <Link2 className="w-3 h-3" />
+                Comptes
+              </p>
+              <div className="space-y-1">
+                {connectedAccounts.map((account) => {
+                  const IconComponent = PLATFORM_ICON_COMPONENTS[account.platform];
+                  return (
+                    <button
+                      key={account.id}
+                      onClick={() => {
+                        onAccountSelect(account.id);
+                        onTeamSelect(null);
+                        onFilterSelect('all');
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                        selectedAccount === account.id
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      )}
+                    >
+                      <div className="flex-shrink-0">
+                        <IconComponent className="w-4 h-4" />
+                      </div>
+                      <span className="flex-1 text-left truncate">
+                        {PLATFORM_LABELS[account.platform]}
+                      </span>
+                      {account.unread_conversations > 0 && (
+                        <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                          {account.unread_conversations}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Teams Section */}
           {teams.length > 0 && (
             <div>
@@ -145,6 +198,7 @@ export function InboxSidebar({
                     key={team.id}
                     onClick={() => {
                       onTeamSelect(team.id);
+                      onAccountSelect(null);
                       onFilterSelect('all');
                     }}
                     className={cn(

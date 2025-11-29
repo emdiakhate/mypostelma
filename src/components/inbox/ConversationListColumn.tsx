@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import type { ConversationWithLastMessage } from '@/types/inbox';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PLATFORM_LABELS } from '@/config/inboxPlatforms';
 
 interface ConversationListColumnProps {
   conversations: ConversationWithLastMessage[];
@@ -165,7 +166,7 @@ export function ConversationListColumn({
                         {conversation.participant_name || conversation.participant_username || 'Inconnu'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {conversation.platform}
+                        {PLATFORM_LABELS[conversation.platform] || conversation.platform}
                       </p>
                     </div>
                   </div>
@@ -218,7 +219,7 @@ export function ConversationListColumn({
 
                   {/* Platform badge */}
                   <Badge variant="secondary" className="text-xs h-5">
-                    {conversation.platform}
+                    {PLATFORM_LABELS[conversation.platform] || conversation.platform}
                   </Badge>
                 </div>
               </button>
