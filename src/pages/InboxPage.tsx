@@ -24,14 +24,14 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'unread' | 'assigned'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedInbox, setSelectedInbox] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       loadTeams();
       loadConversations();
     }
-  }, [user, selectedTeam, selectedFilter]);
+  }, [user, selectedTeam, selectedFilter, selectedInbox]);
 
   const loadTeams = async () => {
     if (!user) return;
@@ -50,9 +50,7 @@ export default function InboxPage() {
     try {
       setLoading(true);
 
-      const filters: any = {
-        search: searchQuery,
-      };
+      const filters: any = {};
 
       // Filter by status
       if (selectedFilter === 'unread') {
@@ -63,12 +61,18 @@ export default function InboxPage() {
 
       const data = await getConversations(filters);
 
-      // Filter by team if selected
+      // Filter by inbox (connected account) if selected
       let filteredData = data;
+      if (selectedInbox) {
+        filteredData = data.filter((conv: any) => 
+          conv.connected_account_id === selectedInbox
+        );
+      }
+
+      // Filter by team if selected
       if (selectedTeam) {
         // Filter conversations assigned to the selected team
-        // Note: This assumes conversations have a 'teams' field from the view
-        filteredData = data.filter((conv: any) => {
+        filteredData = filteredData.filter((conv: any) => {
           if (!conv.teams || conv.teams.length === 0) return false;
           return conv.teams.some((t: any) => t.team_id === selectedTeam);
         });
@@ -132,8 +136,10 @@ export default function InboxPage() {
         teams={teams}
         selectedTeam={selectedTeam}
         selectedFilter={selectedFilter}
+        selectedInbox={selectedInbox}
         onTeamSelect={setSelectedTeam}
         onFilterSelect={setSelectedFilter}
+        onInboxSelect={setSelectedInbox}
       />
 
       {/* Column 2: Conversations List */}
@@ -141,9 +147,7 @@ export default function InboxPage() {
         conversations={conversations}
         selectedConversation={selectedConversation}
         loading={loading}
-        searchQuery={searchQuery}
         selectedFilter={selectedFilter}
-        onSearchChange={setSearchQuery}
         onConversationSelect={setSelectedConversation}
         onFilterSelect={setSelectedFilter}
         onRefresh={loadConversations}
