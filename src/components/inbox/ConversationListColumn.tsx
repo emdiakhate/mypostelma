@@ -107,10 +107,8 @@ export function ConversationListColumn({
         ) : (
           <div className="divide-y divide-gray-100">
             {conversations.map((conversation) => {
-              // Extract team tags from conversation
-              const teamTags = conversation.tags?.filter(tag => 
-                ['sales team', 'ops team', 'engineering team', 'support team'].includes(tag)
-              ) || [];
+              // Get teams from conversation data
+              const conversationTeams = (conversation as any).teams || [];
 
               return (
                 <button
@@ -130,7 +128,7 @@ export function ConversationListColumn({
                     <div className="flex-1 min-w-0">
                       {/* Platform and Name */}
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 capitalize">
                           {conversation.platform}
                         </span>
                       </div>
@@ -157,36 +155,30 @@ export function ConversationListColumn({
                         </p>
                       )}
 
-                      {/* Last Message Preview */}
+                      {/* Last Message Preview - decode HTML entities */}
                       <p className="text-sm text-gray-600 truncate mb-2">
-                        {conversation.last_message_text || 'Pas encore de messages'}
+                        {decodeURIComponent(conversation.last_message_text || 'Pas encore de messages')}
                       </p>
 
-                      {/* Team Tags with Colors */}
-                      {teamTags.length > 0 && (
+                      {/* Team Tags with actual team colors */}
+                      {conversationTeams.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {teamTags.map((tag, idx) => {
-                            // Map team names to colors
-                            const getTeamColor = (teamName: string) => {
-                              if (teamName.includes('sales')) return 'bg-yellow-100 text-yellow-800';
-                              if (teamName.includes('ops')) return 'bg-red-100 text-red-800';
-                              if (teamName.includes('engineering')) return 'bg-orange-100 text-orange-800';
-                              if (teamName.includes('support')) return 'bg-green-100 text-green-800';
-                              return 'bg-gray-100 text-gray-700';
-                            };
-
-                            return (
+                          {conversationTeams.map((team: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${team.team_color}20`,
+                                color: team.team_color,
+                              }}
+                            >
                               <span
-                                key={idx}
-                                className={cn(
-                                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                                  getTeamColor(tag)
-                                )}
-                              >
-                                {tag.replace(' team', '')}
-                              </span>
-                            );
-                          })}
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: team.team_color }}
+                              />
+                              {team.team_name}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>

@@ -155,6 +155,7 @@ export interface InboxFilters {
   tags?: string[];
   sentiment?: Sentiment[];
   search?: string; // Search in participant name/username or message content
+  connected_account_id?: string; // Filter by connected account
 }
 
 // For creating a new message (sending a reply)

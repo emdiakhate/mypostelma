@@ -203,22 +203,6 @@ export function InboxSidebar({
             </div>
           )}
 
-          {/* Labels Section */}
-          <div className="pt-4">
-            <p className="text-xs font-semibold text-gray-900 px-3 py-2">
-              Labels
-            </p>
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
-                <span className="flex-1 text-left truncate">billing</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
-                <span className="flex-1 text-left truncate">delivery</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
