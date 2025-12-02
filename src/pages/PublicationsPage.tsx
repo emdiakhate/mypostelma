@@ -1,11 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
-import { 
+import { useState, useMemo } from 'react';
+import {
   FileText, Filter, Search, Calendar as CalendarIcon,
-  Download, Trash2, Eye, Copy, MoreVertical, X,
+  Download, X,
   Instagram, Facebook, Linkedin, Twitter, Youtube, Music
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -28,18 +26,6 @@ import PublicationCard from '@/components/PublicationCard';
 import { toast } from 'sonner';
 import { usePublications } from '@/hooks/usePublications';
 import { Post } from '@/types/Post';
-import PostPreviewModal from '@/components/PostPreviewModal';
-import PostCreationModal from '@/components/PostCreationModal';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from '@/components/ui/alert-dialog';
 
 type PostStatus = 'published' | 'draft' | 'failed';
 type SortBy = 'date-desc' | 'date-asc' | 'engagement' | 'platform';

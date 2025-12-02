@@ -130,13 +130,17 @@ export default function InboxPage() {
           schema: 'public',
           table: 'messages',
         },
-        () => {
-          loadConversations();
+        async () => {
+          await loadConversations();
           // Refresh selected conversation if it's currently open
           if (selectedConversation) {
-            const updated = conversations.find(c => c.id === selectedConversation.id);
-            if (updated) {
-              setSelectedConversation(updated);
+            const { data } = await supabase
+              .from('conversations_with_details')
+              .select('*')
+              .eq('id', selectedConversation.id)
+              .single();
+            if (data) {
+              setSelectedConversation(data);
             }
           }
         }
@@ -146,7 +150,7 @@ export default function InboxPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, selectedConversation, conversations]);
+  }, [user, selectedConversation]);
 
   return (
     <div className="h-[calc(100vh-73px)] flex bg-gray-50">
