@@ -60,15 +60,48 @@ export const getConversations = async (filters?: InboxFilters): Promise<Conversa
     );
   }
 
+  // Filter by connected_account_id if provided
+  if (filters?.connected_account_id) {
+    query = query.eq('connected_account_id', filters.connected_account_id);
+  }
+
   const { data, error } = await query;
 
   if (error) throw error;
   
-  // Map data with defaults
+  // Get team assignments for all conversations
+  const conversationIds = (data || []).map((c: any) => c.id);
+  
+  let teamsData: any[] = [];
+  if (conversationIds.length > 0) {
+    const { data: ctData } = await supabase
+      .from('conversation_teams')
+      .select('conversation_id, team_id, teams(id, name, color)')
+      .in('conversation_id', conversationIds);
+    teamsData = ctData || [];
+  }
+
+  // Map teams to conversations
+  const teamsByConversation: Record<string, any[]> = {};
+  teamsData.forEach((ct: any) => {
+    if (!teamsByConversation[ct.conversation_id]) {
+      teamsByConversation[ct.conversation_id] = [];
+    }
+    if (ct.teams) {
+      teamsByConversation[ct.conversation_id].push({
+        team_id: ct.teams.id,
+        team_name: ct.teams.name,
+        team_color: ct.teams.color,
+      });
+    }
+  });
+  
+  // Map data with defaults and teams
   return (data || []).map((conv: any) => ({
     ...conv,
     message_count: 0,
     tags: conv.tags || [],
+    teams: teamsByConversation[conv.id] || [],
   })) as ConversationWithLastMessage[];
 };
 

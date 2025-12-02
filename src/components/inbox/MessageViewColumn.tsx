@@ -58,6 +58,33 @@ export function MessageViewColumn({
     }
   }, [conversation]);
 
+  // Realtime subscription for messages
+  useEffect(() => {
+    if (!conversation) return;
+
+    const channel = supabase
+      .channel(`messages-${conversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          console.log('New message in conversation:', payload);
+          setMessages((prev) => [...prev, payload.new as Message]);
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -101,17 +128,18 @@ export function MessageViewColumn({
     try {
       setSending(true);
 
-      const { error } = await supabase.from('messages').insert({
-        conversation_id: conversation.id,
-        direction: 'outbound',
-        message_type: 'text',
-        text_content: messageText,
-        sender_id: conversation.user_id,
-        is_read: true,
-        sent_at: new Date().toISOString(),
+      // Call the send-message edge function to actually send to the recipient
+      const { data, error } = await supabase.functions.invoke('send-message', {
+        body: {
+          conversation_id: conversation.id,
+          text_content: messageText,
+        },
       });
 
       if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erreur lors de l\'envoi');
+      }
 
       setMessageText('');
       await loadMessages();
@@ -121,11 +149,11 @@ export function MessageViewColumn({
         title: 'Message envoyé',
         description: 'Votre message a été envoyé avec succès',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer le message',
+        description: error.message || 'Impossible d\'envoyer le message',
         variant: 'destructive',
       });
     } finally {
@@ -235,13 +263,13 @@ export function MessageViewColumn({
                 key={message.id}
                 className={cn(
                   'flex',
-                  message.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                  message.direction === 'outgoing' || message.direction === 'outbound' ? 'justify-end' : 'justify-start'
                 )}
               >
                 <div
                   className={cn(
                     'max-w-[70%] rounded-2xl px-4 py-2',
-                    message.direction === 'outbound'
+                    message.direction === 'outgoing' || message.direction === 'outbound'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-900'
                   )}
@@ -261,7 +289,7 @@ export function MessageViewColumn({
                   <p
                     className={cn(
                       'text-xs mt-1',
-                      message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'
+                      message.direction === 'outgoing' || message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'
                     )}
                   >
                     {formatDistanceToNow(new Date(message.sent_at), {
