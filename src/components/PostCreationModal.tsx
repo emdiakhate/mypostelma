@@ -17,7 +17,7 @@ import { usePostPublishing, calculateTimeSlot } from '@/hooks/usePostPublishing'
 import ConnectedAccountsSelector from './ConnectedAccountsSelector';
 import { PLATFORMS } from '@/config/platforms';
 import { TONE_OPTIONS } from '@/data/toneOptions';
-import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, PublishWebhookPayload, AiEditCombineWebhookPayload, AiUgcWebhookPayload, AiImageGenerationResponse, checkImageLoad, testWebhookConnectivity } from '@/config/webhooks';
+import { WEBHOOK_URLS, callWebhook, CaptionsWebhookPayload, AiEditCombineWebhookPayload, AiUgcWebhookPayload, AiImageGenerationResponse, checkImageLoad, testWebhookConnectivity } from '@/config/webhooks';
 import { toast } from 'sonner';
 import MediaUploadSection from './post-creation/MediaUploadSection';
 import BestTimeSection from './post-creation/BestTimeSection';
@@ -525,41 +525,45 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       toast.error('Veuillez sélectionner au moins un compte');
       return;
     }
-    
+
+    if (!currentUser?.id) {
+      toast.error('Utilisateur non authentifié');
+      return;
+    }
+
     setIsPublishingLocal(true);
-    
+
     // Créer les captions finales (générées ou contenu par défaut)
-    const finalCaptions = generatedCaptions || 
+    const finalCaptions = generatedCaptions ||
       selectedPlatforms.reduce((acc, platform) => {
         acc[platform] = content;
         return acc;
       }, {} as Record<string, string>);
-    
-    // Vérifier que les captions sont bien formatées
-    
+
     try {
-      // Appeler le webhook de publication
-      const payload: PublishWebhookPayload = {
-        content: finalCaptions[selectedPlatforms[0]] || content,
-        media: selectedImages,
-        video: generatedVideoUrl || undefined,
-        platforms: selectedPlatforms,
+      // Utiliser l'API Upload Post via le hook
+      const result = await publishPost({
+        type: publishType === 'now' ? 'immediate' : 'scheduled',
+        captions: finalCaptions,
         accounts: selectedAccounts,
-        publishType: publishType,
-        scheduledDate: publishType === 'scheduled' && scheduledDateTime ? scheduledDateTime.toISOString() : undefined,
-        captions: finalCaptions
-      };
+        images: selectedImages,
+        video: generatedVideoUrl || undefined,
+        scheduledDateTime: publishType === 'scheduled' ? scheduledDateTime || undefined : undefined,
+        author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
+        authorId: currentUser.id,
+        profile_username: currentUser.id // Upload Post utilise l'ID utilisateur comme username
+      });
 
-
-      const webhookUrl = publishType === 'now' ? WEBHOOK_URLS.PUBLISH : WEBHOOK_URLS.SCHEDULE;
-      
-      const response = await callWebhook(webhookUrl, payload);
-      
-      if (response && response.success) {
-        toast.success(publishType === 'now' ? 'Publication réussie !' : 'Publication programmée !');
-      } else {
-        toast.error('Erreur lors de la publication');
+      if (!result.success) {
+        toast.error(result.error || 'Erreur lors de la publication');
         return;
+      }
+
+      // Afficher le message de succès
+      if (publishType === 'now') {
+        toast.success('Publication en cours ! Vous recevrez une notification une fois terminée.');
+      } else {
+        toast.success('Publication programmée avec succès !');
       }
       // Si on est en mode édition
       if (isEditing) {
@@ -578,12 +582,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             captions: finalCaptions,
             author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
             campaign,
-            campaignColor: initialData?.campaignColor
+            campaignColor: initialData?.campaignColor,
+            upload_post_request_id: result.request_id,
+            upload_post_status: 'in_progress'
           };
 
-          
           onSave(publishedPost);
-          toast.success('Post publié avec succès !');
           onClose();
           return;
         } else if (scheduledDateTime) {
@@ -604,12 +608,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
             captions: finalCaptions,
             author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
             campaign,
-            campaignColor: initialData?.campaignColor
+            campaignColor: initialData?.campaignColor,
+            upload_post_job_id: result.job_id,
+            upload_post_status: 'scheduled'
           };
 
-          
           onSave(scheduledPost);
-          toast.success('Post modifié avec succès !');
           onClose();
           return;
         }
@@ -617,12 +621,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       // Mode création
       if (publishType === 'now') {
-        
-        toast.success('Publications envoyées avec succès !');
         onClose();
       } else if (scheduledDateTime) {
-        
-
         const scheduledPost = {
           id: `post-${Date.now()}`,
           content: finalCaptions[selectedPlatforms[0]] || content,
@@ -638,12 +638,12 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           captions: finalCaptions,
           author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
           campaign,
-          campaignColor: initialData?.campaignColor
+          campaignColor: initialData?.campaignColor,
+          upload_post_job_id: result.job_id,
+          upload_post_status: 'scheduled'
         };
 
-        
         onSave(scheduledPost);
-        toast.success('Post programmé avec succès !');
         onClose();
       }
     } catch (error) {
