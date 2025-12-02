@@ -10,26 +10,55 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authentication check - verify the user is logged in
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create a client with the user's auth token to verify identity
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { conversation_id, message_id } = await req.json();
 
-    console.log('Analyzing message routing:', { conversation_id, message_id });
+    console.log('Analyzing message routing:', { conversation_id, message_id, user_id: user.id });
+
+    // Use service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the message
     const { data: message, error: msgError } = await supabase
@@ -53,11 +82,20 @@ serve(async (req) => {
       throw new Error('Conversation not found');
     }
 
+    // Authorization check - verify the user owns this conversation
+    if (conversation.user_id !== user.id) {
+      console.error('User does not own this conversation:', { user_id: user.id, conversation_user_id: conversation.user_id });
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - You do not have access to this conversation' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get all teams for this user
     const { data: teams, error: teamsError } = await supabase
       .from('teams')
       .select('*')
-      .eq('user_id', conversation.user_id);
+      .eq('user_id', user.id);
 
     // Handle case where teams table doesn't exist yet (migration not applied)
     if (teamsError) {
@@ -67,20 +105,14 @@ serve(async (req) => {
         routed: false,
         message: 'Teams feature not yet enabled. Please apply database migration first.'
       }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!teams || teams.length === 0) {
       console.log('No teams found, skipping routing');
       return new Response(JSON.stringify({ success: true, routed: false }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -101,8 +133,8 @@ serve(async (req) => {
         ? { [analysis.suggested_team_id]: analysis.confidence_score }
         : {},
       model_used: 'gpt-4',
-      tokens_used: 0, // TODO: track actual tokens
-      processing_time_ms: 0,
+      tokens_used: 0,
+      processing_time_ms: analysis.processing_time_ms,
     });
 
     // Assign to team if confidence is high enough
@@ -121,7 +153,7 @@ serve(async (req) => {
       // Add team name to conversation tags
       if (assignedTeam) {
         const currentTags = conversation.tags || [];
-        const newTags = [...new Set([...currentTags, assignedTeam.name])]; // Avoid duplicates
+        const newTags = [...new Set([...currentTags, assignedTeam.name])];
         
         await supabase
           .from('conversations')
@@ -140,20 +172,14 @@ serve(async (req) => {
         confidence: analysis.confidence_score,
       }),
       {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (error: any) {
     console.error('Error in analyze-message-routing:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
