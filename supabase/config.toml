@@ -58,5 +58,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.analyze-message-routing]
-verify_jwt = false
-
+verify_jwt = true

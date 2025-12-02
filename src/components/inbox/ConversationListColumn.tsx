@@ -3,14 +3,10 @@
  */
 
 import { useState } from 'react';
-import { Search, RefreshCw, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { ConversationWithLastMessage } from '@/types/inbox';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { PLATFORM_LABELS } from '@/config/inboxPlatforms';
 
 interface ConversationListColumnProps {
@@ -108,7 +104,6 @@ export function ConversationListColumn({
         ) : (
           <div className="divide-y divide-gray-100">
             {conversations.map((conversation) => {
-              // Get teams from conversation data
               const conversationTeams = (conversation as any).teams || [];
 
               return (
@@ -127,15 +122,6 @@ export function ConversationListColumn({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {conversation.participant_name || conversation.participant_username || 'Inconnu'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {PLATFORM_LABELS[conversation.platform] || conversation.platform}
-                      </p>
-                    </div>
-                  </div>
-
                       {/* Name and Time */}
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-sm font-bold text-gray-900 truncate">
@@ -158,14 +144,14 @@ export function ConversationListColumn({
                         </p>
                       )}
 
-                      {/* Last Message Preview - decode HTML entities */}
+                      {/* Last Message Preview */}
                       <p className="text-sm text-gray-600 truncate mb-2">
-                        {decodeURIComponent(conversation.last_message_text || 'Pas encore de messages')}
+                        {conversation.last_message_text || 'Pas encore de messages'}
                       </p>
 
-                      {/* Team Tags with actual team colors */}
+                      {/* Team Tags */}
                       {conversationTeams.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 mb-2">
                           {conversationTeams.map((team: any, idx: number) => (
                             <span
                               key={idx}
@@ -184,15 +170,16 @@ export function ConversationListColumn({
                           ))}
                         </div>
                       )}
-                    </div>
 
-                  {/* Platform badge */}
-                  <Badge variant="secondary" className="text-xs h-5">
-                    {PLATFORM_LABELS[conversation.platform] || conversation.platform}
-                  </Badge>
-                </div>
-              </button>
-            ))}
+                      {/* Platform badge */}
+                      <Badge variant="secondary" className="text-xs h-5">
+                        {PLATFORM_LABELS[conversation.platform] || conversation.platform}
+                      </Badge>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

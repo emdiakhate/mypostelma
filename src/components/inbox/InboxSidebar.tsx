@@ -2,32 +2,17 @@
  * Inbox Sidebar - Teams & Filters (Column 1)
  */
 
-import { useEffect, useState } from 'react';
 import {
   Inbox,
   Mail,
   UserCheck,
-  Archive,
-  Clock,
-  CheckCircle,
-  Smile,
-  Frown,
-  Meh,
-  Tag,
-  Filter,
-  Link2
+  Link2,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import type { Team } from '@/types/teams';
 import type { ConnectedAccountWithStats } from '@/types/inbox';
 import { PLATFORM_LABELS, PLATFORM_ICON_COMPONENTS } from '@/config/inboxPlatforms';
-
-interface ConnectedAccountSimple {
-  id: string;
-  platform: string;
-  account_name: string | null;
-}
 
 interface InboxSidebarProps {
   teams: Team[];
@@ -54,29 +39,6 @@ export function InboxSidebar({
   onFilterSelect,
   onInboxSelect,
 }: InboxSidebarProps) {
-  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccountSimple[]>([]);
-
-  useEffect(() => {
-    loadConnectedAccounts();
-  }, []);
-
-  const loadConnectedAccounts = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('connected_accounts')
-        .select('id, platform, account_name')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (error) throw error;
-      setConnectedAccounts(data || []);
-    } catch (error) {
-      console.error('Error loading connected accounts:', error);
-    }
-  };
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -92,6 +54,7 @@ export function InboxSidebar({
         return <MessageSquare className="w-4 h-4" />;
     }
   };
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
       {/* Header */}
@@ -123,34 +86,6 @@ export function InboxSidebar({
             <span className="flex-1 text-left truncate">Toutes les conversations</span>
           </button>
 
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => {
-                      onFilterSelect(filter.id);
-                      onTeamSelect(null);
-                      onAccountSelect(null);
-                    }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                      isSelected
-                        ? 'bg-purple-50 text-purple-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-left truncate">{filter.label}</span>
-                    {filter.count !== null && (
-                      <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
-                        {filter.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Unattended */}
           <button
             onClick={() => {
@@ -171,7 +106,7 @@ export function InboxSidebar({
 
           {/* Connected Accounts Section */}
           {connectedAccounts.length > 0 && (
-            <div>
+            <div className="pt-4">
               <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2 flex items-center gap-2">
                 <Link2 className="w-3 h-3" />
                 Comptes
@@ -195,10 +130,10 @@ export function InboxSidebar({
                       )}
                     >
                       <div className="flex-shrink-0">
-                        <IconComponent className="w-4 h-4" />
+                        {IconComponent ? <IconComponent className="w-4 h-4" /> : getPlatformIcon(account.platform)}
                       </div>
                       <span className="flex-1 text-left truncate">
-                        {PLATFORM_LABELS[account.platform]}
+                        {PLATFORM_LABELS[account.platform] || account.platform}
                       </span>
                       {account.unread_conversations > 0 && (
                         <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
@@ -250,39 +185,6 @@ export function InboxSidebar({
               </div>
             </div>
           )}
-
-          {/* Inboxes Section */}
-          {connectedAccounts.length > 0 && (
-            <div className="pt-4">
-              <p className="text-xs font-semibold text-gray-900 px-3 py-2">
-                Comptes
-              </p>
-              <div className="space-y-1">
-                {connectedAccounts.map((account) => (
-                  <button
-                    key={account.id}
-                    onClick={() => {
-                      onInboxSelect(account.id);
-                      onTeamSelect(null);
-                      onFilterSelect('all');
-                    }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                      selectedInbox === account.id
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    )}
-                  >
-                    {getPlatformIcon(account.platform)}
-                    <span className="flex-1 text-left truncate">
-                      {account.account_name || account.platform}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
       </div>
     </div>

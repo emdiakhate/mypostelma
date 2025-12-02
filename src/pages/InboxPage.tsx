@@ -136,12 +136,12 @@ export default function InboxPage() {
           // Refresh selected conversation if it's currently open
           if (selectedConversation) {
             const { data } = await supabase
-              .from('conversations_with_details')
+              .from('conversations_with_last_message')
               .select('*')
               .eq('id', selectedConversation.id)
               .single();
             if (data) {
-              setSelectedConversation(data);
+              setSelectedConversation(data as unknown as ConversationWithLastMessage);
             }
           }
         }

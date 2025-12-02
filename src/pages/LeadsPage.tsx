@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   Phone, 
@@ -328,6 +329,9 @@ const LeadsPage: React.FC = () => {
   // Fonction pour marquer un lead comme concurrent
   const handleMarkAsCompetitor = async (lead: Lead) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
       await createCompetitor({
         name: lead.name,
         industry: lead.category,
@@ -337,6 +341,7 @@ const LeadsPage: React.FC = () => {
         facebook_url: lead.socialMedia?.facebook,
         linkedin_url: lead.socialMedia?.linkedin,
         twitter_url: lead.socialMedia?.twitter,
+        user_id: user.id,
       });
 
       toast.success(`${lead.name} ajouté comme concurrent`);

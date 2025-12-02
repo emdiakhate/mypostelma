@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types/Post';
 
 export interface PostFilters {
-  status?: string[];
+  status?: ('draft' | 'scheduled' | 'published' | 'pending' | 'failed')[];
   platforms?: string[];
   dateRange?: {
     start: Date;
