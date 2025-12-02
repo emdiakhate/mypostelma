@@ -30,7 +30,7 @@ export class PostsService {
 
     // Filtres
     if (params?.status && params.status.length > 0) {
-      query = query.in('status', params.status as any);
+      query = query.in('status', params.status);
     }
 
     if (params?.platforms && params.platforms.length > 0) {

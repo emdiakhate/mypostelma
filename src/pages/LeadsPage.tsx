@@ -337,7 +337,7 @@ const LeadsPage: React.FC = () => {
         facebook_url: lead.socialMedia?.facebook,
         linkedin_url: lead.socialMedia?.linkedin,
         twitter_url: lead.socialMedia?.twitter,
-      } as any);
+      });
 
       toast.success(`${lead.name} ajouté comme concurrent`);
     } catch (error: any) {
@@ -536,38 +536,6 @@ const LeadsPage: React.FC = () => {
     });
 
     return merged;
-  };
-
-  // Génération de leads mock
-  const generateMockLeads = (params: any): Lead[] => {
-    const categories = ['restaurant', 'salon', 'coach', 'boutique', 'service'];
-    const names = [
-      'Le Bistrot du Coin', 'Salon Coiffure Élégance', 'Coach Sportif Pro',
-      'Boutique Mode Chic', 'Service à Domicile', 'Restaurant Gastronomique',
-      'Institut de Beauté', 'Gym Fitness', 'Boulangerie Artisanale', 'Café Culturel'
-    ];
-    
-    return Array.from({ length: Math.min(params.maxResults, 25) }, (_, i) => ({
-      id: `mock_lead_${Date.now()}_${i}`,
-      name: names[i % names.length],
-      category: categories[i % categories.length],
-      address: `${Math.floor(Math.random() * 100) + 1} Rue de la ${params.query}`,
-      city: params.city,
-      postalCode: `${Math.floor(Math.random() * 90000) + 10000}`,
-      phone: params.includePhone ? `0${Math.floor(Math.random() * 900000000) + 100000000}` : undefined,
-      email: params.includeEmail ? `contact@${names[i % names.length].toLowerCase().replace(/\s+/g, '')}.com` : undefined,
-      website: `https://www.${names[i % names.length].toLowerCase().replace(/\s+/g, '')}.com`,
-      socialMedia: params.includeSocial ? {
-        instagram: `@${names[i % names.length].toLowerCase().replace(/\s+/g, '')}`,
-        facebook: names[i % names.length],
-        linkedin: names[i % names.length]
-      } : undefined,
-      status: 'new' as LeadStatus,
-      notes: '',
-      tags: ['recherche_automatique'],
-      addedAt: new Date(),
-      source: 'google_maps'
-    }));
   };
 
   if (loading) {

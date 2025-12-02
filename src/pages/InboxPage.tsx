@@ -10,8 +10,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getConversations } from '@/services/inbox';
 import { getTeams } from '@/services/teams';
-import type { ConversationWithLastMessage } from '@/types/inbox';
+import { getConnectedAccountsWithStats } from '@/services/connectedAccounts';
+import type { ConversationWithLastMessage, Platform } from '@/types/inbox';
 import type { Team } from '@/types/teams';
+import type { ConnectedAccountWithStats } from '@/types/inbox';
 import { InboxSidebar } from '@/components/inbox/InboxSidebar';
 import { ConversationListColumn } from '@/components/inbox/ConversationListColumn';
 import { MessageViewColumn } from '@/components/inbox/MessageViewColumn';
@@ -21,17 +23,20 @@ export default function InboxPage() {
   const [conversations, setConversations] = useState<ConversationWithLastMessage[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithLastMessage | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccountWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'unread' | 'assigned'>('all');
   const [selectedInbox, setSelectedInbox] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       loadTeams();
+      loadConnectedAccounts();
       loadConversations();
     }
-  }, [user, selectedTeam, selectedFilter, selectedInbox]);
+  }, [user, selectedTeam, selectedAccount, selectedFilter]);
 
   const loadTeams = async () => {
     if (!user) return;
@@ -41,6 +46,17 @@ export default function InboxPage() {
       setTeams(data);
     } catch (error) {
       console.error('Error loading teams:', error);
+    }
+  };
+
+  const loadConnectedAccounts = async () => {
+    if (!user) return;
+
+    try {
+      const data = await getConnectedAccountsWithStats(user.id);
+      setConnectedAccounts(data);
+    } catch (error) {
+      console.error('Error loading connected accounts:', error);
     }
   };
 
@@ -72,6 +88,13 @@ export default function InboxPage() {
         filteredData = data.filter((conv: any) => {
           if (!conv.teams || conv.teams.length === 0) return false;
           return conv.teams.some((t: any) => t.team_id === selectedTeam);
+        });
+      }
+
+      // Filter by connected account if selected
+      if (selectedAccount) {
+        filteredData = filteredData.filter((conv: any) => {
+          return conv.connected_account_id === selectedAccount;
         });
       }
 
@@ -108,9 +131,19 @@ export default function InboxPage() {
           schema: 'public',
           table: 'messages',
         },
-        (payload) => {
-          console.log('New message received:', payload);
-          loadConversations();
+        async () => {
+          await loadConversations();
+          // Refresh selected conversation if it's currently open
+          if (selectedConversation) {
+            const { data } = await supabase
+              .from('conversations_with_details')
+              .select('*')
+              .eq('id', selectedConversation.id)
+              .single();
+            if (data) {
+              setSelectedConversation(data);
+            }
+          }
         }
       )
       .subscribe();
@@ -118,17 +151,20 @@ export default function InboxPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, selectedConversation]);
 
   return (
     <div className="h-[calc(100vh-73px)] flex bg-gray-50">
       {/* Column 1: Teams & Filters Sidebar */}
       <InboxSidebar
         teams={teams}
+        connectedAccounts={connectedAccounts}
         selectedTeam={selectedTeam}
+        selectedAccount={selectedAccount}
         selectedFilter={selectedFilter}
         selectedInbox={selectedInbox}
         onTeamSelect={setSelectedTeam}
+        onAccountSelect={setSelectedAccount}
         onFilterSelect={setSelectedFilter}
         onInboxSelect={setSelectedInbox}
       />

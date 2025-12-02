@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import type { ConversationWithLastMessage } from '@/types/inbox';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PLATFORM_LABELS } from '@/config/inboxPlatforms';
 
 interface ConversationListColumnProps {
   conversations: ConversationWithLastMessage[];
@@ -126,12 +127,14 @@ export function ConversationListColumn({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      {/* Platform and Name */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-500 capitalize">
-                          {conversation.platform}
-                        </span>
-                      </div>
+                      <p className="font-medium text-gray-900 truncate">
+                        {conversation.participant_name || conversation.participant_username || 'Inconnu'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {PLATFORM_LABELS[conversation.platform] || conversation.platform}
+                      </p>
+                    </div>
+                  </div>
 
                       {/* Name and Time */}
                       <div className="flex items-center justify-between mb-1">
@@ -183,14 +186,13 @@ export function ConversationListColumn({
                       )}
                     </div>
 
-                    {/* Unread indicator */}
-                    {conversation.status === 'unread' && (
-                      <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-2" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                  {/* Platform badge */}
+                  <Badge variant="secondary" className="text-xs h-5">
+                    {PLATFORM_LABELS[conversation.platform] || conversation.platform}
+                  </Badge>
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { PLATFORM_LABELS } from '@/config/inboxPlatforms';
 
 interface Message {
   id: string;
@@ -213,7 +214,7 @@ export function MessageViewColumn({
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
               <Badge variant="secondary" className="text-xs h-5">
-                {conversation.platform}
+                {PLATFORM_LABELS[conversation.platform] || conversation.platform}
               </Badge>
 
               {/* Team tags */}

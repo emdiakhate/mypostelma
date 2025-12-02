@@ -34,17 +34,14 @@ const Dashboard = () => {
 
   // Calculer les stats réelles
   const stats = useMemo(() => {
-    const totalFollowers = analyticsData?.analytics 
-      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.followers || 0), 0)
-      : 0;
-
-    const totalImpressions = analyticsData?.analytics
-      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.impressions || 0), 0)
-      : 0;
-
-    const totalReach = analyticsData?.analytics
-      ? Object.values(analyticsData.analytics).reduce((sum, platform: any) => sum + (platform.reach || 0), 0)
-      : 0;
+    // Optimisation : une seule itération sur les données analytics
+    const { totalFollowers, totalImpressions, totalReach } = analyticsData?.analytics
+      ? Object.values(analyticsData.analytics).reduce((acc, platform: any) => ({
+          totalFollowers: acc.totalFollowers + (platform.followers || 0),
+          totalImpressions: acc.totalImpressions + (platform.impressions || 0),
+          totalReach: acc.totalReach + (platform.reach || 0),
+        }), { totalFollowers: 0, totalImpressions: 0, totalReach: 0 })
+      : { totalFollowers: 0, totalImpressions: 0, totalReach: 0 };
 
     const activePlatforms = connectedAccounts.length;
 

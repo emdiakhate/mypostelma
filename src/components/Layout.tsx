@@ -216,13 +216,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     case 'settings': return '/app/settings';
                     case 'archives': return '/app/archives';
                     case 'competitors': return '/app/competitors';
-                    case 'users': return '/app/users';
-                    case 'team': return '/app/team';
-                    case 'accounts': return '/app/settings/accounts';
-                    case 'inbox': return '/app/inbox';
-                    case 'connections': return '/app/connections';
                     case 'teams': return '/app/teams';
                     case 'leads': return '/app/leads';
+                    case 'accounts': return '/app/settings/accounts';
                     case 'admin': return '/app/admin';
                     default: return '/app/dashboard';
                   }
