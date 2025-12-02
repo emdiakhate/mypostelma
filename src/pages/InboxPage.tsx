@@ -59,20 +59,17 @@ export default function InboxPage() {
         filters.assigned_to = user.id;
       }
 
-      const data = await getConversations(filters);
-
-      // Filter by inbox (connected account) if selected
-      let filteredData = data;
+      // Filter by connected account
       if (selectedInbox) {
-        filteredData = data.filter((conv: any) => 
-          conv.connected_account_id === selectedInbox
-        );
+        filters.connected_account_id = selectedInbox;
       }
 
-      // Filter by team if selected
+      const data = await getConversations(filters);
+
+      // Filter by team if selected (client-side since teams are loaded separately)
+      let filteredData = data;
       if (selectedTeam) {
-        // Filter conversations assigned to the selected team
-        filteredData = filteredData.filter((conv: any) => {
+        filteredData = data.filter((conv: any) => {
           if (!conv.teams || conv.teams.length === 0) return false;
           return conv.teams.some((t: any) => t.team_id === selectedTeam);
         });
@@ -107,19 +104,13 @@ export default function InboxPage() {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'messages',
         },
-        () => {
+        (payload) => {
+          console.log('New message received:', payload);
           loadConversations();
-          // Refresh selected conversation if it's currently open
-          if (selectedConversation) {
-            const updated = conversations.find(c => c.id === selectedConversation.id);
-            if (updated) {
-              setSelectedConversation(updated);
-            }
-          }
         }
       )
       .subscribe();
@@ -127,7 +118,7 @@ export default function InboxPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, selectedConversation, conversations]);
+  }, [user]);
 
   return (
     <div className="h-[calc(100vh-73px)] flex bg-gray-50">
