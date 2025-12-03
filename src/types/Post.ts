@@ -6,6 +6,7 @@ export interface Post {
   id: string;
   content: string;
   scheduledTime: Date;
+  published_at?: Date | string; // Date de publication réelle
   platforms: SocialPlatform[];
   status: PostStatus;
   image?: string;
@@ -38,6 +39,21 @@ export interface Post {
   sentiment_score?: number; // -1 to 1
   sentiment_label?: 'positive' | 'neutral' | 'negative';
   comments_sentiment_count?: number; // Number of comments analyzed
+
+  // Upload Post integration
+  upload_post_job_id?: string; // ID du job programmé Upload Post
+  upload_post_request_id?: string; // ID de la requête async Upload Post
+  upload_post_status?: 'pending' | 'in_progress' | 'completed' | 'failed' | 'scheduled';
+  upload_post_results?: {
+    [platform: string]: {
+      success: boolean;
+      url?: string;
+      publish_id?: string;
+      post_id?: string;
+      error?: string;
+      completed_at?: string;
+    };
+  };
 }
 
 export interface Campaign {

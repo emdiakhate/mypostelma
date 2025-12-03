@@ -98,7 +98,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const grouped: Record<string, Post[]> = {};
     weekDays.forEach(day => {
       grouped[day.key] = posts.filter(post => {
-        const postDate = new Date(post.scheduledTime);
+        // Pour les posts publiés, utiliser published_at s'il existe
+        // Pour les posts programmés/brouillons, utiliser scheduledTime
+        let postDate: Date;
+
+        if ((post.status === 'published' || post.upload_post_status === 'completed') && post.published_at) {
+          postDate = new Date(post.published_at);
+        } else {
+          postDate = new Date(post.scheduledTime);
+        }
+
         return postDate.toDateString() === day.date.toDateString();
       });
     });

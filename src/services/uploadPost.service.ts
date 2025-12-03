@@ -159,4 +159,96 @@ export class UploadPostService {
       return false;
     }
   }
+
+  /**
+   * Configure l'URL du webhook pour recevoir les notifications Upload-Post
+   * Cette fonction doit être appelée une fois lors de la première utilisation
+   */
+  static async configureWebhook(): Promise<{ success: boolean; webhook_url?: string; error?: string }> {
+    try {
+      console.log('[UploadPostService] Configuring webhook');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('upload-post-configure-webhook', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      console.log('[UploadPostService] Configure webhook response:', { data, error });
+
+      if (error) {
+        console.error('[UploadPostService] Webhook configuration error:', error);
+        throw new Error(error.message || 'Failed to configure webhook');
+      }
+
+      if (!data?.success) {
+        const errorMsg = data?.error || 'Failed to configure webhook';
+        console.error('[UploadPostService] Webhook config API error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('[UploadPostService] Error configuring webhook:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère l'historique des publications depuis Upload Post API
+   * @param username - Nom de l'utilisateur
+   * @param options - Options de pagination et filtrage
+   */
+  static async getUploadHistory(
+    username: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      status?: string;
+    }
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('[UploadPostService] Getting upload history', { username, options });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('upload-post-get-history', {
+        body: {
+          profile_username: username,
+          limit: options?.limit || 50,
+          offset: options?.offset || 0,
+          status: options?.status
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      console.log('[UploadPostService] Get history response:', { data, error });
+
+      if (error) {
+        console.error('[UploadPostService] Get history error:', error);
+        throw new Error(error.message || 'Failed to get upload history');
+      }
+
+      if (!data?.success) {
+        const errorMsg = data?.error || 'Failed to get upload history';
+        console.error('[UploadPostService] Get history API error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('[UploadPostService] Error getting upload history:', error);
+      throw error;
+    }
+  }
 }

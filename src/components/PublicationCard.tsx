@@ -5,7 +5,7 @@ import {
   Eye, Pencil, Copy, Trash2, MoreVertical,
   Instagram, Facebook, Linkedin, Twitter, Youtube, Music,
   CalendarIcon, FileText, Heart, MessageCircle, Share2,
-  SmilePlus, Meh, Frown
+  SmilePlus, Meh, Frown, ExternalLink, AlertCircle, CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,12 +97,22 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
         className: 'bg-green-100 text-green-800',
         dot: 'bg-green-500'
       },
+      completed: {
+        label: 'Publié',
+        className: 'bg-green-100 text-green-800',
+        dot: 'bg-green-500'
+      },
       scheduled: {
+        label: 'Programmé',
+        className: 'bg-blue-100 text-blue-800',
+        dot: 'bg-blue-500'
+      },
+      pending: {
         label: 'En cours',
         className: 'bg-yellow-100 text-yellow-800',
         dot: 'bg-yellow-500'
       },
-      pending: {
+      in_progress: {
         label: 'En cours',
         className: 'bg-yellow-100 text-yellow-800',
         dot: 'bg-yellow-500'
@@ -119,22 +129,25 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
       }
     };
 
-    // Si le statut est explicitement "failed"
+    // Priorité 1: Utiliser le statut Upload Post s'il existe
+    if (post.upload_post_status) {
+      return statusConfigs[post.upload_post_status] || statusConfigs.pending;
+    }
+
+    // Priorité 2: Utiliser le statut général
     if (post.status === 'failed') {
       return statusConfigs.failed;
     }
 
-    // Si le statut est explicitement "published"
     if (post.status === 'published') {
       return statusConfigs.published;
     }
 
-    // Si le statut est "draft"
     if (post.status === 'draft') {
       return statusConfigs.draft;
     }
 
-    // Si le post est programmé (scheduled/pending) et la date est dans le futur -> "En cours"
+    // Si le post est programmé (scheduled/pending) et la date est dans le futur -> "Programmé"
     if ((post.status === 'scheduled' || post.status === 'pending') && scheduledTime > now) {
       return statusConfigs.scheduled;
     }
@@ -144,7 +157,7 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
       return statusConfigs.published;
     }
 
-    // Par défaut, si la date est dans le futur -> "En cours", sinon "Publié"
+    // Par défaut, si la date est dans le futur -> "Programmé", sinon "Publié"
     return scheduledTime > now ? statusConfigs.scheduled : statusConfigs.published;
   };
 
@@ -284,6 +297,50 @@ export default function PublicationCard({ post, onView, onEdit, onDuplicate, onD
               <span className="font-medium">{stats.shares || 0}</span>
             </div>
           </div>
+
+          {/* Publication Results */}
+          {post.upload_post_results && Object.keys(post.upload_post_results).length > 0 && (
+            <div className="pt-2 border-t">
+              <div className="text-xs font-semibold mb-2">Résultats de publication</div>
+              <div className="space-y-1.5">
+                {Object.entries(post.upload_post_results).map(([platform, result]: [string, any]) => {
+                  const platformInfo = platformIcons[platform];
+                  const Icon = platformInfo?.icon || Music;
+                  const iconColor = platformInfo?.color || 'text-gray-500';
+
+                  return (
+                    <div key={platform} className="flex items-center justify-between text-xs bg-gray-50 rounded p-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className={`w-3 h-3 ${iconColor}`} />
+                        <span className="capitalize">{platform}</span>
+                      </div>
+                      {result.success ? (
+                        <div className="flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3 text-green-600" />
+                          {result.url && (
+                            <a
+                              href={result.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 hover:underline flex items-center gap-0.5"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-red-600" title={result.error || 'Erreur inconnue'}>
+                          <AlertCircle className="w-3 h-3" />
+                          <span className="truncate max-w-[100px]">{result.error || 'Échec'}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Sentiment Analysis Info */}
           {post.last_sentiment_analysis_at && (
