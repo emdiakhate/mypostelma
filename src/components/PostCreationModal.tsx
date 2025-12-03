@@ -26,6 +26,7 @@ import PublishOptionsSection from './post-creation/PublishOptionsSection';
 import VoiceRecorderButton from './VoiceRecorderButton';
 import { CreatePersonalToneModal } from './CreatePersonalToneModal';
 import { usePersonalTones } from '@/hooks/usePersonalTones';
+import { useUploadPost } from '@/hooks/useUploadPost';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PostCreationModalProps {
@@ -199,6 +200,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
   // Personal tones hook
   const { personalTones } = usePersonalTones();
+  
+  // Upload Post hook for getting the correct username
+  const { profile: uploadPostProfile } = useUploadPost();
 
   // États pour la génération IA
   const [mediaSource, setMediaSource] = useState<'upload' | 'ai'>('upload');
@@ -551,7 +555,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         scheduledDateTime: publishType === 'scheduled' ? scheduledDateTime || undefined : undefined,
         author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
         authorId: currentUser.id,
-        profile_username: currentUser.id // Upload Post utilise l'ID utilisateur comme username
+        profile_username: uploadPostProfile?.username || currentUser.id // Utiliser le username Upload Post
       });
 
       if (!result.success) {
