@@ -625,6 +625,26 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       // Mode création
       if (publishType === 'now') {
+        // Sauvegarder le post publié dans la base de données
+        const publishedPost = {
+          id: `post-${Date.now()}`,
+          content: finalCaptions[selectedPlatforms[0]] || content,
+          platforms: selectedPlatforms,
+          accounts: selectedAccounts,
+          images: selectedImages,
+          video: generatedVideoUrl || undefined,
+          videoThumbnail: generatedVideoUrl || undefined,
+          status: 'published' as const,
+          captions: finalCaptions,
+          author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
+          campaign,
+          campaignColor: initialData?.campaignColor,
+          upload_post_request_id: result.request_id,
+          upload_post_status: 'in_progress',
+          published_at: new Date().toISOString()
+        };
+
+        onSave(publishedPost);
         onClose();
       } else if (scheduledDateTime) {
         const scheduledPost = {
