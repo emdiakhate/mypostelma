@@ -19,11 +19,11 @@ interface InboxSidebarProps {
   connectedAccounts: ConnectedAccountWithStats[];
   selectedTeam: string | null;
   selectedAccount: string | null;
-  selectedFilter: 'all' | 'unread' | 'assigned';
+  selectedFilter: 'all' | 'unread' | 'assigned' | 'unassigned';
   selectedInbox: string | null;
   onTeamSelect: (teamId: string | null) => void;
   onAccountSelect: (accountId: string | null) => void;
-  onFilterSelect: (filter: 'all' | 'unread' | 'assigned') => void;
+  onFilterSelect: (filter: 'all' | 'unread' | 'assigned' | 'unassigned') => void;
   onInboxSelect: (inboxId: string | null) => void;
 }
 
