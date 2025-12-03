@@ -67,8 +67,16 @@ export function useUploadPost(): UseUploadPostReturn {
         try {
           // Créer le profil dans Upload-Post
           await UploadPostService.createUserProfile(uploadPostUsername);
-          
-          
+
+          // Configurer le webhook automatiquement
+          try {
+            await UploadPostService.configureWebhook();
+            console.log('[useUploadPost] Webhook configured successfully');
+          } catch (webhookError) {
+            console.error('[useUploadPost] Error configuring webhook (non-blocking):', webhookError);
+            // Ne pas bloquer le processus si la configuration du webhook échoue
+          }
+
           // Sauvegarder le username dans le profil Supabase
           await supabase
             .from('profiles')
@@ -186,8 +194,16 @@ export function useUploadPost(): UseUploadPostReturn {
         try {
           // Créer le profil dans Upload-Post
           await UploadPostService.createUserProfile(uploadPostUsername);
-          
-          
+
+          // Configurer le webhook automatiquement
+          try {
+            await UploadPostService.configureWebhook();
+            console.log('[useUploadPost] Webhook configured successfully');
+          } catch (webhookError) {
+            console.error('[useUploadPost] Error configuring webhook (non-blocking):', webhookError);
+            // Ne pas bloquer le processus si la configuration du webhook échoue
+          }
+
           // Sauvegarder le username dans le profil Supabase
           await supabase
             .from('profiles')
@@ -195,8 +211,8 @@ export function useUploadPost(): UseUploadPostReturn {
             .eq('id', user.id);
         } catch (createError) {
           // Si le profil existe déjà dans Upload-Post, on continue
-          
-          
+
+
           // Sauvegarder quand même le username dans le profil Supabase
           await supabase
             .from('profiles')
