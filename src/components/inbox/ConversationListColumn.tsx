@@ -13,9 +13,9 @@ interface ConversationListColumnProps {
   conversations: ConversationWithLastMessage[];
   selectedConversation: ConversationWithLastMessage | null;
   loading: boolean;
-  selectedFilter: 'all' | 'unread' | 'assigned';
+  selectedFilter: 'all' | 'unread' | 'assigned' | 'unassigned';
   onConversationSelect: (conversation: ConversationWithLastMessage) => void;
-  onFilterSelect: (filter: 'all' | 'unread' | 'assigned') => void;
+  onFilterSelect: (filter: 'all' | 'unread' | 'assigned' | 'unassigned') => void;
   onRefresh: () => void;
 }
 
@@ -61,10 +61,10 @@ export function ConversationListColumn({
             </span>
           </button>
           <button
-            onClick={() => onFilterSelect('unread')}
+            onClick={() => onFilterSelect('unassigned')}
             className={cn(
               'px-4 py-2 text-sm font-medium transition-colors border-b-2',
-              selectedFilter === 'unread'
+              selectedFilter === 'unassigned'
                 ? 'text-blue-600 border-blue-600'
                 : 'text-gray-600 hover:text-gray-900 border-transparent'
             )}
