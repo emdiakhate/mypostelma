@@ -127,7 +127,7 @@ serve(async (req) => {
     // Déterminer le nouveau statut global
     const allPlatforms = matchingPost.platforms || [];
     const completedPlatforms = Object.keys(updatedResults);
-    const allCompleted = allPlatforms.every(p => completedPlatforms.includes(p));
+    const allCompleted = allPlatforms.every((p: string) => completedPlatforms.includes(p));
     const hasFailure = Object.values(updatedResults).some((r: any) => !r.success);
 
     let newStatus = 'in_progress';
