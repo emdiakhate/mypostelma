@@ -1509,6 +1509,10 @@ export type Database = {
           status: Database["public"]["Enums"]["post_status"]
           time_slot: number | null
           updated_at: string
+          upload_post_error: string | null
+          upload_post_job_id: string | null
+          upload_post_results: Json | null
+          upload_post_status: string | null
           video: string | null
           video_thumbnail: string | null
         }
@@ -1534,6 +1538,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null
           updated_at?: string
+          upload_post_error?: string | null
+          upload_post_job_id?: string | null
+          upload_post_results?: Json | null
+          upload_post_status?: string | null
           video?: string | null
           video_thumbnail?: string | null
         }
@@ -1559,6 +1567,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["post_status"]
           time_slot?: number | null
           updated_at?: string
+          upload_post_error?: string | null
+          upload_post_job_id?: string | null
+          upload_post_results?: Json | null
+          upload_post_status?: string | null
           video?: string | null
           video_thumbnail?: string | null
         }
