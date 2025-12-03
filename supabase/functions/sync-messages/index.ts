@@ -469,7 +469,17 @@ function decodeBase64Url(data: string): string {
     // Gmail uses base64url encoding
     const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
     const decoded = atob(base64);
-    return decoded;
+
+    // Convert from Latin-1 to UTF-8
+    // atob() decodes to Latin-1, we need to properly decode UTF-8
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+
+    // Decode UTF-8 bytes to string
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(bytes);
   } catch {
     return '';
   }

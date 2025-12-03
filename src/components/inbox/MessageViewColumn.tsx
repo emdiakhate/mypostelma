@@ -47,8 +47,10 @@ export function MessageViewColumn({
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (conversation) {
@@ -161,6 +163,31 @@ export function MessageViewColumn({
     }
   };
 
+  const handleFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    toast({
+      title: 'Fichier sélectionné',
+      description: `${files[0].name} - Envoi de pièces jointes bientôt disponible`,
+    });
+
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  };
+
   const handleVoiceInput = async () => {
     setRecording(true);
     toast({
@@ -171,12 +198,69 @@ export function MessageViewColumn({
   };
 
   const handleAISuggestion = async () => {
-    setGeneratingAI(true);
-    toast({
-      title: 'Génération IA',
-      description: 'Fonctionnalité bientôt disponible',
-    });
-    setTimeout(() => setGeneratingAI(false), 1000);
+    if (!conversation || messages.length === 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun message dans la conversation',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setGeneratingAI(true);
+
+      // Get the last 5 messages for context
+      const lastMessages = messages.slice(-5);
+
+      // Find the last incoming message
+      const lastIncomingMessage = [...messages].reverse().find(
+        m => m.direction === 'received' || m.direction === 'incoming' || m.direction === 'inbound'
+      );
+
+      if (!lastIncomingMessage) {
+        toast({
+          title: 'Erreur',
+          description: 'Aucun message entrant trouvé',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Build conversation context
+      const conversationContext = lastMessages.map(msg => ({
+        direction: (msg.direction === 'received' || msg.direction === 'incoming' || msg.direction === 'inbound') ? 'incoming' : 'outgoing',
+        content: msg.text_content || '',
+      }));
+
+      // Call the AI suggestion function
+      const { data, error } = await supabase.functions.invoke('generate-reply-suggestion', {
+        body: {
+          message_content: lastIncomingMessage.text_content || '',
+          conversation_context: conversationContext,
+          platform: conversation.platform,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.suggestion) {
+        setMessageText(data.suggestion);
+        toast({
+          title: 'Suggestion générée',
+          description: 'La suggestion IA a été ajoutée au message',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating AI suggestion:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de générer une suggestion',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -307,6 +391,15 @@ export function MessageViewColumn({
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-200">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+          accept="image/*,video/*,application/pdf,.doc,.docx"
+        />
+
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -318,11 +411,35 @@ export function MessageViewColumn({
             disabled={sending}
           />
 
+          {/* Emoji Picker Popup */}
+          {showEmojiPicker && (
+            <div className="absolute bottom-12 right-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10">
+              <div className="grid grid-cols-8 gap-1 max-w-xs">
+                {['😀', '😊', '😂', '🤣', '😍', '🥰', '😎', '🤔', '👍', '👏', '🙏', '💪', '🎉', '❤️', '✨', '🔥', '👋', '🙌', '💯', '✅', '❌', '⚡', '🎯', '📧'].map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleEmojiSelect(emoji)}
+                    className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowEmojiPicker(false)}
+                className="text-xs text-gray-500 mt-2 w-full text-center hover:text-gray-700"
+              >
+                Fermer
+              </button>
+            </div>
+          )}
+
           {/* Integrated buttons inside textarea */}
           <div className="absolute right-2 bottom-2 flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
+              onClick={handleFileSelect}
               disabled={sending}
               className="h-8 w-8 p-0 hover:bg-gray-100"
               title="Pièce jointe"
@@ -344,6 +461,7 @@ export function MessageViewColumn({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               disabled={sending}
               className="h-8 w-8 p-0 hover:bg-gray-100"
               title="Émojis"

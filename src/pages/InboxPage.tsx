@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getConversations } from '@/services/inbox';
 import { getTeams } from '@/services/teams';
-import { getConnectedAccountsWithStats } from '@/services/connectedAccounts';
+import { getConnectedAccountsWithStats, syncAccountMessages } from '@/services/connectedAccounts';
 import type { ConversationWithLastMessage, Platform } from '@/types/inbox';
 import type { Team } from '@/types/teams';
 import type { ConnectedAccountWithStats } from '@/types/inbox';
@@ -27,7 +27,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'unread' | 'assigned'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'unread' | 'assigned' | 'unassigned'>('all');
   const [selectedInbox, setSelectedInbox] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +73,8 @@ export default function InboxPage() {
         filters.status = ['unread'];
       } else if (selectedFilter === 'assigned') {
         filters.assigned_to = user.id;
+      } else if (selectedFilter === 'unassigned') {
+        // This will be filtered client-side
       }
 
       // Filter by connected account
@@ -96,6 +98,11 @@ export default function InboxPage() {
         filteredData = filteredData.filter((conv: any) => {
           return conv.connected_account_id === selectedAccount;
         });
+      }
+
+      // Filter by unassigned if selected
+      if (selectedFilter === 'unassigned') {
+        filteredData = filteredData.filter((conv: any) => !conv.assigned_to);
       }
 
       setConversations(filteredData);
@@ -152,6 +159,43 @@ export default function InboxPage() {
       supabase.removeChannel(channel);
     };
   }, [user, selectedConversation]);
+
+  // Auto-sync connected accounts every 5 minutes
+  useEffect(() => {
+    if (!user || connectedAccounts.length === 0) return;
+
+    const syncAllAccounts = async () => {
+      console.log('Auto-syncing connected accounts...');
+
+      // Only sync email accounts (gmail, outlook)
+      const emailAccounts = connectedAccounts.filter(
+        acc => (acc.platform === 'gmail' || acc.platform === 'outlook') && acc.status === 'active'
+      );
+
+      for (const account of emailAccounts) {
+        try {
+          console.log(`Syncing account: ${account.account_name}`);
+          await syncAccountMessages(account.id);
+        } catch (error) {
+          console.error(`Failed to sync account ${account.account_name}:`, error);
+        }
+      }
+
+      // Reload conversations after sync
+      await loadConversations();
+    };
+
+    // Initial sync after 5 seconds
+    const initialTimeout = setTimeout(syncAllAccounts, 5000);
+
+    // Then sync every 5 minutes
+    const syncInterval = setInterval(syncAllAccounts, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(syncInterval);
+    };
+  }, [user, connectedAccounts]);
 
   return (
     <div className="h-[calc(100vh-73px)] flex bg-gray-50">
