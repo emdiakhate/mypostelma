@@ -102,6 +102,30 @@ export default function ConnectedAccountsPage() {
     }
   }, [user]);
 
+  // Auto-sync every 30 seconds for email accounts
+  useEffect(() => {
+    if (!user || accounts.length === 0) return;
+
+    const syncAllEmailAccounts = async () => {
+      const emailAccounts = accounts.filter(acc => ['gmail', 'outlook'].includes(acc.platform) && acc.status === 'active');
+      for (const account of emailAccounts) {
+        try {
+          await syncAccountMessages(account.id);
+        } catch (error) {
+          console.error('Auto-sync error for account:', account.id, error);
+        }
+      }
+    };
+
+    // Initial sync
+    syncAllEmailAccounts();
+
+    // Set up interval for periodic sync
+    const interval = setInterval(syncAllEmailAccounts, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, accounts.length]);
+
   const loadAccounts = async () => {
     try {
       setLoading(true);
