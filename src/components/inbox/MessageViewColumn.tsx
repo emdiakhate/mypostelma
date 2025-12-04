@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, Loader2, MoreVertical, Paperclip, Smile } from 'lucide-react';
+import { Send, Mic, Sparkles, Loader2, MoreVertical, Paperclip, Smile, X, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,8 @@ export function MessageViewColumn({
   const [recording, setRecording] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,16 +127,30 @@ export function MessageViewColumn({
   };
 
   const handleSend = async () => {
-    if (!messageText.trim() || !conversation || sending) return;
+    if ((!messageText.trim() && !selectedFile) || !conversation || sending) return;
 
     try {
       setSending(true);
+
+      let mediaUrl: string | undefined;
+      let mediaType: string | undefined;
+
+      // Upload file if selected
+      if (selectedFile) {
+        const uploadedUrl = await uploadFile(selectedFile);
+        if (uploadedUrl) {
+          mediaUrl = uploadedUrl;
+          mediaType = selectedFile.type.startsWith('image/') ? 'image' : 'file';
+        }
+      }
 
       // Call the send-message edge function to actually send to the recipient
       const { data, error } = await supabase.functions.invoke('send-message', {
         body: {
           conversation_id: conversation.id,
-          text_content: messageText,
+          text_content: messageText || (selectedFile ? `📎 ${selectedFile.name}` : ''),
+          media_url: mediaUrl,
+          media_type: mediaType,
         },
       });
 
@@ -144,12 +160,13 @@ export function MessageViewColumn({
       }
 
       setMessageText('');
+      setSelectedFile(null);
       await loadMessages();
       onConversationUpdate();
 
       toast({
         title: 'Message envoyé',
-        description: 'Votre message a été envoyé avec succès',
+        description: selectedFile ? 'Votre message avec pièce jointe a été envoyé' : 'Votre message a été envoyé avec succès',
       });
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -171,14 +188,75 @@ export function MessageViewColumn({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    const file = files[0];
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Fichier trop volumineux',
+        description: 'La taille maximale est de 10 Mo',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
     toast({
       title: 'Fichier sélectionné',
-      description: `${files[0].name} - Envoi de pièces jointes bientôt disponible`,
+      description: `${file.name} - Cliquez sur envoyer pour joindre`,
     });
 
     // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    if (!conversation) return null;
+
+    try {
+      setUploadingFile(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversation_id', conversation.id);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        throw new Error('Non authentifié');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-inbox-attachment`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors de l\'upload');
+      }
+
+      const result = await response.json();
+      return result.url;
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible d\'uploader le fichier',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -400,6 +478,35 @@ export function MessageViewColumn({
           accept="image/*,video/*,application/pdf,.doc,.docx"
         />
 
+        {/* Selected File Preview */}
+        {selectedFile && (
+          <div className="mb-3 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+            {selectedFile.type.startsWith('image/') ? (
+              <img
+                src={URL.createObjectURL(selectedFile)}
+                alt="Preview"
+                className="w-12 h-12 object-cover rounded"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                <FileIcon className="w-6 h-6 text-gray-500" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+              <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(1)} Ko</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedFile(null)}
+              className="h-8 w-8 p-0 hover:bg-gray-200"
+            >
+              <X className="w-4 h-4 text-gray-500" />
+            </Button>
+          </div>
+        )}
+
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -408,7 +515,7 @@ export function MessageViewColumn({
             onKeyDown={handleKeyPress}
             placeholder="Écrivez votre message... (Ctrl+Entrée pour envoyer)"
             className="min-h-[80px] pr-40 resize-none"
-            disabled={sending}
+            disabled={sending || uploadingFile}
           />
 
           {/* Emoji Picker Popup */}
@@ -483,11 +590,11 @@ export function MessageViewColumn({
             <Button
               size="sm"
               onClick={handleSend}
-              disabled={!messageText.trim() || sending}
+              disabled={(!messageText.trim() && !selectedFile) || sending || uploadingFile}
               className="h-8 px-3 bg-blue-600 hover:bg-blue-700"
               title="Envoyer (Ctrl+Entrée)"
             >
-              {sending ? (
+              {sending || uploadingFile ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
@@ -497,7 +604,7 @@ export function MessageViewColumn({
         </div>
 
         <p className="text-xs text-gray-500 mt-2">
-          Appuyez sur Ctrl+Entrée pour envoyer
+          {uploadingFile ? 'Upload en cours...' : 'Appuyez sur Ctrl+Entrée pour envoyer'}
         </p>
       </div>
     </div>
