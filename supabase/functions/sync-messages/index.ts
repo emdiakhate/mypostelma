@@ -78,6 +78,69 @@ serve(async (req) => {
 });
 
 // =====================================================
+// TOKEN REFRESH
+// =====================================================
+
+async function refreshGmailToken(supabase: any, account: any): Promise<string> {
+  console.log('Refreshing Gmail token for account:', account.id);
+  
+  const clientId = Deno.env.get('VITE_GOOGLE_CLIENT_ID');
+  const clientSecret = Deno.env.get('VITE_GOOGLE_CLIENT_SECRET');
+  
+  if (!clientId || !clientSecret) {
+    throw new Error('Google OAuth credentials not configured');
+  }
+  
+  if (!account.refresh_token) {
+    throw new Error('No refresh token available. Please reconnect your Gmail account.');
+  }
+  
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: account.refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('Token refresh failed:', error);
+    
+    // Mark account as needing reconnection
+    await supabase
+      .from('connected_accounts')
+      .update({ 
+        status: 'expired',
+        error_message: 'Token expired. Please reconnect your account.'
+      })
+      .eq('id', account.id);
+    
+    throw new Error('Token refresh failed. Please reconnect your Gmail account.');
+  }
+  
+  const data = await response.json();
+  const newAccessToken = data.access_token;
+  
+  // Update token in database
+  await supabase
+    .from('connected_accounts')
+    .update({ 
+      access_token: newAccessToken,
+      token_expires_at: new Date(Date.now() + (data.expires_in || 3600) * 1000).toISOString(),
+      status: 'active',
+      error_message: null
+    })
+    .eq('id', account.id);
+  
+  console.log('Token refreshed successfully');
+  return newAccessToken;
+}
+
+// =====================================================
 // GMAIL SYNC
 // =====================================================
 
@@ -86,15 +149,39 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
     const accountEmail = account.config?.email || account.platform_account_id;
     console.log('Starting Gmail sync for account:', account.id, accountEmail);
 
+    let accessToken = account.access_token;
+    
+    // Check if token might be expired
+    const tokenExpiry = account.token_expires_at ? new Date(account.token_expires_at) : null;
+    if (tokenExpiry && tokenExpiry <= new Date()) {
+      console.log('Token expired, refreshing...');
+      accessToken = await refreshGmailToken(supabase, account);
+    }
+
     // Get messages from Gmail API - both INBOX and SENT
-    const messagesResponse = await fetch(
+    let messagesResponse = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox OR in:sent`,
       {
         headers: {
-          Authorization: `Bearer ${account.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       }
     );
+
+    // If 401, try to refresh token
+    if (messagesResponse.status === 401) {
+      console.log('Got 401, attempting token refresh...');
+      accessToken = await refreshGmailToken(supabase, account);
+      
+      messagesResponse = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox OR in:sent`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+    }
 
     if (!messagesResponse.ok) {
       const error = await messagesResponse.text();
@@ -117,7 +204,7 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
           {
             headers: {
-              Authorization: `Bearer ${account.access_token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
