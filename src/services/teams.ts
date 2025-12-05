@@ -31,14 +31,47 @@ export async function getTeams(userId: string): Promise<Team[]> {
 }
 
 export async function getTeamsWithStats(userId: string): Promise<TeamWithStats[]> {
-  const { data, error } = await supabase
-    .from('teams_with_stats')
+  // Query teams directly with aggregated stats to avoid view permission issues
+  const { data: teams, error } = await supabase
+    .from('teams')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  if (!teams || teams.length === 0) return [];
+
+  // Get stats for each team
+  const teamIds = teams.map(t => t.id);
+  
+  const { data: memberStats } = await supabase
+    .from('team_members')
+    .select('team_id')
+    .in('team_id', teamIds)
+    .eq('status', 'accepted');
+
+  const { data: conversationStats } = await supabase
+    .from('conversation_teams')
+    .select('team_id')
+    .in('team_id', teamIds);
+
+  // Count members and conversations per team
+  const memberCounts: Record<string, number> = {};
+  const conversationCounts: Record<string, number> = {};
+  
+  (memberStats || []).forEach(m => {
+    memberCounts[m.team_id] = (memberCounts[m.team_id] || 0) + 1;
+  });
+  
+  (conversationStats || []).forEach(c => {
+    conversationCounts[c.team_id] = (conversationCounts[c.team_id] || 0) + 1;
+  });
+
+  return teams.map(team => ({
+    ...team,
+    active_members: memberCounts[team.id] || 0,
+    assigned_conversations: conversationCounts[team.id] || 0,
+  }));
 }
 
 export async function getTeamById(teamId: string): Promise<Team | null> {
