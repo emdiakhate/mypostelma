@@ -634,6 +634,13 @@ export type Database = {
             foreignKeyName: "conversations_connected_account_id_fkey"
             columns: ["connected_account_id"]
             isOneToOne: false
+            referencedRelation: "connected_accounts_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
             referencedRelation: "connected_accounts_with_stats"
             referencedColumns: ["id"]
           },
@@ -2145,6 +2152,13 @@ export type Database = {
             foreignKeyName: "webhook_logs_connected_account_id_fkey"
             columns: ["connected_account_id"]
             isOneToOne: false
+            referencedRelation: "connected_accounts_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_logs_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
             referencedRelation: "connected_accounts_with_stats"
             referencedColumns: ["id"]
           },
@@ -2198,6 +2212,57 @@ export type Database = {
           post_text: string | null
           post_url: string | null
           posted_at: string | null
+        }
+        Relationships: []
+      }
+      connected_accounts_safe: {
+        Row: {
+          account_name: string | null
+          avatar_url: string | null
+          config: Json | null
+          connected_at: string | null
+          error_message: string | null
+          id: string | null
+          last_sync_at: string | null
+          messages_received: number | null
+          messages_sent: number | null
+          platform: string | null
+          platform_account_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string | null
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform?: string | null
+          platform_account_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string | null
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform?: string | null
+          platform_account_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2262,6 +2327,13 @@ export type Database = {
             foreignKeyName: "conversations_connected_account_id_fkey"
             columns: ["connected_account_id"]
             isOneToOne: false
+            referencedRelation: "connected_accounts_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
             referencedRelation: "connected_accounts_with_stats"
             referencedColumns: ["id"]
           },
@@ -2295,6 +2367,13 @@ export type Database = {
             columns: ["connected_account_id"]
             isOneToOne: false
             referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts_safe"
             referencedColumns: ["id"]
           },
           {
