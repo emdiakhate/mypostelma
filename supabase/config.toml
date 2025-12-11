@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.analyze-message-routing]
 verify_jwt = true
+
+[functions.meta-oauth-callback]
+verify_jwt = true
