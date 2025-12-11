@@ -12,6 +12,7 @@ import ConnectGmailModal from '@/components/inbox/ConnectGmailModal';
 import ConnectOutlookModal from '@/components/inbox/ConnectOutlookModal';
 import ConnectTelegramModal from '@/components/inbox/ConnectTelegramModal';
 import ConnectWhatsAppModal from '@/components/inbox/ConnectWhatsAppModal';
+import ConnectMetaModal from '@/components/inbox/ConnectMetaModal';
 
 // Platform configurations
 const PLATFORM_CONFIG: Record<
@@ -56,15 +57,15 @@ const PLATFORM_CONFIG: Record<
     name: 'Instagram',
     icon: <MessageCircle className="w-6 h-6" />,
     color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    description: 'Bientôt disponible',
-    available: false,
+    description: 'Recevez et répondez aux messages Instagram',
+    available: true,
   },
   facebook: {
     name: 'Facebook',
     icon: <MessageCircle className="w-6 h-6" />,
     color: 'bg-blue-600',
-    description: 'Bientôt disponible',
-    available: false,
+    description: 'Recevez et répondez aux messages Facebook',
+    available: true,
   },
   twitter: {
     name: 'Twitter / X',
@@ -404,6 +405,28 @@ export default function ConnectedAccountsPage() {
 
       {showConnectModal === 'whatsapp_twilio' && (
         <ConnectWhatsAppModal
+          onClose={() => setShowConnectModal(null)}
+          onSuccess={() => {
+            setShowConnectModal(null);
+            loadAccounts();
+          }}
+        />
+      )}
+
+      {showConnectModal === 'facebook' && (
+        <ConnectMetaModal
+          platform="facebook"
+          onClose={() => setShowConnectModal(null)}
+          onSuccess={() => {
+            setShowConnectModal(null);
+            loadAccounts();
+          }}
+        />
+      )}
+
+      {showConnectModal === 'instagram' && (
+        <ConnectMetaModal
+          platform="instagram"
           onClose={() => setShowConnectModal(null)}
           onSuccess={() => {
             setShowConnectModal(null);

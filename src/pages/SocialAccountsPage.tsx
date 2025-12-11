@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useUploadPost } from '@/hooks/useUploadPost';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -167,8 +168,30 @@ export default function SocialAccountsPage() {
   };
 
   const handleDisconnectPlatform = async (platformId: SocialPlatform) => {
-    toast.success(`Déconnexion de ${platformId} effectuée`);
-    refreshProfile();
+    try {
+      const account = connectedMap.get(platformId);
+      if (!account) {
+        toast.error('Compte non trouvé');
+        return;
+      }
+      
+      // Call the edge function to disconnect from Upload-Post
+      const { error } = await supabase.functions.invoke('disconnect-upload-post-account', {
+        body: { platform: platformId }
+      });
+      
+      if (error) {
+        console.error('Error disconnecting:', error);
+        toast.error(`Erreur lors de la déconnexion: ${error.message}`);
+        return;
+      }
+      
+      toast.success(`${platformId} déconnecté avec succès`);
+      refreshProfile();
+    } catch (error: any) {
+      console.error('Error disconnecting platform:', error);
+      toast.error(error?.message || 'Erreur lors de la déconnexion');
+    }
   };
 
   // Loading skeleton
