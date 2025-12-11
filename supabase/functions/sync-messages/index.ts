@@ -95,6 +95,9 @@ async function refreshGmailToken(supabase: any, account: any): Promise<string> {
     throw new Error('No refresh token available. Please reconnect your Gmail account.');
   }
   
+  console.log('Using client_id:', clientId?.substring(0, 20) + '...');
+  console.log('Refresh token available:', !!account.refresh_token);
+  
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -106,23 +109,42 @@ async function refreshGmailToken(supabase: any, account: any): Promise<string> {
     }),
   });
   
+  const responseText = await response.text();
+  console.log('Token refresh response status:', response.status);
+  console.log('Token refresh response:', responseText);
+  
   if (!response.ok) {
-    const error = await response.text();
-    console.error('Token refresh failed:', error);
+    console.error('Token refresh failed with status:', response.status);
+    
+    // Parse error for more details
+    let errorDetails = responseText;
+    try {
+      const errorJson = JSON.parse(responseText);
+      errorDetails = errorJson.error_description || errorJson.error || responseText;
+    } catch (e) {
+      // Keep original text
+    }
     
     // Mark account as needing reconnection
     await supabase
       .from('connected_accounts')
       .update({ 
         status: 'expired',
-        error_message: 'Token expired. Please reconnect your account.'
+        error_message: `Token expiré: ${errorDetails}. Veuillez reconnecter votre compte Gmail.`
       })
       .eq('id', account.id);
     
-    throw new Error('Token refresh failed. Please reconnect your Gmail account.');
+    throw new Error(`Token refresh failed: ${errorDetails}. Please reconnect your Gmail account.`);
   }
   
-  const data = await response.json();
+  // Parse response after checking status
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    throw new Error('Invalid response from Google OAuth');
+  }
+  
   const newAccessToken = data.access_token;
   
   // Update token in database
