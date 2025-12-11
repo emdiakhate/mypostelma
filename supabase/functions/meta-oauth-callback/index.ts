@@ -51,11 +51,16 @@ serve(async (req) => {
   }
 
   try {
-    const { code, redirect_uri, platform, user_id } = await req.json();
+    const body = await req.json();
+    console.log("[Meta OAuth] Request body received:", JSON.stringify(body));
+    
+    const { code, redirect_uri, platform, user_id } = body;
 
     console.log(`[Meta OAuth] Processing ${platform} callback for user ${user_id}`);
+    console.log("[Meta OAuth] Redirect URI:", redirect_uri);
 
     if (!code || !redirect_uri || !platform || !user_id) {
+      console.error("[Meta OAuth] Missing parameters:", { code: !!code, redirect_uri: !!redirect_uri, platform, user_id });
       return new Response(
         JSON.stringify({ error: "Missing required parameters: code, redirect_uri, platform, user_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
