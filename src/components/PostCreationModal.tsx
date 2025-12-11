@@ -26,7 +26,6 @@ import PublishOptionsSection from './post-creation/PublishOptionsSection';
 import VoiceRecorderButton from './VoiceRecorderButton';
 import { CreatePersonalToneModal } from './CreatePersonalToneModal';
 import { usePersonalTones } from '@/hooks/usePersonalTones';
-import { useUploadPost } from '@/hooks/useUploadPost';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PostCreationModalProps {
@@ -201,8 +200,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   // Personal tones hook
   const { personalTones } = usePersonalTones();
   
-  // Upload Post hook for getting the correct username
-  const { profile: uploadPostProfile } = useUploadPost();
+  // État pour stocker les infos des comptes sélectionnés (pour la publication Meta)
+  const [selectedAccountsInfo, setSelectedAccountsInfo] = useState<{ accountId: string; platform: string }[]>([]);
 
   // États pour la génération IA
   const [mediaSource, setMediaSource] = useState<'upload' | 'ai'>('upload');
@@ -244,7 +243,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const engagementChartData = useEngagementChart(selectedPlatforms[0] as any, []);
   const hashtagSuggestions = useHashtagSuggestions(content, selectedPlatforms[0] as any, []);
   const { hashtagSets } = useHashtagSets();
-  const { isPublishing, publishPost } = usePostPublishing();
+  const { isPublishing, publishToMultipleAccounts } = usePostPublishing();
 
   // États pour la génération d'images (désactivé - utiliser n8n)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -257,14 +256,31 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   // État local pour la publication
   const [isPublishingLocal, setIsPublishingLocal] = useState(false);
 
-  // Synchroniser selectedAccounts avec selectedPlatforms
+  // Charger les infos des comptes sélectionnés quand la sélection change
   useEffect(() => {
-    if (selectedAccounts.length > 0) {
-      const platforms = selectedAccounts.map(accountId => accountId);
-      setSelectedPlatforms(platforms);
-    } else {
-      setSelectedPlatforms(['instagram']);
-    }
+    const loadAccountsInfo = async () => {
+      if (selectedAccounts.length === 0) {
+        setSelectedAccountsInfo([]);
+        setSelectedPlatforms(['instagram']);
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from('connected_accounts')
+          .select('id, platform')
+          .in('id', selectedAccounts);
+
+        if (data) {
+          setSelectedAccountsInfo(data.map(a => ({ accountId: a.id, platform: a.platform })));
+          setSelectedPlatforms(data.map(a => a.platform));
+        }
+      } catch (err) {
+        console.error('Error loading accounts info:', err);
+      }
+    };
+
+    loadAccountsInfo();
   }, [selectedAccounts]);
 
   // Charger la vidéo lors de l'édition
@@ -535,145 +551,75 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
       return;
     }
 
+    // Vérifier si Instagram est sélectionné sans image
+    const hasInstagram = selectedAccountsInfo.some(a => a.platform === 'instagram');
+    if (hasInstagram && selectedImages.length === 0) {
+      toast.error('Instagram nécessite au moins une image pour publier');
+      return;
+    }
+
     setIsPublishingLocal(true);
 
-    // Créer les captions finales (générées ou contenu par défaut)
-    const finalCaptions = generatedCaptions ||
-      selectedPlatforms.reduce((acc, platform) => {
-        acc[platform] = content;
-        return acc;
-      }, {} as Record<string, string>);
+    // Le message à publier
+    const message = generatedCaptions?.[selectedPlatforms[0]] || content;
 
     try {
-      // Utiliser l'API Upload Post via le hook
-      const result = await publishPost({
-        type: publishType === 'now' ? 'immediate' : 'scheduled',
-        captions: finalCaptions,
-        accounts: selectedAccounts,
-        images: selectedImages,
-        video: generatedVideoUrl || undefined,
-        scheduledDateTime: publishType === 'scheduled' ? scheduledDateTime || undefined : undefined,
-        author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
-        authorId: currentUser.id,
-        profile_username: uploadPostProfile?.username || currentUser.id // Utiliser le username Upload Post
-      });
+      // Publier via l'API Meta
+      const { results } = await publishToMultipleAccounts(
+        selectedAccountsInfo,
+        message,
+        selectedImages,
+        generatedVideoUrl || undefined
+      );
 
-      if (!result.success) {
-        toast.error(result.error || 'Erreur lors de la publication');
+      // Vérifier les résultats
+      const successCount = results.filter(r => r.success).length;
+      const failedResults = results.filter(r => !r.success);
+
+      if (successCount > 0) {
+        toast.success(`Publication réussie sur ${successCount} compte(s) !`);
+      }
+
+      if (failedResults.length > 0) {
+        failedResults.forEach(r => {
+          toast.error(`Erreur ${r.platform}: ${r.error}`);
+        });
+      }
+
+      if (successCount === 0) {
         return;
       }
 
-      // Afficher le message de succès
-      if (publishType === 'now') {
-        toast.success('Publication en cours ! Vous recevrez une notification une fois terminée.');
-      } else {
-        toast.success('Publication programmée avec succès !');
-      }
-      // Si on est en mode édition
-      if (isEditing) {
-        if (publishType === 'now') {
-          // Publier maintenant et mettre à jour le post dans le calendrier
-          const publishedPost = {
-            ...initialData,
-            id: initialData?.id || `post-${Date.now()}`,
-            content: finalCaptions[selectedPlatforms[0]] || content,
-            platforms: selectedPlatforms,
-            accounts: selectedAccounts,
-            images: selectedImages,
-            video: generatedVideoUrl || undefined,
-            videoThumbnail: generatedVideoUrl || undefined,
-            status: 'published' as const,
-            captions: finalCaptions,
-            author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
-            campaign,
-            campaignColor: initialData?.campaignColor,
-            upload_post_request_id: result.request_id,
-            upload_post_status: 'in_progress'
-          };
+      // Créer les captions finales
+      const finalCaptions = generatedCaptions ||
+        selectedPlatforms.reduce((acc, platform) => {
+          acc[platform] = content;
+          return acc;
+        }, {} as Record<string, string>);
 
-          onSave(publishedPost);
-          onClose();
-          return;
-        } else if (scheduledDateTime) {
-          // Modifier la programmation
-          const scheduledPost = {
-            ...initialData,
-            id: initialData?.id || `post-${Date.now()}`,
-            content: finalCaptions[selectedPlatforms[0]] || content,
-            platforms: selectedPlatforms,
-            accounts: selectedAccounts,
-            images: selectedImages,
-            video: generatedVideoUrl || undefined,
-            videoThumbnail: generatedVideoUrl || undefined,
-            scheduledTime: scheduledDateTime,
-            dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
-            timeSlot: calculateTimeSlot(scheduledDateTime),
-            status: 'scheduled' as const,
-            captions: finalCaptions,
-            author: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur',
-            campaign,
-            campaignColor: initialData?.campaignColor,
-            upload_post_job_id: result.job_id,
-            upload_post_status: 'scheduled'
-          };
+      // Mode création - sauvegarder le post
+      const now = new Date();
+      const publishedPost = {
+        id: `post-${Date.now()}`,
+        content: message,
+        platforms: selectedPlatforms,
+        accounts: selectedAccounts,
+        images: selectedImages,
+        video: generatedVideoUrl || undefined,
+        videoThumbnail: generatedVideoUrl || undefined,
+        scheduledTime: now,
+        dayColumn: format(now, 'EEEE', { locale: fr }).toLowerCase(),
+        timeSlot: calculateTimeSlot(now),
+        status: 'published' as const,
+        captions: finalCaptions,
+        author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
+        campaign,
+        campaignColor: initialData?.campaignColor,
+        published_at: now.toISOString()
+      };
 
-          onSave(scheduledPost);
-          onClose();
-          return;
-        }
-      }
-
-      // Mode création
-      if (publishType === 'now') {
-        // Sauvegarder le post publié dans la base de données
-        const now = new Date();
-        const publishedPost = {
-          id: `post-${Date.now()}`,
-          content: finalCaptions[selectedPlatforms[0]] || content,
-          platforms: selectedPlatforms,
-          accounts: selectedAccounts,
-          images: selectedImages,
-          video: generatedVideoUrl || undefined,
-          videoThumbnail: generatedVideoUrl || undefined,
-          scheduledTime: now,
-          dayColumn: format(now, 'EEEE', { locale: fr }).toLowerCase(),
-          timeSlot: calculateTimeSlot(now),
-          status: 'published' as const,
-          captions: finalCaptions,
-          author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
-          campaign,
-          campaignColor: initialData?.campaignColor,
-          upload_post_request_id: result.request_id,
-          upload_post_status: 'in_progress',
-          published_at: now.toISOString()
-        };
-
-        onSave(publishedPost);
-        onClose();
-      } else if (scheduledDateTime) {
-        const scheduledPost = {
-          id: `post-${Date.now()}`,
-          content: finalCaptions[selectedPlatforms[0]] || content,
-          platforms: selectedPlatforms,
-          accounts: selectedAccounts,
-          images: selectedImages,
-          video: generatedVideoUrl || undefined,
-          videoThumbnail: generatedVideoUrl || undefined,
-          scheduledTime: scheduledDateTime,
-          dayColumn: format(scheduledDateTime, 'EEEE', { locale: fr }).toLowerCase(),
-          timeSlot: calculateTimeSlot(scheduledDateTime),
-          status: 'scheduled' as const,
-          captions: finalCaptions,
-          author: currentUser?.user_metadata?.full_name?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Utilisateur',
-          campaign,
-          campaignColor: initialData?.campaignColor,
-          upload_post_job_id: result.job_id,
-          upload_post_status: 'scheduled'
-        };
-
-        onSave(scheduledPost);
-        onClose();
-      }
+      onSave(publishedPost);
+      onClose();
     } catch (error) {
       console.error('Erreur publication:', error);
       toast.error('Erreur lors de la publication');
@@ -682,20 +628,18 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     }
   }, [
     generatedCaptions, 
-    selectedAccounts, 
-    publishType, 
-    hasPermission, 
-    publishPost, 
+    selectedAccounts,
+    selectedAccountsInfo,
+    publishToMultipleAccounts, 
     selectedImages, 
     onClose, 
     currentUser, 
-    scheduledDateTime, 
-    isEditing, 
-    initialData, 
     selectedPlatforms, 
     content, 
     onSave,
-    campaign
+    campaign,
+    generatedVideoUrl,
+    initialData
   ]);
 
   if (!isOpen) return null;
