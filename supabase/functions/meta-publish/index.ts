@@ -30,9 +30,16 @@ function isValidPublicUrl(url: string): boolean {
   return true;
 }
 
+// Create admin client for storage operations (bypasses RLS)
+function createAdminClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+}
+
 // Helper to upload base64 or blob to storage and get public URL
 async function uploadMediaToStorage(
-  supabaseClient: any,
   mediaUrl: string,
   userId: string
 ): Promise<string> {
@@ -65,8 +72,11 @@ async function uploadMediaToStorage(
     
     const fileName = `meta-posts/${userId}/${Date.now()}.${extension}`;
     
-    const { data: uploadData, error: uploadError } = await supabaseClient.storage
-      .from('media-archives')
+    // Use admin client for storage upload (bypasses RLS)
+    const adminClient = createAdminClient();
+    
+    const { data: uploadData, error: uploadError } = await adminClient.storage
+      .from('posts-media')
       .upload(fileName, bytes, {
         contentType: mimeType,
         upsert: true
@@ -77,8 +87,8 @@ async function uploadMediaToStorage(
       throw new Error('Erreur lors de l\'upload du média: ' + uploadError.message);
     }
     
-    const { data: publicUrlData } = supabaseClient.storage
-      .from('media-archives')
+    const { data: publicUrlData } = adminClient.storage
+      .from('posts-media')
       .getPublicUrl(fileName);
     
     console.log('[META-PUBLISH] Uploaded and got public URL:', publicUrlData.publicUrl);
@@ -151,11 +161,11 @@ Deno.serve(async (req) => {
     let result;
 
     if (platform === 'facebook') {
-      result = await publishToFacebook(supabaseClient, pageId, accessToken, message, user.id, media_urls, media_type);
+      result = await publishToFacebook(pageId, accessToken, message, user.id, media_urls, media_type);
     } else if (platform === 'instagram') {
       // For Instagram, we need the Instagram Business Account ID from config
       const instagramAccountId = account.config?.instagram_business_account_id || account.platform_account_id;
-      result = await publishToInstagram(supabaseClient, instagramAccountId, accessToken, message, user.id, media_urls, media_type);
+      result = await publishToInstagram(instagramAccountId, accessToken, message, user.id, media_urls, media_type);
     } else {
       return new Response(JSON.stringify({ error: 'Plateforme non supportée' }), {
         status: 400,
@@ -184,7 +194,6 @@ Deno.serve(async (req) => {
 });
 
 async function publishToFacebook(
-  supabaseClient: any,
   pageId: string, 
   accessToken: string, 
   message: string, 
@@ -197,7 +206,7 @@ async function publishToFacebook(
   // If we have media, publish with photo/video
   if (mediaUrls && mediaUrls.length > 0 && mediaType === 'photo') {
     // Upload to storage if needed and get public URL
-    const photoUrl = await uploadMediaToStorage(supabaseClient, mediaUrls[0], userId);
+    const photoUrl = await uploadMediaToStorage(mediaUrls[0], userId);
     
     console.log('[META-PUBLISH] Publishing photo to Facebook with URL:', photoUrl);
     
@@ -246,7 +255,6 @@ async function publishToFacebook(
 }
 
 async function publishToInstagram(
-  supabaseClient: any,
   instagramAccountId: string,
   accessToken: string,
   message: string,
@@ -262,7 +270,7 @@ async function publishToInstagram(
   }
 
   // Upload to storage if needed and get public URL
-  const mediaUrl = await uploadMediaToStorage(supabaseClient, mediaUrls[0], userId);
+  const mediaUrl = await uploadMediaToStorage(mediaUrls[0], userId);
   
   console.log('[META-PUBLISH] Publishing to Instagram with URL:', mediaUrl);
 
