@@ -115,6 +115,23 @@ Deno.serve(async (req) => {
       // Continue anyway - we still want to delete the account from our database
     }
 
+    // Delete the account from connected_accounts table
+    const { error: deleteError } = await supabaseClient
+      .from('connected_accounts')
+      .delete()
+      .eq('id', account_id)
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      console.error('Error deleting account:', deleteError);
+      return new Response(JSON.stringify({ error: 'Failed to delete account' }), {
+        status: 500,
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Account ${account_id} deleted successfully`);
+
     return new Response(
       JSON.stringify({
         success: true,

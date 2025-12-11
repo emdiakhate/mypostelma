@@ -229,7 +229,7 @@ export default function SocialAccountsPage() {
         }
         
         const { error } = await supabase.functions.invoke('disconnect-account', {
-          body: { accountId: metaAccount.id }
+          body: { account_id: metaAccount.id, platform: platformId }
         });
         
         if (error) {
