@@ -15,8 +15,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { 
   Users,
   Loader2,
-  Instagram,
-  Facebook,
   Linkedin,
   Twitter,
   Music,
@@ -30,24 +28,8 @@ import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import type { SocialPlatform } from '@/types/uploadPost.types';
 
-// Configuration des plateformes disponibles
+// Configuration des plateformes disponibles (Facebook et Instagram désactivés - utiliser la page Connexions pour la messagerie Meta)
 const AVAILABLE_PLATFORMS = [
-  { 
-    id: 'instagram' as SocialPlatform, 
-    name: 'Instagram', 
-    icon: Instagram,
-    bgColor: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    textColor: 'text-purple-600',
-    description: 'Connectez pour publier sur Instagram'
-  },
-  { 
-    id: 'facebook' as SocialPlatform, 
-    name: 'Facebook', 
-    icon: Facebook,
-    bgColor: 'bg-blue-600',
-    textColor: 'text-blue-600',
-    description: 'Connectez pour publier sur Facebook'
-  },
   { 
     id: 'tiktok' as SocialPlatform, 
     name: 'TikTok', 
