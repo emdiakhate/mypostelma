@@ -21,15 +21,33 @@ import {
   MessageCircle,
   Link2,
   Check,
-  Sparkles
+  Sparkles,
+  Instagram,
+  Facebook
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import type { SocialPlatform } from '@/types/uploadPost.types';
 
-// Configuration des plateformes disponibles (Facebook et Instagram désactivés - utiliser la page Connexions pour la messagerie Meta)
+// Configuration des plateformes disponibles
 const AVAILABLE_PLATFORMS = [
+  { 
+    id: 'instagram' as SocialPlatform, 
+    name: 'Instagram', 
+    icon: Instagram,
+    bgColor: 'bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400',
+    textColor: 'text-pink-600',
+    description: 'Connectez pour publier sur Instagram'
+  },
+  { 
+    id: 'facebook' as SocialPlatform, 
+    name: 'Facebook', 
+    icon: Facebook,
+    bgColor: 'bg-blue-600',
+    textColor: 'text-blue-600',
+    description: 'Connectez pour publier sur Facebook'
+  },
   { 
     id: 'tiktok' as SocialPlatform, 
     name: 'TikTok', 
