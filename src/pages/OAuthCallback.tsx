@@ -21,21 +21,28 @@ export default function OAuthCallback() {
       const error = params.get('error');
       const stateParam = params.get('state');
 
+      console.log('[OAuth Callback] URL params:', { code: !!code, error, stateParam });
+
       // Try to parse state
       let state: { platform?: string; returnUrl?: string; originalOrigin?: string } = {};
       try {
         if (stateParam) {
           state = JSON.parse(stateParam);
+          console.log('[OAuth Callback] Parsed state:', state);
         }
       } catch (e) {
-        console.error('Failed to parse state:', e);
+        console.error('[OAuth Callback] Failed to parse state:', e);
       }
 
       const platform = state.platform;
       const returnUrl = state.returnUrl || '/app/connections';
 
+      console.log('[OAuth Callback] Detected platform:', platform);
+
       // Handle Meta OAuth (Facebook/Instagram)
       if (platform === 'facebook' || platform === 'instagram') {
+        console.log('[OAuth Callback] Handling Meta OAuth for', platform);
+        
         if (error) {
           setStatus('error');
           setMessage(`Erreur: ${error}`);

@@ -98,6 +98,7 @@ const ProtectedRoutes = () => {
       <Route path="/connecting-account" element={<ConnectingAccountPage />} />
       
       {/* OAuth Callback Routes */}
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/oauth/google/callback" element={<OAuthCallback />} />
       <Route path="/oauth/microsoft/callback" element={<OAuthCallback />} />
       
