@@ -102,11 +102,16 @@ export default function OAuthCallback() {
           });
 
           if (fnError) {
+            console.error('[OAuth Callback] Edge function error:', fnError);
             throw new Error(fnError.message || 'Erreur lors de la connexion');
           }
 
           if (data?.error) {
-            throw new Error(data.error);
+            console.error('[OAuth Callback] Response error:', data);
+            const errorMessage = data.error;
+            const hint = data.hint || '';
+            const fullError = hint ? `${errorMessage}\n\n${hint}` : errorMessage;
+            throw new Error(fullError);
           }
 
           setStatus('success');
