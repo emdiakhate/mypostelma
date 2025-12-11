@@ -140,18 +140,22 @@ export default function SocialAccountsPage() {
   // Créer un map des comptes connectés pour un accès rapide (Upload-Post + Meta)
   const connectedMap = useMemo(() => {
     const map = new Map();
-    // Upload-Post accounts
+    // Upload-Post accounts (exclure Facebook et Instagram car gérés par Meta OAuth)
     connectedAccounts.forEach(account => {
-      map.set(account.platform, account);
+      if (!META_PLATFORMS.includes(account.platform)) {
+        map.set(account.platform, { ...account, source: 'upload-post' });
+      }
     });
-    // Meta accounts (Facebook, Instagram)
+    // Meta accounts (Facebook, Instagram) - ont priorité
     metaConnectedAccounts.forEach(account => {
       map.set(account.platform, {
         platform: account.platform,
         display_name: account.account_name,
         username: account.account_name,
         social_images: account.avatar_url,
-        connected_at: account.connected_at
+        connected_at: account.connected_at,
+        id: account.id,
+        source: 'meta'
       });
     });
     return map;
