@@ -23,11 +23,22 @@ export default function OAuthCallback() {
 
       console.log('[OAuth Callback] URL params:', { code: !!code, error, stateParam });
 
-      // Try to parse state
+      // Try to parse state (may be Base64 encoded by Facebook)
       let state: { platform?: string; returnUrl?: string; originalOrigin?: string } = {};
       try {
         if (stateParam) {
-          state = JSON.parse(stateParam);
+          let decodedState = stateParam;
+          
+          // Try Base64 decode first (Facebook encodes the state parameter)
+          try {
+            decodedState = atob(stateParam);
+            console.log('[OAuth Callback] Base64 decoded state:', decodedState);
+          } catch {
+            // Not Base64, use as-is
+            console.log('[OAuth Callback] State is not Base64, using as-is');
+          }
+          
+          state = JSON.parse(decodedState);
           console.log('[OAuth Callback] Parsed state:', state);
         }
       } catch (e) {
