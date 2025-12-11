@@ -3,6 +3,9 @@ project_id = "qltfylleiwjvtngmsdyg"
 [functions.disconnect-account]
 verify_jwt = true
 
+[functions.disconnect-upload-post-account]
+verify_jwt = true
+
 [functions.fal-image-generation]
 verify_jwt = false
 
