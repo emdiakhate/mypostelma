@@ -1,11 +1,13 @@
 /**
  * Page de gestion des comptes sociaux
  * Affiche tous les réseaux sociaux avec leur statut de connexion
+ * Facebook et Instagram utilisent Meta OAuth, les autres utilisent Upload-Post
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUploadPost } from '@/hooks/useUploadPost';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +30,11 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
+import ConnectMetaModal from '@/components/inbox/ConnectMetaModal';
 import type { SocialPlatform } from '@/types/uploadPost.types';
+
+// Plateformes utilisant Meta OAuth
+const META_PLATFORMS = ['instagram', 'facebook'];
 
 // Configuration des plateformes disponibles
 const AVAILABLE_PLATFORMS = [
@@ -84,9 +90,30 @@ const AVAILABLE_PLATFORMS = [
 
 export default function SocialAccountsPage() {
   const { profile, connectedAccounts, loading, error, refreshProfile, connectAccounts } = useUploadPost();
+  const { user } = useAuth();
   const [connecting, setConnecting] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
   const [justConnected, setJustConnected] = useState<string | null>(null);
+  const [metaModalPlatform, setMetaModalPlatform] = useState<'facebook' | 'instagram' | null>(null);
+  const [metaConnectedAccounts, setMetaConnectedAccounts] = useState<any[]>([]);
+
+  // Charger les comptes Meta connectés
+  const fetchMetaAccounts = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('connected_accounts')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('platform', ['facebook', 'instagram']);
+    
+    if (!error && data) {
+      setMetaConnectedAccounts(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetaAccounts();
+  }, [user]);
 
   // Vérifier si l'utilisateur revient après connexion
   useEffect(() => {
@@ -101,6 +128,7 @@ export default function SocialAccountsPage() {
       
       toast.success('🎉 Comptes connectés avec succès !');
       refreshProfile();
+      fetchMetaAccounts();
       
       // Scroll vers le haut
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,16 +137,34 @@ export default function SocialAccountsPage() {
     }
   }, [refreshProfile]);
 
-  // Créer un map des comptes connectés pour un accès rapide
+  // Créer un map des comptes connectés pour un accès rapide (Upload-Post + Meta)
   const connectedMap = useMemo(() => {
     const map = new Map();
+    // Upload-Post accounts
     connectedAccounts.forEach(account => {
       map.set(account.platform, account);
     });
+    // Meta accounts (Facebook, Instagram)
+    metaConnectedAccounts.forEach(account => {
+      map.set(account.platform, {
+        platform: account.platform,
+        display_name: account.account_name,
+        username: account.account_name,
+        social_images: account.avatar_url,
+        connected_at: account.connected_at
+      });
+    });
     return map;
-  }, [connectedAccounts]);
+  }, [connectedAccounts, metaConnectedAccounts]);
 
   const handleConnectPlatform = async (platformId: SocialPlatform) => {
+    // Pour Facebook et Instagram, utiliser Meta OAuth
+    if (META_PLATFORMS.includes(platformId)) {
+      setMetaModalPlatform(platformId as 'facebook' | 'instagram');
+      return;
+    }
+
+    // Pour les autres plateformes, utiliser Upload-Post
     try {
       setConnecting(true);
       setSelectedPlatforms([platformId]);
@@ -147,17 +193,22 @@ export default function SocialAccountsPage() {
     try {
       setConnecting(true);
       
+      // Connecter uniquement les plateformes non-Meta via Upload-Post
+      const nonMetaPlatforms = AVAILABLE_PLATFORMS
+        .filter(p => !META_PLATFORMS.includes(p.id))
+        .map(p => p.id);
+      
       await connectAccounts({
         redirectUrl: `${window.location.origin}/app/settings/accounts?connected=true`,
         logoImage: `${window.location.origin}/logo.png`,
         connectTitle: 'Connectez vos réseaux à Postelma',
         connectDescription: 'Autorisez Postelma à publier sur vos plateformes en toute sécurité',
-        platforms: AVAILABLE_PLATFORMS.map(p => p.id),
+        platforms: nonMetaPlatforms,
         redirectButtonText: 'Retour à Postelma'
       });
       
       toast.success('Fenêtre de connexion ouverte !', {
-        description: 'Connectez vos comptes puis revenez ici.'
+        description: 'Connectez vos comptes puis revenez ici. Pour Facebook et Instagram, utilisez les boutons individuels.'
       });
     } catch (error: any) {
       console.error('Error connecting accounts:', error);
@@ -169,13 +220,36 @@ export default function SocialAccountsPage() {
 
   const handleDisconnectPlatform = async (platformId: SocialPlatform) => {
     try {
+      // Pour Meta, utiliser disconnect-account
+      if (META_PLATFORMS.includes(platformId)) {
+        const metaAccount = metaConnectedAccounts.find(a => a.platform === platformId);
+        if (!metaAccount) {
+          toast.error('Compte non trouvé');
+          return;
+        }
+        
+        const { error } = await supabase.functions.invoke('disconnect-account', {
+          body: { accountId: metaAccount.id }
+        });
+        
+        if (error) {
+          console.error('Error disconnecting:', error);
+          toast.error(`Erreur lors de la déconnexion: ${error.message}`);
+          return;
+        }
+        
+        toast.success(`${platformId} déconnecté avec succès`);
+        fetchMetaAccounts();
+        return;
+      }
+
+      // Pour Upload-Post
       const account = connectedMap.get(platformId);
       if (!account) {
         toast.error('Compte non trouvé');
         return;
       }
       
-      // Call the edge function to disconnect from Upload-Post
       const { error } = await supabase.functions.invoke('disconnect-upload-post-account', {
         body: { platform: platformId }
       });
@@ -237,7 +311,7 @@ export default function SocialAccountsPage() {
               className="text-sm px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 animate-fade-in"
             >
               <Check className="w-4 h-4 mr-2 text-green-600" />
-              {connectedAccounts.length} / {AVAILABLE_PLATFORMS.length} connecté(s)
+              {connectedMap.size} / {AVAILABLE_PLATFORMS.length} connecté(s)
             </Badge>
             
             <Button 
@@ -416,6 +490,19 @@ export default function SocialAccountsPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Meta OAuth Modal */}
+        {metaModalPlatform && (
+          <ConnectMetaModal
+            platform={metaModalPlatform}
+            onClose={() => setMetaModalPlatform(null)}
+            onSuccess={() => {
+              setMetaModalPlatform(null);
+              fetchMetaAccounts();
+              toast.success(`${metaModalPlatform} connecté avec succès !`);
+            }}
+          />
         )}
       </div>
     </TooltipProvider>
