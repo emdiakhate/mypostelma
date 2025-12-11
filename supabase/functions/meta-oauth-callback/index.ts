@@ -72,15 +72,34 @@ serve(async (req) => {
 
     // Exchange code for access token
     const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&client_secret=${META_APP_SECRET}&code=${code}`;
-    
+
     console.log("[Meta OAuth] Exchanging code for token...");
+    console.log("[Meta OAuth] Redirect URI:", redirect_uri);
+    console.log("[Meta OAuth] Platform:", platform);
+
     const tokenResponse = await fetch(tokenUrl);
-    const tokenData: TokenResponse = await tokenResponse.json();
+    const tokenData: any = await tokenResponse.json();
 
     if (!tokenResponse.ok || !tokenData.access_token) {
-      console.error("[Meta OAuth] Token exchange failed:", tokenData);
+      console.error("[Meta OAuth] Token exchange failed:");
+      console.error("[Meta OAuth] Status:", tokenResponse.status);
+      console.error("[Meta OAuth] Response:", JSON.stringify(tokenData));
+
+      // Provide more detailed error message
+      let errorMsg = "Failed to exchange code for token";
+      if (tokenData.error?.message) {
+        errorMsg = tokenData.error.message;
+      } else if (tokenData.error_description) {
+        errorMsg = tokenData.error_description;
+      }
+
       return new Response(
-        JSON.stringify({ error: "Failed to exchange code for token", details: tokenData }),
+        JSON.stringify({
+          error: errorMsg,
+          details: tokenData,
+          redirect_uri: redirect_uri,
+          hint: "Vérifiez que l'URI de redirection est bien configurée dans votre application Meta Developer"
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
