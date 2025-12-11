@@ -21,6 +21,74 @@ interface PublishRequest {
   media_type?: 'photo' | 'video' | 'text';
 }
 
+// Helper to check if URL is a valid public URL that Meta can access
+function isValidPublicUrl(url: string): boolean {
+  if (!url) return false;
+  // Must be https and not a blob/data URL
+  if (url.startsWith('blob:') || url.startsWith('data:')) return false;
+  if (!url.startsWith('https://')) return false;
+  return true;
+}
+
+// Helper to upload base64 or blob to storage and get public URL
+async function uploadMediaToStorage(
+  supabaseClient: any,
+  mediaUrl: string,
+  userId: string
+): Promise<string> {
+  console.log('[META-PUBLISH] Checking media URL type:', mediaUrl.substring(0, 50));
+  
+  // If already a valid public URL (e.g., from Supabase storage), return as-is
+  if (isValidPublicUrl(mediaUrl)) {
+    console.log('[META-PUBLISH] URL is already valid public URL');
+    return mediaUrl;
+  }
+  
+  // Handle base64 data URLs
+  if (mediaUrl.startsWith('data:')) {
+    console.log('[META-PUBLISH] Converting base64 to file');
+    const matches = mediaUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) {
+      throw new Error('Invalid base64 data URL format');
+    }
+    
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const extension = mimeType.split('/')[1] || 'jpg';
+    
+    // Decode base64 to Uint8Array
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const fileName = `meta-posts/${userId}/${Date.now()}.${extension}`;
+    
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+      .from('media-archives')
+      .upload(fileName, bytes, {
+        contentType: mimeType,
+        upsert: true
+      });
+    
+    if (uploadError) {
+      console.error('[META-PUBLISH] Upload error:', uploadError);
+      throw new Error('Erreur lors de l\'upload du média: ' + uploadError.message);
+    }
+    
+    const { data: publicUrlData } = supabaseClient.storage
+      .from('media-archives')
+      .getPublicUrl(fileName);
+    
+    console.log('[META-PUBLISH] Uploaded and got public URL:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+  }
+  
+  // For blob URLs or other non-accessible URLs, we can't process them server-side
+  throw new Error('URL du média non accessible. Veuillez utiliser une image publique ou réessayer.');
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
 
@@ -83,11 +151,11 @@ Deno.serve(async (req) => {
     let result;
 
     if (platform === 'facebook') {
-      result = await publishToFacebook(pageId, accessToken, message, media_urls, media_type);
+      result = await publishToFacebook(supabaseClient, pageId, accessToken, message, user.id, media_urls, media_type);
     } else if (platform === 'instagram') {
       // For Instagram, we need the Instagram Business Account ID from config
       const instagramAccountId = account.config?.instagram_business_account_id || account.platform_account_id;
-      result = await publishToInstagram(instagramAccountId, accessToken, message, media_urls, media_type);
+      result = await publishToInstagram(supabaseClient, instagramAccountId, accessToken, message, user.id, media_urls, media_type);
     } else {
       return new Response(JSON.stringify({ error: 'Plateforme non supportée' }), {
         status: 400,
@@ -116,9 +184,11 @@ Deno.serve(async (req) => {
 });
 
 async function publishToFacebook(
+  supabaseClient: any,
   pageId: string, 
   accessToken: string, 
   message: string, 
+  userId: string,
   mediaUrls?: string[],
   mediaType?: string
 ): Promise<{ id: string }> {
@@ -126,8 +196,11 @@ async function publishToFacebook(
   
   // If we have media, publish with photo/video
   if (mediaUrls && mediaUrls.length > 0 && mediaType === 'photo') {
-    // Single photo post
-    const photoUrl = mediaUrls[0];
+    // Upload to storage if needed and get public URL
+    const photoUrl = await uploadMediaToStorage(supabaseClient, mediaUrls[0], userId);
+    
+    console.log('[META-PUBLISH] Publishing photo to Facebook with URL:', photoUrl);
+    
     const response = await fetch(
       `https://graph.facebook.com/${graphApiVersion}/${pageId}/photos`,
       {
@@ -173,9 +246,11 @@ async function publishToFacebook(
 }
 
 async function publishToInstagram(
+  supabaseClient: any,
   instagramAccountId: string,
   accessToken: string,
   message: string,
+  userId: string,
   mediaUrls?: string[],
   mediaType?: string
 ): Promise<{ id: string }> {
@@ -186,9 +261,12 @@ async function publishToInstagram(
     throw new Error('Instagram nécessite au moins une image ou vidéo pour publier');
   }
 
-  // Step 1: Create media container
-  const mediaUrl = mediaUrls[0];
+  // Upload to storage if needed and get public URL
+  const mediaUrl = await uploadMediaToStorage(supabaseClient, mediaUrls[0], userId);
   
+  console.log('[META-PUBLISH] Publishing to Instagram with URL:', mediaUrl);
+
+  // Step 1: Create media container
   const containerResponse = await fetch(
     `https://graph.facebook.com/${graphApiVersion}/${instagramAccountId}/media`,
     {
