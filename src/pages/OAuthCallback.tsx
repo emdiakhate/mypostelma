@@ -101,18 +101,35 @@ export default function OAuthCallback() {
             },
           });
 
-          if (fnError) {
-            console.error('[OAuth Callback] Edge function error:', fnError);
-            throw new Error(fnError.message || 'Erreur lors de la connexion');
+        if (fnError) {
+          console.error('[OAuth Callback] Edge function error:', fnError);
+          // Try to get the actual error response body
+          let errorBody = null;
+          try {
+            // For FunctionsHttpError, the context is the Response object
+            if (fnError.context) {
+              errorBody = await fnError.context.json();
+            }
+          } catch (e) {
+            console.log('[OAuth Callback] Could not parse error body:', e);
           }
+          
+          console.log('[OAuth Callback] Error body:', errorBody);
+          
+          if (errorBody?.error) {
+            const hint = errorBody.hint || errorBody.details?.error?.message || '';
+            throw new Error(hint ? `${errorBody.error}\n\n${hint}` : errorBody.error);
+          }
+          throw new Error(fnError.message || 'Erreur lors de la connexion');
+        }
 
-          if (data?.error) {
-            console.error('[OAuth Callback] Response error:', data);
-            const errorMessage = data.error;
-            const hint = data.hint || '';
-            const fullError = hint ? `${errorMessage}\n\n${hint}` : errorMessage;
-            throw new Error(fullError);
-          }
+        if (data?.error) {
+          console.error('[OAuth Callback] Response error:', data);
+          const errorMessage = data.error;
+          const hint = data.hint || data.details?.error?.message || '';
+          const fullError = hint ? `${errorMessage}\n\n${hint}` : errorMessage;
+          throw new Error(fullError);
+        }
 
           setStatus('success');
           setMessage(`${platform === 'instagram' ? 'Instagram' : 'Facebook'} connecté avec succès!`);
