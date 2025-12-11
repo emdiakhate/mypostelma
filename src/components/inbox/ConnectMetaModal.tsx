@@ -2,10 +2,11 @@
  * Modal pour connecter Facebook ou Instagram via Meta OAuth
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Facebook, Instagram, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConnectMetaModalProps {
   platform: 'facebook' | 'instagram';
@@ -15,6 +16,26 @@ interface ConnectMetaModalProps {
 
 export default function ConnectMetaModal({ platform, onClose, onSuccess }: ConnectMetaModalProps) {
   const [loading, setLoading] = useState(false);
+  const [metaAppId, setMetaAppId] = useState<string | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetaConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-meta-oauth-config');
+        if (error) throw error;
+        if (data?.appId) {
+          setMetaAppId(data.appId);
+        }
+      } catch (error) {
+        console.error('Error fetching Meta config:', error);
+        toast.error('Impossible de charger la configuration Meta');
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    fetchMetaConfig();
+  }, []);
 
   const platformConfig = {
     facebook: {
@@ -38,9 +59,6 @@ export default function ConnectMetaModal({ platform, onClose, onSuccess }: Conne
     try {
       setLoading(true);
 
-      // Get Meta App ID from environment
-      const metaAppId = import.meta.env.VITE_META_APP_ID;
-      
       if (!metaAppId) {
         toast.error('Configuration Meta manquante. Contactez le support.');
         return;
