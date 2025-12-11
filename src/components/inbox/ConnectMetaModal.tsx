@@ -64,9 +64,11 @@ export default function ConnectMetaModal({ platform, onClose, onSuccess }: Conne
         return;
       }
 
-      // Build OAuth URL
-      const redirectUri = `${window.location.origin}/oauth/callback`;
-      const state = JSON.stringify({ platform, returnUrl: window.location.pathname });
+      // Build OAuth URL - Use production URL that's configured in Meta Developer Console
+      // In production, use the actual domain; in dev/preview, use the configured production URL
+      const productionUrl = 'https://mypostelma.lovable.app';
+      const redirectUri = `${productionUrl}/oauth/callback`;
+      const state = JSON.stringify({ platform, returnUrl: window.location.pathname, originalOrigin: window.location.origin });
       
       const oauthUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth');
       oauthUrl.searchParams.set('client_id', metaAppId);
