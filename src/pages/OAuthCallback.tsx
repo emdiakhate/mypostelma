@@ -117,8 +117,17 @@ export default function OAuthCallback() {
           console.log('[OAuth Callback] Error body:', errorBody);
           
           if (errorBody?.error) {
+            const errorMessage = errorBody.error;
+            const errorDescription = errorBody.message || '';
             const hint = errorBody.hint || errorBody.details?.error?.message || '';
-            throw new Error(hint ? `${errorBody.error}\n\n${hint}` : errorBody.error);
+            const instructions = errorBody.instructions || [];
+
+            let fullError = errorMessage;
+            if (errorDescription) fullError += `\n\n${errorDescription}`;
+            if (instructions.length > 0) fullError += `\n\n${instructions.join('\n')}`;
+            if (hint) fullError += `\n\n💡 ${hint}`;
+
+            throw new Error(fullError);
           }
           throw new Error(fnError.message || 'Erreur lors de la connexion');
         }
@@ -126,8 +135,15 @@ export default function OAuthCallback() {
         if (data?.error) {
           console.error('[OAuth Callback] Response error:', data);
           const errorMessage = data.error;
+          const errorDescription = data.message || '';
           const hint = data.hint || data.details?.error?.message || '';
-          const fullError = hint ? `${errorMessage}\n\n${hint}` : errorMessage;
+          const instructions = data.instructions || [];
+
+          let fullError = errorMessage;
+          if (errorDescription) fullError += `\n\n${errorDescription}`;
+          if (instructions.length > 0) fullError += `\n\n${instructions.join('\n')}`;
+          if (hint) fullError += `\n\n💡 ${hint}`;
+
           throw new Error(fullError);
         }
 
