@@ -46,11 +46,31 @@ export const usePostPublishing = (): UsePostPublishingResult => {
 
       if (error) {
         console.error('Meta publish error:', error);
-        throw new Error(error.message || 'Erreur lors de la publication');
+        // Try to get error details from the context
+        let errorDetails = error.message || 'Erreur lors de la publication';
+        if (error.context) {
+          try {
+            const errorBody = await error.context.json();
+            console.error('Error body:', errorBody);
+            errorDetails = errorBody.error || errorDetails;
+            if (errorBody.hint) {
+              errorDetails += `\n\n${errorBody.hint}`;
+            }
+          } catch (e) {
+            console.error('Could not parse error body:', e);
+          }
+        }
+        throw new Error(errorDetails);
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erreur lors de la publication');
+      if (data && !data.success) {
+        const errorMsg = data.error || 'Erreur lors de la publication';
+        const hint = data.hint ? `\n\n${data.hint}` : '';
+        throw new Error(errorMsg + hint);
+      }
+
+      if (!data || !data.success) {
+        throw new Error('Réponse invalide du serveur');
       }
 
       return {

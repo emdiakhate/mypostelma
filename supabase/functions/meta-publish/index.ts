@@ -107,6 +107,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('[META-PUBLISH] Starting publish request');
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -118,19 +120,25 @@ Deno.serve(async (req) => {
     );
 
     // Get user
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    if (authError || !user) {
+      console.error('[META-PUBLISH] Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: authError?.message }), {
         status: 401,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('[META-PUBLISH] User authenticated:', user.id);
+
     const body: PublishRequest = await req.json();
     const { platform, account_id, message, media_urls, media_type } = body;
 
     console.log(`[META-PUBLISH] Publishing to ${platform} for user ${user.id}`);
+    console.log('[META-PUBLISH] Account ID:', account_id);
+    console.log('[META-PUBLISH] Media type:', media_type);
+    console.log('[META-PUBLISH] Message length:', message?.length || 0);
 
     // Get the connected account with access token
     const { data: account, error: accountError } = await supabaseClient
@@ -142,14 +150,40 @@ Deno.serve(async (req) => {
 
     if (accountError || !account) {
       console.error('[META-PUBLISH] Account not found:', accountError);
-      return new Response(JSON.stringify({ error: 'Compte non trouvé' }), {
+      return new Response(JSON.stringify({
+        error: 'Compte non trouvé',
+        details: accountError?.message,
+        account_id
+      }), {
         status: 404,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('[META-PUBLISH] Account found:', {
+      platform: account.platform,
+      account_name: account.account_name,
+      has_token: !!account.access_token,
+      platform_account_id: account.platform_account_id
+    });
+
     if (!account.access_token) {
-      return new Response(JSON.stringify({ error: 'Token d\'accès manquant. Veuillez reconnecter votre compte.' }), {
+      console.error('[META-PUBLISH] Missing access token for account:', account_id);
+      return new Response(JSON.stringify({
+        error: 'Token d\'accès manquant. Veuillez reconnecter votre compte.',
+        account_name: account.account_name
+      }), {
+        status: 400,
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!account.platform_account_id) {
+      console.error('[META-PUBLISH] Missing platform_account_id for account:', account_id);
+      return new Response(JSON.stringify({
+        error: 'ID de page Facebook manquant. Veuillez reconnecter votre compte.',
+        account_name: account.account_name
+      }), {
         status: 400,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       });
@@ -157,6 +191,8 @@ Deno.serve(async (req) => {
 
     const accessToken = account.access_token;
     const pageId = account.platform_account_id;
+
+    console.log('[META-PUBLISH] Using page ID:', pageId);
 
     let result;
 
@@ -184,9 +220,21 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[META-PUBLISH] Error:', error);
+    console.error('[META-PUBLISH] Unhandled error:', error);
+    console.error('[META-PUBLISH] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    } : { error: String(error) };
+
+    return new Response(JSON.stringify({
+      error: errorMessage,
+      details: errorDetails,
+      hint: 'Vérifiez les logs de la fonction pour plus de détails'
+    }), {
       status: 500,
       headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
     });
@@ -233,6 +281,8 @@ async function publishToFacebook(
   }
 
   // Text-only post
+  console.log('[META-PUBLISH] Publishing text post to Facebook page:', pageId);
+
   const response = await fetch(
     `https://graph.facebook.com/${graphApiVersion}/${pageId}/feed`,
     {
@@ -245,13 +295,32 @@ async function publishToFacebook(
     }
   );
 
+  console.log('[META-PUBLISH] Facebook API response status:', response.status);
+
   if (!response.ok) {
     const errorData = await response.json();
     console.error('[META-PUBLISH] Facebook post error:', errorData);
-    throw new Error(errorData.error?.message || 'Erreur lors de la publication');
+    console.error('[META-PUBLISH] Error code:', errorData.error?.code);
+    console.error('[META-PUBLISH] Error type:', errorData.error?.type);
+
+    // Provide more helpful error messages
+    let userMessage = errorData.error?.message || 'Erreur lors de la publication';
+
+    if (errorData.error?.code === 190) {
+      userMessage = 'Token d\'accès expiré. Veuillez reconnecter votre compte Facebook.';
+    } else if (errorData.error?.code === 200) {
+      userMessage = 'Permissions insuffisantes. Vérifiez que vous avez autorisé la publication sur cette page.';
+    } else if (errorData.error?.code === 100) {
+      userMessage = 'Paramètre invalide. ' + (errorData.error?.message || '');
+    }
+
+    throw new Error(userMessage);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('[META-PUBLISH] Facebook post created successfully:', result.id);
+
+  return result;
 }
 
 async function publishToInstagram(

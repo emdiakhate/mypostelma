@@ -324,10 +324,31 @@ export default function SocialAccountsPage() {
         </div>
 
         {/* Info message */}
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Note :</strong> Pour Instagram, vous devez avoir un compte Business ou Creator lié à une Page Facebook.
-          </p>
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border border-blue-200 dark:border-blue-900 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Instagram className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                Configuration requise pour Instagram
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Pour connecter Instagram, vous devez d'abord convertir votre compte en <strong>compte Business</strong> et le lier à une <strong>page Facebook</strong>.
+              </p>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">📱 Étapes à suivre :</p>
+                <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
+                  <li>Ouvrez l'app Instagram → <strong>Paramètres</strong> → <strong>Compte</strong></li>
+                  <li>Appuyez sur <strong>"Passer à un compte professionnel"</strong></li>
+                  <li>Sélectionnez <strong>"Entreprise"</strong> (Business)</li>
+                  <li>Connectez ou créez une <strong>page Facebook</strong></li>
+                  <li>Vérifiez que vous êtes <strong>administrateur</strong> de la page</li>
+                  <li>Revenez ici et cliquez sur <strong>"Connecter Instagram"</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Meta connection modal */}

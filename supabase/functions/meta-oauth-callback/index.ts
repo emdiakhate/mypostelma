@@ -178,10 +178,19 @@ serve(async (req) => {
         };
       } else {
         console.log("[Meta OAuth] No Instagram Business Account found");
+        console.log("[Meta OAuth] Available pages:", pages.map(p => ({ id: p.id, name: p.name, hasInstagram: !!p.instagram_business_account })));
+
         return new Response(
-          JSON.stringify({ 
-            error: "No Instagram Business Account found", 
-            message: "Please connect a Facebook Page with an Instagram Business Account" 
+          JSON.stringify({
+            error: "Compte Instagram Business non trouvé",
+            message: "Aucun compte Instagram Business n'est lié à vos pages Facebook.",
+            instructions: [
+              "1. Convertissez votre Instagram en compte Business (Paramètres → Compte → Passer à un compte professionnel)",
+              "2. Liez-le à une page Facebook (Paramètres → Compte → Page liée)",
+              "3. Vérifiez que vous êtes administrateur de la page Facebook",
+              "4. Réessayez la connexion"
+            ],
+            hint: "Vous devez d'abord avoir un compte Instagram Business connecté à une Page Facebook."
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
