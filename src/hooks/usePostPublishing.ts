@@ -1,13 +1,14 @@
 /**
- * Hook pour gérer la publication de posts via l'API Meta (Facebook/Instagram)
+ * Hook pour gérer la publication de posts via Upload-Post API
  */
 
 import { useState, useCallback } from 'react';
+import { publishContent, determineMediaType } from '@/services/uploadPostApi';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PublishParams {
-  accountId: string; // ID de connected_accounts
-  platform: 'facebook' | 'instagram';
+  accountId: string;
+  platform: string;
   message: string;
   images?: string[];
   video?: string;
@@ -30,55 +31,48 @@ export const usePostPublishing = (): UsePostPublishingResult => {
 
   const publishPost = useCallback(async (params: PublishParams) => {
     try {
-      console.log('Publishing to Meta:', params);
+      console.log('Publishing via Upload-Post:', params);
 
-      const mediaType = params.video ? 'video' : params.images && params.images.length > 0 ? 'photo' : 'text';
+      // Récupérer le profil Upload-Post de l'utilisateur
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Utilisateur non authentifié');
+      }
 
-      const { data, error } = await supabase.functions.invoke('meta-publish', {
-        body: {
-          platform: params.platform,
-          account_id: params.accountId,
-          message: params.message,
-          media_urls: params.images || [],
-          media_type: mediaType,
-        }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('upload_post_username')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.upload_post_username) {
+        throw new Error('Profil Upload-Post non configuré. Veuillez connecter vos comptes sociaux.');
+      }
+
+      const mediaType = determineMediaType({
+        photos: params.images,
+        video: params.video
       });
 
-      if (error) {
-        console.error('Meta publish error:', error);
-        // Try to get error details from the context
-        let errorDetails = error.message || 'Erreur lors de la publication';
-        if (error.context) {
-          try {
-            const errorBody = await error.context.json();
-            console.error('Error body:', errorBody);
-            errorDetails = errorBody.error || errorDetails;
-            if (errorBody.hint) {
-              errorDetails += `\n\n${errorBody.hint}`;
-            }
-          } catch (e) {
-            console.error('Could not parse error body:', e);
-          }
-        }
-        throw new Error(errorDetails);
-      }
+      const response = await publishContent({
+        profile_username: profile.upload_post_username,
+        platforms: [params.platform],
+        title: params.message,
+        media_type: mediaType,
+        photos: params.images,
+        video: params.video
+      });
 
-      if (data && !data.success) {
-        const errorMsg = data.error || 'Erreur lors de la publication';
-        const hint = data.hint ? `\n\n${data.hint}` : '';
-        throw new Error(errorMsg + hint);
-      }
-
-      if (!data || !data.success) {
-        throw new Error('Réponse invalide du serveur');
+      if (!response.success) {
+        throw new Error(response.error || 'Erreur lors de la publication');
       }
 
       return {
         success: true,
-        postId: data.post_id
+        postId: response.data?.request_id || response.data?.job_id
       };
     } catch (error) {
-      console.error('Erreur publication Meta:', error);
+      console.error('Erreur publication Upload-Post:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erreur inconnue'
@@ -94,28 +88,84 @@ export const usePostPublishing = (): UsePostPublishingResult => {
   ) => {
     setIsPublishing(true);
 
-    const results = await Promise.all(
-      accounts.map(async (account) => {
-        const result = await publishPost({
-          accountId: account.accountId,
-          platform: account.platform as 'facebook' | 'instagram',
-          message,
-          images,
-          video
-        });
+    try {
+      // Récupérer le profil Upload-Post de l'utilisateur
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Utilisateur non authentifié');
+      }
 
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('upload_post_username')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.upload_post_username) {
+        setIsPublishing(false);
         return {
+          results: accounts.map(account => ({
+            accountId: account.accountId,
+            platform: account.platform,
+            success: false,
+            error: 'Profil Upload-Post non configuré. Veuillez connecter vos comptes sociaux.'
+          }))
+        };
+      }
+
+      // Extraire les plateformes uniques
+      const platforms = [...new Set(accounts.map(a => a.platform))];
+
+      const mediaType = determineMediaType({
+        photos: images,
+        video: video
+      });
+
+      // Publier vers toutes les plateformes en une seule requête
+      const response = await publishContent({
+        profile_username: profile.upload_post_username,
+        platforms: platforms,
+        title: message,
+        media_type: mediaType,
+        photos: images,
+        video: video
+      });
+
+      if (!response.success) {
+        setIsPublishing(false);
+        return {
+          results: accounts.map(account => ({
+            accountId: account.accountId,
+            platform: account.platform,
+            success: false,
+            error: response.error || 'Erreur lors de la publication'
+          }))
+        };
+      }
+
+      // Retourner le succès pour tous les comptes
+      const results = accounts.map(account => ({
+        accountId: account.accountId,
+        platform: account.platform,
+        success: true,
+        postId: response.data?.request_id || response.data?.job_id
+      }));
+
+      setIsPublishing(false);
+      return { results };
+    } catch (error) {
+      console.error('Erreur publication:', error);
+      setIsPublishing(false);
+      return {
+        results: accounts.map(account => ({
           accountId: account.accountId,
           platform: account.platform,
-          ...result
-        };
-      })
-    );
-
-    setIsPublishing(false);
-
-    return { results };
-  }, [publishPost]);
+          success: false,
+          error: error instanceof Error ? error.message : 'Erreur inconnue'
+        }))
+      };
+    }
+  }, []);
 
   return {
     isPublishing,
@@ -128,5 +178,5 @@ export const usePostPublishing = (): UsePostPublishingResult => {
 export const calculateTimeSlot = (date: Date): number => {
   const hour = date.getHours();
   const minute = date.getMinutes();
-  return hour * 60 + minute; // Convertir en minutes depuis minuit
+  return hour * 60 + minute;
 };
