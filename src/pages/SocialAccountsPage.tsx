@@ -1,11 +1,10 @@
 /**
  * Page de gestion des comptes sociaux
- * Affiche Facebook et Instagram avec Meta OAuth
+ * Utilise Upload-Post pour connecter tous les réseaux sociaux
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useUploadPost } from '@/hooks/useUploadPost';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,75 +17,93 @@ import {
   Check,
   Sparkles,
   Instagram,
-  Facebook
+  Facebook,
+  Linkedin,
+  Twitter,
+  Youtube,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
-import ConnectMetaModal from '@/components/inbox/ConnectMetaModal';
+import type { SocialPlatform } from '@/types/uploadPost.types';
 
-// Configuration des plateformes disponibles (Meta uniquement)
-const AVAILABLE_PLATFORMS = [
+// Icône TikTok personnalisée
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+);
+
+// Icône Threads personnalisée
+const ThreadsIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.5 12.068V12c.008-3.508.865-6.37 2.497-8.415C5.846 1.246 8.567.024 12.106 0h.014c2.905.016 5.353.808 7.27 2.354 1.728 1.394 2.987 3.392 3.742 5.94l-3.182.85c-1.12-3.794-3.592-5.702-7.357-5.675-2.626.019-4.62.876-5.928 2.55-1.2 1.537-1.811 3.696-1.82 6.413v.076c.003 2.71.616 4.89 1.82 6.479 1.308 1.725 3.296 2.625 5.914 2.675 2.096.04 3.846-.51 5.203-1.634 1.186-.984 1.864-2.321 2.015-3.976l.012-.127c.016-.188.024-.382.024-.58 0-1.186-.272-2.156-.81-2.885-.55-.745-1.372-1.145-2.444-1.19a4.063 4.063 0 0 0-1.535.258c.132-.396.198-.828.198-1.287 0-.466-.066-.898-.198-1.287a4.063 4.063 0 0 1 1.535-.258c1.687.016 3.074.654 4.127 1.9 1.082 1.28 1.631 2.995 1.631 5.098 0 .282-.011.559-.033.828l-.013.152c-.22 2.494-1.265 4.53-3.109 6.058C17.914 23.102 15.31 24 12.186 24z"/>
+  </svg>
+);
+
+// Configuration des plateformes disponibles
+const AVAILABLE_PLATFORMS: {
+  id: SocialPlatform;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  bgColor: string;
+  textColor: string;
+  description: string;
+}[] = [
   { 
-    id: 'facebook' as const, 
-    name: 'Facebook', 
-    icon: Facebook,
-    bgColor: 'bg-blue-600',
-    textColor: 'text-blue-600',
-    description: 'Connectez pour publier sur Facebook'
-  },
-  { 
-    id: 'instagram' as const, 
+    id: 'instagram', 
     name: 'Instagram', 
     icon: Instagram,
     bgColor: 'bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400',
     textColor: 'text-pink-600',
-    description: 'Connectez pour publier sur Instagram'
+    description: 'Photos, Reels et Stories'
+  },
+  { 
+    id: 'facebook', 
+    name: 'Facebook', 
+    icon: Facebook,
+    bgColor: 'bg-blue-600',
+    textColor: 'text-blue-600',
+    description: 'Pages et publications'
+  },
+  { 
+    id: 'tiktok', 
+    name: 'TikTok', 
+    icon: TikTokIcon,
+    bgColor: 'bg-black',
+    textColor: 'text-black',
+    description: 'Vidéos courtes'
+  },
+  { 
+    id: 'linkedin', 
+    name: 'LinkedIn', 
+    icon: Linkedin,
+    bgColor: 'bg-blue-700',
+    textColor: 'text-blue-700',
+    description: 'Réseau professionnel'
+  },
+  { 
+    id: 'x', 
+    name: 'X (Twitter)', 
+    icon: Twitter,
+    bgColor: 'bg-black',
+    textColor: 'text-black',
+    description: 'Tweets et fils'
+  },
+  { 
+    id: 'threads', 
+    name: 'Threads', 
+    icon: ThreadsIcon,
+    bgColor: 'bg-black',
+    textColor: 'text-black',
+    description: 'Conversations texte'
   }
 ];
 
-interface MetaAccount {
-  id: string;
-  platform: string;
-  account_name: string;
-  avatar_url?: string;
-  connected_at?: string;
-}
-
 export default function SocialAccountsPage() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [metaModalPlatform, setMetaModalPlatform] = useState<'facebook' | 'instagram' | null>(null);
-  const [metaConnectedAccounts, setMetaConnectedAccounts] = useState<MetaAccount[]>([]);
-  const [disconnecting, setDisconnecting] = useState<string | null>(null);
-
-  // Charger les comptes Meta connectés
-  const fetchMetaAccounts = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('connected_accounts')
-        .select('id, platform, account_name, avatar_url, connected_at')
-        .eq('user_id', user.id)
-        .in('platform', ['facebook', 'instagram']);
-      
-      if (!error && data) {
-        setMetaConnectedAccounts(data);
-      }
-    } catch (err) {
-      console.error('Error fetching Meta accounts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMetaAccounts();
-  }, [user]);
+  const { profile, connectedAccounts, loading, error, refreshProfile, connectAccounts } = useUploadPost();
+  const [connecting, setConnecting] = useState(false);
 
   // Vérifier si l'utilisateur revient après connexion
   useEffect(() => {
@@ -99,66 +116,48 @@ export default function SocialAccountsPage() {
       });
       
       toast.success('🎉 Compte connecté avec succès !');
-      fetchMetaAccounts();
+      refreshProfile();
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  // Créer un map des comptes connectés
+  // Créer un map des comptes connectés par plateforme
   const connectedMap = useMemo(() => {
-    const map = new Map<string, MetaAccount>();
-    metaConnectedAccounts.forEach(account => {
+    const map = new Map<string, typeof connectedAccounts[0]>();
+    connectedAccounts.forEach(account => {
       map.set(account.platform, account);
     });
     return map;
-  }, [metaConnectedAccounts]);
+  }, [connectedAccounts]);
 
-  const handleConnectPlatform = (platformId: 'facebook' | 'instagram') => {
-    setMetaModalPlatform(platformId);
-  };
-
-  const handleDisconnectPlatform = async (platformId: string) => {
-    const account = connectedMap.get(platformId);
-    if (!account) {
-      toast.error('Compte non trouvé');
-      return;
-    }
-
+  const handleConnectAccounts = async () => {
     try {
-      setDisconnecting(platformId);
-      
-      const { error } = await supabase.functions.invoke('disconnect-account', {
-        body: { account_id: account.id, platform: platformId }
+      setConnecting(true);
+      await connectAccounts({
+        redirectUrl: `${window.location.origin}/social-accounts?connected=true`,
+        connectTitle: 'Connectez vos réseaux sociaux',
+        connectDescription: 'Sélectionnez les comptes à connecter pour publier automatiquement',
+        redirectButtonText: 'Retourner à PostElma'
       });
-      
-      if (error) {
-        console.error('Error disconnecting:', error);
-        toast.error(`Erreur lors de la déconnexion: ${error.message}`);
-        return;
-      }
-      
-      toast.success(`${platformId === 'facebook' ? 'Facebook' : 'Instagram'} déconnecté avec succès`);
-      fetchMetaAccounts();
-    } catch (error: any) {
-      console.error('Error disconnecting platform:', error);
-      toast.error(error?.message || 'Erreur lors de la déconnexion');
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la connexion');
     } finally {
-      setDisconnecting(null);
+      setConnecting(false);
     }
   };
 
   // Loading skeleton
-  if (loading) {
+  if (loading && !profile) {
     return (
       <div className="space-y-6 p-6">
         <div className="space-y-2">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-96" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="animate-fade-in">
               <CardContent className="p-6">
                 <Skeleton className="h-40 w-full" />
@@ -182,35 +181,79 @@ export default function SocialAccountsPage() {
             </div>
             <p className="text-muted-foreground flex items-center gap-2">
               <Link2 className="w-4 h-4" />
-              Gérez vos connexions Facebook et Instagram
+              Gérez vos connexions à vos réseaux sociaux
             </p>
           </div>
           
-          <Badge 
-            variant="outline" 
-            className="text-sm px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20"
-          >
-            <Check className="w-4 h-4 mr-2 text-green-600" />
-            {connectedMap.size} / {AVAILABLE_PLATFORMS.length} connecté(s)
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshProfile()}
+              disabled={loading}
+            >
+              <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+              Actualiser
+            </Button>
+            
+            <Badge 
+              variant="outline" 
+              className="text-sm px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20"
+            >
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+              {connectedMap.size} / {AVAILABLE_PLATFORMS.length} connecté(s)
+            </Badge>
+          </div>
         </div>
 
+        {/* Bouton principal de connexion */}
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-center md:text-left">
+                <h3 className="font-semibold text-lg mb-1">Connecter vos réseaux sociaux</h3>
+                <p className="text-sm text-muted-foreground">
+                  Cliquez pour ouvrir la fenêtre de connexion et sélectionner vos comptes
+                </p>
+              </div>
+              <Button 
+                onClick={handleConnectAccounts}
+                disabled={connecting}
+                size="lg"
+                className="min-w-[200px]"
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connexion...
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Connecter des comptes
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Grid des plateformes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {AVAILABLE_PLATFORMS.map((platform) => {
             const isConnected = connectedMap.has(platform.id);
             const accountData = connectedMap.get(platform.id);
             const Icon = platform.icon;
-            const isDisconnecting = disconnecting === platform.id;
 
             return (
               <Tooltip key={platform.id}>
                 <TooltipTrigger asChild>
                   <Card 
                     className={cn(
-                      "rounded-xl transition-all duration-300 hover:shadow-lg",
+                      "rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer",
                       isConnected && "border-green-500/50 shadow-green-100 dark:shadow-green-900/20"
                     )}
+                    onClick={!isConnected ? handleConnectAccounts : undefined}
                   >
                     <CardContent className="p-6">
                       {isConnected && accountData ? (
@@ -230,55 +273,34 @@ export default function SocialAccountsPage() {
                           </div>
 
                           <div className="flex flex-col items-center text-center space-y-3 py-4">
-                            <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
-                              {accountData.avatar_url ? (
-                                <AvatarImage src={accountData.avatar_url} alt={accountData.account_name} />
+                            <Avatar className="w-16 h-16 border-4 border-white shadow-lg">
+                              {accountData.social_images ? (
+                                <AvatarImage src={accountData.social_images} alt={accountData.display_name} />
                               ) : (
                                 <AvatarFallback className={platform.bgColor}>
-                                  <Icon className="w-10 h-10 text-white" />
+                                  <Icon className="w-8 h-8 text-white" />
                                 </AvatarFallback>
                               )}
                             </Avatar>
                             
                             <div>
                               <p className="font-bold text-lg">
-                                {accountData.account_name}
+                                {accountData.display_name || accountData.username}
                               </p>
-                              {accountData.connected_at && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Connecté le {new Date(accountData.connected_at).toLocaleDateString('fr-FR', { 
-                                    day: 'numeric', 
-                                    month: 'long', 
-                                    year: 'numeric' 
-                                  })}
+                              {accountData.username && (
+                                <p className="text-sm text-muted-foreground">
+                                  @{accountData.username}
                                 </p>
                               )}
                             </div>
                           </div>
-
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-950"
-                            onClick={() => handleDisconnectPlatform(platform.id)}
-                            disabled={isDisconnecting}
-                          >
-                            {isDisconnecting ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Déconnexion...
-                              </>
-                            ) : (
-                              'Déconnecter'
-                            )}
-                          </Button>
                         </div>
                       ) : (
                         // Card Déconnecté
                         <div className="space-y-4">
                           <div className="flex items-start justify-between">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center opacity-60">
-                              <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center opacity-60">
+                              <Icon className="w-5 h-5 text-muted-foreground" />
                             </div>
                             <span className="text-sm text-muted-foreground">
                               Déconnecté
@@ -286,8 +308,8 @@ export default function SocialAccountsPage() {
                           </div>
 
                           <div className="flex flex-col items-center text-center space-y-3 py-8">
-                            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center opacity-60">
-                              <Icon className="w-10 h-10 text-gray-600 dark:text-gray-400" />
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center opacity-60">
+                              <Icon className="w-10 h-10 text-muted-foreground" />
                             </div>
                             
                             <div>
@@ -301,11 +323,15 @@ export default function SocialAccountsPage() {
                           </div>
 
                           <Button 
-                            className="w-full bg-primary hover:brightness-110 transition-all"
-                            onClick={() => handleConnectPlatform(platform.id)}
+                            variant="outline"
+                            className="w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConnectAccounts();
+                            }}
                           >
                             <Link2 className="mr-2 h-4 w-4" />
-                            Connecter {platform.name}
+                            Connecter
                           </Button>
                         </div>
                       )}
@@ -324,43 +350,42 @@ export default function SocialAccountsPage() {
         </div>
 
         {/* Info message */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border border-blue-200 dark:border-blue-900 space-y-4">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border border-blue-200 dark:border-blue-900">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Instagram className="w-4 h-4 text-white" />
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                Configuration requise pour Instagram
+                Comment ça marche ?
               </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                Pour connecter Instagram, vous devez d'abord convertir votre compte en <strong>compte Business</strong> et le lier à une <strong>page Facebook</strong>.
-              </p>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">📱 Étapes à suivre :</p>
-                <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
-                  <li>Ouvrez l'app Instagram → <strong>Paramètres</strong> → <strong>Compte</strong></li>
-                  <li>Appuyez sur <strong>"Passer à un compte professionnel"</strong></li>
-                  <li>Sélectionnez <strong>"Entreprise"</strong> (Business)</li>
-                  <li>Connectez ou créez une <strong>page Facebook</strong></li>
-                  <li>Vérifiez que vous êtes <strong>administrateur</strong> de la page</li>
-                  <li>Revenez ici et cliquez sur <strong>"Connecter Instagram"</strong></li>
-                </ol>
-              </div>
+              <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">1.</span>
+                  <span>Cliquez sur "Connecter des comptes" pour ouvrir la fenêtre de connexion</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">2.</span>
+                  <span>Sélectionnez les réseaux sociaux que vous souhaitez connecter</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">3.</span>
+                  <span>Autorisez PostElma à publier sur vos comptes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">4.</span>
+                  <span>Revenez ici et actualisez pour voir vos comptes connectés</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
 
-        {/* Meta connection modal */}
-        {metaModalPlatform && (
-          <ConnectMetaModal
-            platform={metaModalPlatform}
-            onClose={() => setMetaModalPlatform(null)}
-            onSuccess={() => {
-              setMetaModalPlatform(null);
-              fetchMetaAccounts();
-            }}
-          />
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-4">
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          </div>
         )}
       </div>
     </TooltipProvider>
