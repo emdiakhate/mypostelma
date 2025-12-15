@@ -256,31 +256,20 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   // État local pour la publication
   const [isPublishingLocal, setIsPublishingLocal] = useState(false);
 
-  // Charger les infos des comptes sélectionnés quand la sélection change
+  // Synchroniser les plateformes sélectionnées avec les comptes (Upload-Post)
   useEffect(() => {
-    const loadAccountsInfo = async () => {
-      if (selectedAccounts.length === 0) {
-        setSelectedAccountsInfo([]);
-        setSelectedPlatforms(['instagram']);
-        return;
-      }
+    if (selectedAccounts.length === 0) {
+      setSelectedAccountsInfo([]);
+      setSelectedPlatforms(['instagram']);
+      return;
+    }
 
-      try {
-        const { data } = await supabase
-          .from('connected_accounts')
-          .select('id, platform')
-          .in('id', selectedAccounts);
-
-        if (data) {
-          setSelectedAccountsInfo(data.map(a => ({ accountId: a.id, platform: a.platform })));
-          setSelectedPlatforms(data.map(a => a.platform));
-        }
-      } catch (err) {
-        console.error('Error loading accounts info:', err);
-      }
-    };
-
-    loadAccountsInfo();
+    // Les selectedAccounts sont maintenant des IDs de plateforme (instagram, facebook, etc.)
+    setSelectedAccountsInfo(selectedAccounts.map(platformId => ({ 
+      accountId: platformId, 
+      platform: platformId 
+    })));
+    setSelectedPlatforms(selectedAccounts);
   }, [selectedAccounts]);
 
   // Charger la vidéo lors de l'édition
