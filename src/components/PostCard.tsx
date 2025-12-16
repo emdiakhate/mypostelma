@@ -299,8 +299,8 @@ const PostCard: React.FC<PostCardProps> = memo(({
             <Eye className="w-3.5 h-3.5" />
           </button>
           
-          {/* Éditer - restriction par rôle */}
-          {canEdit ? (
+          {/* Éditer - restriction par rôle et statut */}
+          {canEdit && onEdit ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -323,7 +323,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                Vous n'avez pas la permission d'éditer
+                {!onEdit ? 'Post déjà publié' : 'Vous n\'avez pas la permission d\'éditer'}
               </TooltipContent>
             </Tooltip>
           )}
@@ -340,8 +340,8 @@ const PostCard: React.FC<PostCardProps> = memo(({
             <Copy className="w-3.5 h-3.5" />
           </button>
           
-          {/* Supprimer - restriction par rôle */}
-          {canDelete ? (
+          {/* Supprimer - restriction par rôle et statut */}
+          {canDelete && onDelete ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -366,7 +366,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                Vous n'avez pas la permission de supprimer
+                {!onDelete ? 'Post déjà publié' : 'Vous n\'avez pas la permission de supprimer'}
               </TooltipContent>
             </Tooltip>
           )}
