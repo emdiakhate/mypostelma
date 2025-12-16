@@ -10,7 +10,7 @@ import {
   MessageSquare, TrendingUp, Target, Globe, Sparkles,
   Instagram, Linkedin, Twitter, Maximize
 } from 'lucide-react';
-import heroImage from '@/assets/hero-dashboard-calendar.png';
+import heroImage from '@/assets/hero-dashboard-new.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -693,27 +693,18 @@ const LandingPage: React.FC = () => {
 
           {/* CTA sous la vidéo */}
           <div className="text-center mt-12">
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               Convaincu ? Essayez gratuitement pendant 14 jours
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                className="bg-[#1a4d2e] hover:bg-[#2d5f4a] text-white px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all"
-                asChild
-              >
-                <Link to="/app/calendar">
-                  Démarrer gratuitement
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button 
-                variant="outline"
-                className="border-2 border-[#1a4d2e] text-[#1a4d2e] hover:bg-[#1a4d2e] hover:text-white px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Demander une démo
-              </Button>
-            </div>
+            <Button 
+              className="bg-[#1a4d2e] hover:bg-[#2d5f4a] text-white px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all"
+              asChild
+            >
+              <Link to="/app/calendar">
+                Démarrer gratuitement
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

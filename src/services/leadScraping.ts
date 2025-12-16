@@ -106,53 +106,49 @@ export class LeadScrapingService {
 
   /**
    * Scraping avec Jina.ai Reader (gratuit)
-   * Utilise Google Maps pour trouver des leads (meilleure source)
+   * Utilise Google Search pour trouver des leads
    */
   private static async scrapeWithJina(
     params: ScrapingParams
   ): Promise<Partial<EnrichedLead>[]> {
     try {
-      // Utiliser Google Maps au lieu de Google Search pour de meilleurs résultats
       const searchQuery = `${params.query} ${params.city}`;
-      const googleMapsUrl = `google.com/maps/search/${encodeURIComponent(searchQuery)}`;
+      const googleSearchUrl = `google.com/search?q=${encodeURIComponent(
+        searchQuery
+      )}`;
 
-      console.log('🔎 Jina.ai scraping Google Maps:', googleMapsUrl);
+      console.log('🔎 Jina.ai scraping:', googleSearchUrl);
 
       // Appeler Jina.ai Reader avec timeout
       const response = await fetchWithTimeout(
-        `${JINA_READER_URL}/${googleMapsUrl}`,
+        `${JINA_READER_URL}/${googleSearchUrl}`,
         {
           headers: {
             Accept: 'application/json',
             'X-Return-Format': 'json',
           },
         },
-        15000 // 15 secondes pour Jina.ai
+        10000 // 10 secondes pour Jina.ai
       );
 
       if (!response.ok) {
         console.warn('Jina.ai request failed:', response.status);
-        // Fallback: essayer avec Google Search local
-        return this.scrapeWithJinaFallback(params);
+        return [];
       }
 
       const data = await response.json();
-      console.log('Jina.ai raw response length:', JSON.stringify(data).length);
+      console.log('Jina.ai raw response:', JSON.stringify(data).substring(0, 500));
 
       const leads: Partial<EnrichedLead>[] = [];
 
       // Parser la structure de réponse Jina.ai
+      // Jina.ai retourne un objet avec 'data' contenant le contenu structuré
       if (data && data.data) {
         const content = data.data;
 
-        // Si le contenu est une chaîne (markdown), parser
+        // Si le contenu est une chaîne (markdown), essayer de l'extraire
         if (typeof content === 'string') {
           const parsedLeads = this.parseJinaMarkdown(content, params);
-          leads.push(...parsedLeads);
-        }
-        // Si c'est un objet avec du contenu markdown
-        else if (content.content && typeof content.content === 'string') {
-          const parsedLeads = this.parseJinaMarkdown(content.content, params);
           leads.push(...parsedLeads);
         }
         // Si c'est un objet avec des résultats structurés
@@ -162,15 +158,16 @@ export class LeadScrapingService {
             if (lead) leads.push(lead);
           });
         }
+        // Si c'est directement un tableau
+        else if (Array.isArray(content)) {
+          content.slice(0, params.maxResults || 10).forEach((item: any) => {
+            const lead = this.parseJinaResult(item, params);
+            if (lead) leads.push(lead);
+          });
+        }
       }
 
       console.log(`Jina.ai extracted ${leads.length} leads`);
-      
-      // Si toujours 0 leads, essayer le fallback
-      if (leads.length === 0) {
-        return this.scrapeWithJinaFallback(params);
-      }
-      
       return leads;
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -178,73 +175,6 @@ export class LeadScrapingService {
       } else {
         console.error('Error scraping with Jina.ai:', error);
       }
-      // Essayer le fallback
-      return this.scrapeWithJinaFallback(params);
-    }
-  }
-
-  /**
-   * Fallback: Utiliser un site d'annuaire local comme source alternative
-   */
-  private static async scrapeWithJinaFallback(
-    params: ScrapingParams
-  ): Promise<Partial<EnrichedLead>[]> {
-    try {
-      // Utiliser PagesJaunes ou Yelp comme fallback
-      const searchQuery = `${params.query} ${params.city}`;
-      const yelpUrl = `yelp.com/search?find_desc=${encodeURIComponent(params.query)}&find_loc=${encodeURIComponent(params.city)}`;
-      
-      console.log('🔄 Jina.ai fallback avec Yelp:', yelpUrl);
-
-      const response = await fetchWithTimeout(
-        `${JINA_READER_URL}/${yelpUrl}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'X-Return-Format': 'json',
-          },
-        },
-        12000
-      );
-
-      if (!response.ok) {
-        console.warn('Jina.ai fallback failed:', response.status);
-        return [];
-      }
-
-      const data = await response.json();
-      const leads: Partial<EnrichedLead>[] = [];
-
-      if (data && data.data) {
-        const content = typeof data.data === 'string' ? data.data : data.data.content || '';
-        
-        // Pattern spécifique Yelp: les noms de business sont souvent en liens
-        const yelpPattern = /\[([^\]]{3,60})\]\([^\)]*yelp\.com\/biz[^\)]*\)/g;
-        let match;
-        while ((match = yelpPattern.exec(content)) !== null && leads.length < (params.maxResults || 10)) {
-          const name = match[1].trim();
-          if (name && !leads.some(l => l.name?.toLowerCase() === name.toLowerCase())) {
-            leads.push({
-              name,
-              category: params.query,
-              city: params.city,
-              source: 'jina',
-              tags: ['yelp_fallback'],
-            } as Partial<EnrichedLead>);
-          }
-        }
-
-        // Si pas de résultats Yelp, parser comme markdown générique
-        if (leads.length === 0) {
-          const genericLeads = this.parseJinaMarkdown(content, params);
-          leads.push(...genericLeads);
-        }
-      }
-
-      console.log(`Jina.ai fallback extracted ${leads.length} leads`);
-      return leads;
-    } catch (error) {
-      console.error('Error in Jina fallback:', error);
       return [];
     }
   }
@@ -304,70 +234,43 @@ export class LeadScrapingService {
 
   /**
    * Parse le contenu markdown de Jina.ai pour extraire les leads
-   * Gère le format Google Search markdown
    */
   private static parseJinaMarkdown(
     content: string,
     params: ScrapingParams
   ): Partial<EnrichedLead>[] {
     const leads: Partial<EnrichedLead>[] = [];
-    const maxResults = params.maxResults || 10;
 
-    // Pattern 1: Format avec étoiles et avis "Restaurant ABC ★ 4.5 (123)"
-    const ratingPattern = /([^\n★⭐]+?)\s*[★⭐]\s*([\d.,]+)\s*\(([^)]+)\)/g;
+    // Pattern pour extraire les informations de business
+    // Exemple: "Restaurant ABC ★ 4.5 (123) · Adresse · Téléphone"
+    const businessPattern = /([^\n]+?)\s*[★⭐]\s*([\d.]+)\s*\(([^\)]+)\)/g;
+
     let match;
-    while ((match = ratingPattern.exec(content)) !== null && leads.length < maxResults) {
-      const [_, rawName, rating, reviews] = match;
-      const name = rawName.replace(/^[\s\-·•]+/, '').trim();
-      if (name && name.length > 3 && !name.toLowerCase().includes('google')) {
+    while ((match = businessPattern.exec(content)) !== null) {
+      const [_, name, rating, reviews] = match;
+
+      if (name && name.trim()) {
         leads.push({
-          name,
+          name: name.trim(),
           category: params.query,
           city: params.city,
-          google_rating: parseFloat(rating.replace(',', '.')) || undefined,
-          google_reviews_count: parseInt(reviews.replace(/[,\s\xa0]/g, '')) || undefined,
+          google_rating: parseFloat(rating) || undefined,
+          google_reviews_count: parseInt(reviews.replace(/[,\s]/g, '')) || undefined,
           source: 'jina',
           tags: ['jina_search'],
         } as Partial<EnrichedLead>);
       }
     }
 
-    // Pattern 2: Liens markdown avec titres "[Nom du business](url)"
-    if (leads.length < maxResults) {
-      const linkPattern = /\[([^\]]{5,80})\]\((https?:\/\/[^\)]+)\)/g;
-      while ((match = linkPattern.exec(content)) !== null && leads.length < maxResults) {
-        const [_, name, url] = match;
-        const cleanName = name.trim();
-        // Exclure les liens de navigation Google
-        if (cleanName && 
-            !cleanName.toLowerCase().includes('google') &&
-            !cleanName.toLowerCase().includes('search') &&
-            !cleanName.toLowerCase().includes('image') &&
-            !url.includes('google.com/search') &&
-            !leads.some(l => l.name?.toLowerCase() === cleanName.toLowerCase())) {
-          leads.push({
-            name: cleanName,
-            category: params.query,
-            city: params.city,
-            website: url.includes('maps.google') ? undefined : url,
-            google_maps_url: url.includes('maps.google') ? url : undefined,
-            source: 'jina',
-            tags: ['jina_search'],
-          } as Partial<EnrichedLead>);
-        }
-      }
-    }
+    // Si aucun lead trouvé avec le pattern rating, essayer un pattern plus simple
+    if (leads.length === 0) {
+      const simplePattern = /^([A-Z][^\n]{10,100})$/gm;
+      let simpleMatch;
+      let count = 0;
 
-    // Pattern 3: Titres de section "### Nom du business" ou "## Nom"
-    if (leads.length < maxResults) {
-      const headingPattern = /^#{1,3}\s+([^\n]{5,80})$/gm;
-      while ((match = headingPattern.exec(content)) !== null && leads.length < maxResults) {
-        const name = match[1].trim();
-        if (name && 
-            !name.toLowerCase().includes('google') &&
-            !name.toLowerCase().includes('search') &&
-            !name.toLowerCase().includes('result') &&
-            !leads.some(l => l.name?.toLowerCase() === name.toLowerCase())) {
+      while ((simpleMatch = simplePattern.exec(content)) !== null && count < (params.maxResults || 10)) {
+        const name = simpleMatch[1].trim();
+        if (name && !name.startsWith('http') && !name.includes('Google')) {
           leads.push({
             name,
             category: params.query,
@@ -375,33 +278,11 @@ export class LeadScrapingService {
             source: 'jina',
             tags: ['jina_search'],
           } as Partial<EnrichedLead>);
+          count++;
         }
       }
     }
 
-    // Pattern 4: Lignes avec format business typique (mot capitalisé suivi de détails)
-    if (leads.length < maxResults) {
-      const businessLinePattern = /^([A-Z][A-Za-zÀ-ÿ\s\-'&]{4,50})\s*[-·•|]\s*(.+)$/gm;
-      while ((match = businessLinePattern.exec(content)) !== null && leads.length < maxResults) {
-        const [_, name, details] = match;
-        const cleanName = name.trim();
-        if (cleanName && 
-            !cleanName.toLowerCase().includes('google') &&
-            !cleanName.toLowerCase().includes('accessibility') &&
-            !leads.some(l => l.name?.toLowerCase() === cleanName.toLowerCase())) {
-          leads.push({
-            name: cleanName,
-            category: params.query,
-            city: params.city,
-            address: details.includes(params.city) ? details : undefined,
-            source: 'jina',
-            tags: ['jina_search'],
-          } as Partial<EnrichedLead>);
-        }
-      }
-    }
-
-    console.log(`parseJinaMarkdown extracted ${leads.length} leads`);
     return leads;
   }
 
