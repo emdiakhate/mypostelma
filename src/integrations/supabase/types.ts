@@ -1193,6 +1193,10 @@ export type Database = {
           conversation_id: string
           created_at: string | null
           direction: string
+          email_cc: string | null
+          email_from: string | null
+          email_subject: string | null
+          email_to: string | null
           id: string
           is_read: boolean | null
           is_starred: boolean | null
@@ -1210,6 +1214,10 @@ export type Database = {
           conversation_id: string
           created_at?: string | null
           direction: string
+          email_cc?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          email_to?: string | null
           id?: string
           is_read?: boolean | null
           is_starred?: boolean | null
@@ -1227,6 +1235,10 @@ export type Database = {
           conversation_id?: string
           created_at?: string | null
           direction?: string
+          email_cc?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          email_to?: string | null
           id?: string
           is_read?: boolean | null
           is_starred?: boolean | null

@@ -29,6 +29,11 @@ interface Message {
   is_read: boolean;
   sent_at: string;
   created_at: string;
+  // Email metadata
+  email_subject?: string;
+  email_from?: string;
+  email_to?: string;
+  email_cc?: string;
 }
 
 interface MessageViewColumnProps {
@@ -420,48 +425,108 @@ export function MessageViewColumn({
           </div>
         ) : (
           <>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  'flex',
-                  message.direction === 'outgoing' || message.direction === 'outbound' ? 'justify-end' : 'justify-start'
-                )}
-              >
+            {messages.map((message) => {
+              const isEmail = conversation.platform === 'gmail' || conversation.platform === 'outlook';
+              const isOutgoing = message.direction === 'outgoing' || message.direction === 'outbound' || message.direction === 'sent';
+              
+              return (
                 <div
+                  key={message.id}
                   className={cn(
-                    'max-w-[70%] rounded-2xl px-4 py-2',
-                    message.direction === 'outgoing' || message.direction === 'outbound'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                    'flex flex-col',
+                    isEmail ? 'w-full' : (isOutgoing ? 'items-end' : 'items-start')
                   )}
                 >
-                  {message.text_content && (
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {message.text_content}
-                    </p>
+                  {/* Email Header for Gmail/Outlook */}
+                  {isEmail && (message.email_from || message.email_subject) && (
+                    <div className="w-full bg-gray-50 border border-gray-200 rounded-t-lg p-3 text-sm mb-0">
+                      {message.email_from && (
+                        <div className="flex gap-2">
+                          <span className="font-medium text-gray-600 min-w-[50px]">De :</span>
+                          <span className="text-blue-600">{message.email_from}</span>
+                        </div>
+                      )}
+                      {message.sent_at && (
+                        <div className="flex gap-2">
+                          <span className="font-medium text-gray-600 min-w-[50px]">Envoyé :</span>
+                          <span className="text-gray-700">
+                            {new Date(message.sent_at).toLocaleDateString('fr-FR', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      )}
+                      {message.email_to && (
+                        <div className="flex gap-2">
+                          <span className="font-medium text-gray-600 min-w-[50px]">À :</span>
+                          <span className="text-blue-600">{message.email_to}</span>
+                        </div>
+                      )}
+                      {message.email_cc && (
+                        <div className="flex gap-2">
+                          <span className="font-medium text-gray-600 min-w-[50px]">Cc :</span>
+                          <span className="text-gray-700">{message.email_cc}</span>
+                        </div>
+                      )}
+                      {message.email_subject && (
+                        <div className="flex gap-2">
+                          <span className="font-medium text-gray-600 min-w-[50px]">Objet :</span>
+                          <span className="text-gray-900 font-medium">{message.email_subject}</span>
+                        </div>
+                      )}
+                    </div>
                   )}
-                  {message.media_url && (
-                    <img
-                      src={message.media_url}
-                      alt="Media"
-                      className="mt-2 rounded-lg max-w-full"
-                    />
-                  )}
-                  <p
+
+                  {/* Message Content */}
+                  <div
                     className={cn(
-                      'text-xs mt-1',
-                      message.direction === 'outgoing' || message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'
+                      isEmail 
+                        ? 'w-full bg-white border border-gray-200 border-t-0 rounded-b-lg px-4 py-3'
+                        : cn(
+                            'max-w-[70%] rounded-2xl px-4 py-2',
+                            isOutgoing
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                          )
                     )}
                   >
-                    {formatDistanceToNow(new Date(message.sent_at), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </p>
+                    {message.text_content && (
+                      <p className={cn(
+                        "text-sm whitespace-pre-wrap break-words",
+                        isEmail && "text-gray-900"
+                      )}>
+                        {message.text_content}
+                      </p>
+                    )}
+                    {message.media_url && (
+                      <img
+                        src={message.media_url}
+                        alt="Media"
+                        className="mt-2 rounded-lg max-w-full"
+                      />
+                    )}
+                    {!isEmail && (
+                      <p
+                        className={cn(
+                          'text-xs mt-1',
+                          isOutgoing ? 'text-blue-100' : 'text-gray-500'
+                        )}
+                      >
+                        {formatDistanceToNow(new Date(message.sent_at), {
+                          addSuffix: true,
+                          locale: fr,
+                        })}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </>
         )}
