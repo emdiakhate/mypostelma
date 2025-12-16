@@ -16,7 +16,7 @@ const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-call, x-user-id',
 };
 
 serve(async (req) => {
@@ -26,36 +26,50 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check - verify the user is logged in
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('No authorization header provided');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create a client with the user's auth token to verify identity
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    let userId: string;
     
-    if (authError || !user) {
-      console.error('Authentication failed:', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check if this is an internal call from another edge function
+    const isInternalCall = req.headers.get('x-internal-call') === 'true';
+    const internalUserId = req.headers.get('x-user-id');
+    
+    if (isInternalCall && internalUserId) {
+      // Internal call from sync-messages - trust the user ID
+      userId = internalUserId;
+      console.log('Internal call for user:', userId);
+    } else {
+      // External call - verify JWT token
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        console.error('No authorization header provided');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - No authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create a client with the user's auth token to verify identity
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication failed:', authError?.message);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      userId = user.id;
     }
 
-    console.log('Authenticated user:', user.id);
+    console.log('Processing routing for user:', userId);
 
     const { conversation_id, message_id } = await req.json();
 
-    console.log('Analyzing message routing:', { conversation_id, message_id, user_id: user.id });
+    console.log('Analyzing message routing:', { conversation_id, message_id, user_id: userId });
 
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -83,8 +97,8 @@ serve(async (req) => {
     }
 
     // Authorization check - verify the user owns this conversation
-    if (conversation.user_id !== user.id) {
-      console.error('User does not own this conversation:', { user_id: user.id, conversation_user_id: conversation.user_id });
+    if (conversation.user_id !== userId) {
+      console.error('User does not own this conversation:', { user_id: userId, conversation_user_id: conversation.user_id });
       return new Response(
         JSON.stringify({ error: 'Forbidden - You do not have access to this conversation' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -95,7 +109,7 @@ serve(async (req) => {
     const { data: teams, error: teamsError } = await supabase
       .from('teams')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     // Handle case where teams table doesn't exist yet (migration not applied)
     if (teamsError) {
@@ -195,6 +209,9 @@ async function analyzeMessageWithAI(message: any, conversation: any, teams: any[
     )
     .join('\n');
 
+  // Include email subject if available
+  const subjectInfo = message.email_subject ? `\nObjet: "${message.email_subject}"` : '';
+
   const prompt = `Analysez le message suivant et déterminez quelle équipe devrait le traiter.
 
 ÉQUIPES DISPONIBLES:
@@ -202,7 +219,7 @@ ${teamsDescription}
 
 MESSAGE:
 De: ${conversation.participant_name || conversation.participant_username || 'Inconnu'}
-Plateforme: ${conversation.platform}
+Plateforme: ${conversation.platform}${subjectInfo}
 Contenu: "${message.text_content}"
 
 Répondez UNIQUEMENT avec un objet JSON dans ce format exact:
@@ -214,7 +231,12 @@ Répondez UNIQUEMENT avec un objet JSON dans ce format exact:
   "detected_language": "fr" ou "en" etc.
 }
 
-IMPORTANT: Ne pas inclure de texte avant ou après le JSON.`;
+IMPORTANT: 
+- Pour les messages contenant "candidature", "CV", "emploi", "poste", "recrutement" => équipe RH
+- Pour les messages concernant les paiements, factures, budgets => équipe Comptabilité
+- Pour les questions produit, problèmes techniques => équipe Support
+- Pour les demandes commerciales, devis => équipe Vente/Marketing
+- Ne pas inclure de texte avant ou après le JSON.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -229,7 +251,7 @@ IMPORTANT: Ne pas inclure de texte avant ou après le JSON.`;
           {
             role: 'system',
             content:
-              'Tu es un assistant qui analyse les messages et les route vers la bonne équipe. Réponds UNIQUEMENT avec du JSON valide, sans texte supplémentaire.',
+              'Tu es un assistant qui analyse les messages et les route vers la bonne équipe. Réponds UNIQUEMENT avec du JSON valide, sans texte supplémentaire. Sois particulièrement attentif aux mots-clés comme "candidature" (RH), "facture" (Comptabilité), etc.',
           },
           {
             role: 'user',

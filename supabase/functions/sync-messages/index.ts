@@ -26,7 +26,7 @@ serve(async (req) => {
       });
     }
 
-    // Create Supabase client
+    // Create Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -180,8 +180,8 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
       accessToken = await refreshGmailToken(supabase, account);
     }
 
-    // Get messages from Gmail API - both INBOX and SENT
-    let messagesResponse = await fetch(
+    // Fetch recent messages from Gmail API
+    const messagesResponse = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox OR in:sent`,
       {
         headers: {
@@ -190,12 +190,13 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
       }
     );
 
-    // If 401, try to refresh token
+    // Handle 401 - token might be expired
     if (messagesResponse.status === 401) {
-      console.log('Got 401, attempting token refresh...');
+      console.log('Got 401, refreshing token...');
       accessToken = await refreshGmailToken(supabase, account);
       
-      messagesResponse = await fetch(
+      // Retry with new token
+      const retryResponse = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox OR in:sent`,
         {
           headers: {
@@ -203,173 +204,208 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
           },
         }
       );
+      
+      if (!retryResponse.ok) {
+        throw new Error(`Gmail API error after token refresh: ${retryResponse.statusText}`);
+      }
+      
+      const retryData = await retryResponse.json();
+      return await processGmailMessages(supabase, account, accountEmail, accessToken, retryData.messages || []);
     }
 
     if (!messagesResponse.ok) {
-      const error = await messagesResponse.text();
-      console.error('Gmail API error:', error);
-      throw new Error(`Gmail API error: ${error}`);
+      throw new Error(`Gmail API error: ${messagesResponse.statusText}`);
     }
 
     const messagesData = await messagesResponse.json();
     const messages = messagesData.messages || [];
-    console.log(`Found ${messages.length} messages to sync`);
 
-    let synced = 0;
-
-    // Fetch full message details for each message
-    for (const msg of messages) {
-      try {
-        console.log('Processing message:', msg.id);
-
-        const messageResponse = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!messageResponse.ok) {
-          console.error('Failed to fetch message:', msg.id);
-          continue;
-        }
-
-        const messageData = await messageResponse.json();
-
-        // Parse message headers
-        const headers = messageData.payload?.headers || [];
-        const getHeader = (name: string) =>
-          headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value;
-
-        const from = getHeader('From') || '';
-        const to = getHeader('To') || '';
-        const subject = getHeader('Subject') || '(no subject)';
-        const date = getHeader('Date') || new Date().toISOString();
-
-        console.log('Message from:', from, 'to:', to);
-
-        // Extract body
-        let body = '';
-        if (messageData.payload?.body?.data) {
-          body = decodeBase64Url(messageData.payload.body.data);
-        } else if (messageData.payload?.parts) {
-          const textPart = messageData.payload.parts.find(
-            (p: any) => p.mimeType === 'text/plain' || p.mimeType === 'text/html'
-          );
-          if (textPart?.body?.data) {
-            body = decodeBase64Url(textPart.body.data);
-          }
-        }
-
-        // Determine direction
-        const fromEmail = extractEmail(from).toLowerCase();
-        const direction = fromEmail === accountEmail.toLowerCase() ? 'sent' : 'received';
-
-        console.log('Direction:', direction);
-
-        // Get or create conversation
-        const contactEmail = direction === 'received' ? fromEmail : extractEmail(to).toLowerCase();
-        const contactName = direction === 'received' ? extractName(from) : extractName(to);
-
-        console.log('Contact:', contactEmail, contactName);
-
-        let conversationId = await getOrCreateConversation(
-          supabase,
-          account.user_id,
-          account.id,
-          'gmail',
-          contactEmail,
-          contactName
-        );
-
-        if (!conversationId) {
-          console.error('Failed to create conversation for:', contactEmail);
-          continue;
-        }
-
-        console.log('Conversation ID:', conversationId);
-
-        // Check if message already exists
-        const { data: existing } = await supabase
-          .from('messages')
-          .select('id')
-          .eq('platform_message_id', msg.id)
-          .eq('conversation_id', conversationId)
-          .single();
-
-        if (existing) {
-          console.log('Message already synced:', msg.id);
-          continue; // Skip if already synced
-        }
-
-        // Insert message
-        const { error: insertError } = await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          platform_message_id: msg.id,
-          direction,
-          message_type: 'text',
-          text_content: body || subject,
-          sender_id: fromEmail,
-          sender_name: extractName(from) || fromEmail,
-          sender_username: fromEmail,
-          is_read: messageData.labelIds && !messageData.labelIds.includes('UNREAD'),
-          sent_at: new Date(date).toISOString(),
-        });
-
-        if (insertError) {
-          console.error('Error inserting message:', insertError);
-        } else {
-          synced++;
-          console.log('Message synced successfully:', msg.id);
-
-          // Trigger AI routing for incoming messages
-          if (direction === 'received') {
-            try {
-              // Get the message ID
-              const { data: insertedMessage } = await supabase
-                .from('messages')
-                .select('id')
-                .eq('platform_message_id', msg.id)
-                .eq('conversation_id', conversationId)
-                .single();
-
-              if (insertedMessage) {
-                console.log('Triggering AI routing for message:', insertedMessage.id);
-                // Call AI routing function asynchronously (don't await to avoid blocking)
-                supabase.functions.invoke('analyze-message-routing', {
-                  body: {
-                    conversation_id: conversationId,
-                    message_id: insertedMessage.id,
-                  },
-                }).then((response: any) => {
-                  if (response.error) {
-                    console.error('AI routing error:', response.error);
-                  } else {
-                    console.log('AI routing completed:', response.data);
-                  }
-                }).catch((error: any) => {
-                  console.error('AI routing failed:', error);
-                });
-              }
-            } catch (routingError) {
-              console.error('Error triggering AI routing:', routingError);
-              // Don't throw - we don't want to block sync if AI routing fails
-            }
-          }
-        }
-      } catch (msgError) {
-        console.error('Error syncing message:', msg.id, msgError);
-      }
-    }
-
-    console.log(`Sync completed: ${synced} messages synced`);
-    return synced;
+    return await processGmailMessages(supabase, account, accountEmail, accessToken, messages);
   } catch (error) {
     console.error('Error syncing Gmail messages:', error);
     throw error;
   }
+}
+
+async function processGmailMessages(
+  supabase: any, 
+  account: any, 
+  accountEmail: string, 
+  accessToken: string, 
+  messages: any[]
+): Promise<number> {
+  let synced = 0;
+  console.log(`Found ${messages.length} messages to sync`);
+
+  for (const msg of messages) {
+    try {
+      // Get full message details
+      const messageResponse = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!messageResponse.ok) continue;
+
+      const messageData = await messageResponse.json();
+
+      // Extract headers
+      const headers = messageData.payload?.headers || [];
+      const getHeader = (name: string) =>
+        headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+
+      const subject = getHeader('Subject');
+      const from = getHeader('From');
+      const to = getHeader('To');
+      const cc = getHeader('Cc');
+      const date = getHeader('Date');
+
+      console.log('Message from:', from, 'to:', to);
+      console.log('Subject:', subject);
+
+      // Extract body
+      let body = '';
+      if (messageData.payload?.body?.data) {
+        body = decodeBase64Url(messageData.payload.body.data);
+      } else if (messageData.payload?.parts) {
+        const textPart = messageData.payload.parts.find(
+          (p: any) => p.mimeType === 'text/plain' || p.mimeType === 'text/html'
+        );
+        if (textPart?.body?.data) {
+          body = decodeBase64Url(textPart.body.data);
+        }
+      }
+
+      // Determine direction
+      const fromEmail = extractEmail(from).toLowerCase();
+      const direction = fromEmail === accountEmail.toLowerCase() ? 'sent' : 'received';
+
+      console.log('Direction:', direction);
+
+      // Get or create conversation
+      const contactEmail = direction === 'received' ? fromEmail : extractEmail(to).toLowerCase();
+      const contactName = direction === 'received' ? extractName(from) : extractName(to);
+
+      console.log('Contact:', contactEmail, contactName);
+
+      let conversationId = await getOrCreateConversation(
+        supabase,
+        account.user_id,
+        account.id,
+        'gmail',
+        contactEmail,
+        contactName
+      );
+
+      if (!conversationId) {
+        console.error('Failed to create conversation for:', contactEmail);
+        continue;
+      }
+
+      console.log('Conversation ID:', conversationId);
+
+      // Check if message already exists
+      const { data: existing } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('platform_message_id', msg.id)
+        .eq('conversation_id', conversationId)
+        .single();
+
+      if (existing) {
+        console.log('Message already synced:', msg.id);
+        continue; // Skip if already synced
+      }
+
+      // Insert message with email metadata
+      const { error: insertError } = await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        platform_message_id: msg.id,
+        direction,
+        message_type: 'text',
+        text_content: body || subject,
+        sender_id: fromEmail,
+        sender_name: extractName(from) || fromEmail,
+        sender_username: fromEmail,
+        is_read: messageData.labelIds && !messageData.labelIds.includes('UNREAD'),
+        sent_at: new Date(date).toISOString(),
+        // Email-specific metadata
+        email_subject: subject,
+        email_from: from,
+        email_to: to,
+        email_cc: cc || null,
+      });
+
+      if (insertError) {
+        console.error('Error inserting message:', insertError);
+      } else {
+        synced++;
+        console.log('Message synced successfully:', msg.id);
+
+        // Trigger AI routing for incoming messages
+        if (direction === 'received') {
+          try {
+            // Get the message ID
+            const { data: insertedMessage } = await supabase
+              .from('messages')
+              .select('id')
+              .eq('platform_message_id', msg.id)
+              .eq('conversation_id', conversationId)
+              .single();
+
+            if (insertedMessage) {
+              console.log('Triggering AI routing for message:', insertedMessage.id);
+              // Call AI routing function with internal flag (no auth needed for internal calls)
+              triggerAIRouting(supabase, conversationId, insertedMessage.id, account.user_id);
+            }
+          } catch (routingError) {
+            console.error('Error triggering AI routing:', routingError);
+            // Don't throw - we don't want to block sync if AI routing fails
+          }
+        }
+      }
+    } catch (msgError) {
+      console.error('Error syncing message:', msg.id, msgError);
+    }
+  }
+
+  console.log(`Sync completed: ${synced} messages synced`);
+  return synced;
+}
+
+// Trigger AI routing asynchronously (internal call)
+async function triggerAIRouting(supabase: any, conversationId: string, messageId: string, userId: string) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  // Call with service role and internal flag
+  fetch(`${supabaseUrl}/functions/v1/analyze-message-routing`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+      'x-internal-call': 'true',
+      'x-user-id': userId,
+    },
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      message_id: messageId,
+    }),
+  }).then(async (response) => {
+    if (response.ok) {
+      const data = await response.json();
+      console.log('AI routing completed:', data);
+    } else {
+      const error = await response.text();
+      console.error('AI routing error:', error);
+    }
+  }).catch((error) => {
+    console.error('AI routing failed:', error);
+  });
 }
 
 // =====================================================
@@ -378,42 +414,49 @@ async function syncGmailMessages(supabase: any, account: any): Promise<number> {
 
 async function syncOutlookMessages(supabase: any, account: any): Promise<number> {
   try {
-    console.log('Starting Outlook sync for account:', account.id, account.email_address);
+    const accountEmail = account.config?.email || account.platform_account_id;
+    console.log('Starting Outlook sync for account:', account.id, accountEmail);
 
-    // Get messages from Microsoft Graph API
+    const accessToken = account.access_token;
+
+    // Fetch recent messages from Microsoft Graph API
     const messagesResponse = await fetch(
       `https://graph.microsoft.com/v1.0/me/messages?$top=10&$orderby=receivedDateTime desc`,
       {
         headers: {
-          Authorization: `Bearer ${account.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       }
     );
 
     if (!messagesResponse.ok) {
-      const error = await messagesResponse.text();
-      throw new Error(`Outlook API error: ${error}`);
+      throw new Error(`Outlook API error: ${messagesResponse.statusText}`);
     }
 
     const messagesData = await messagesResponse.json();
     const messages = messagesData.value || [];
 
     let synced = 0;
+    console.log(`Found ${messages.length} Outlook messages to sync`);
 
     for (const msg of messages) {
       try {
-        const accountEmail = (account.config?.email || account.platform_account_id).toLowerCase();
-        // Determine direction
         const fromEmail = msg.from?.emailAddress?.address?.toLowerCase() || '';
-        const direction = fromEmail === accountEmail ? 'sent' : 'received';
+        const fromName = msg.from?.emailAddress?.name || fromEmail;
+        const toRecipients = msg.toRecipients || [];
+        const ccRecipients = msg.ccRecipients || [];
+        const toEmail = toRecipients[0]?.emailAddress?.address?.toLowerCase() || '';
+        const toEmails = toRecipients.map((r: any) => `${r.emailAddress?.name || ''} <${r.emailAddress?.address}>`).join(', ');
+        const ccEmails = ccRecipients.map((r: any) => `${r.emailAddress?.name || ''} <${r.emailAddress?.address}>`).join(', ');
+
+        // Determine direction
+        const direction = fromEmail === accountEmail.toLowerCase() ? 'sent' : 'received';
+
+        console.log('Outlook message from:', fromEmail, 'direction:', direction);
 
         // Get or create conversation
-        const contactEmail = direction === 'received'
-          ? fromEmail
-          : msg.toRecipients?.[0]?.emailAddress?.address?.toLowerCase() || '';
-        const contactName = direction === 'received'
-          ? msg.from?.emailAddress?.name || ''
-          : msg.toRecipients?.[0]?.emailAddress?.name || '';
+        const contactEmail = direction === 'received' ? fromEmail : toEmail;
+        const contactName = direction === 'received' ? fromName : (toRecipients[0]?.emailAddress?.name || toEmail);
 
         let conversationId = await getOrCreateConversation(
           supabase,
@@ -424,7 +467,10 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
           contactName
         );
 
-        if (!conversationId) continue;
+        if (!conversationId) {
+          console.error('Failed to create conversation for:', contactEmail);
+          continue;
+        }
 
         // Check if message already exists
         const { data: existing } = await supabase
@@ -434,29 +480,39 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
           .eq('conversation_id', conversationId)
           .single();
 
-        if (existing) continue;
+        if (existing) {
+          console.log('Outlook message already synced:', msg.id);
+          continue;
+        }
 
-        // Insert message
+        // Insert message with email metadata
         const { error: insertError } = await supabase.from('messages').insert({
           conversation_id: conversationId,
           platform_message_id: msg.id,
           direction,
           message_type: 'text',
-          text_content: msg.bodyPreview || msg.body?.content || '',
+          text_content: msg.body?.content || msg.subject || '',
           sender_id: fromEmail,
-          sender_name: msg.from?.emailAddress?.name || fromEmail,
+          sender_name: fromName,
           sender_username: fromEmail,
           is_read: msg.isRead || false,
-          sent_at: msg.receivedDateTime,
+          sent_at: msg.receivedDateTime || new Date().toISOString(),
+          // Email-specific metadata
+          email_subject: msg.subject || '',
+          email_from: `${fromName} <${fromEmail}>`,
+          email_to: toEmails,
+          email_cc: ccEmails || null,
         });
 
-        if (!insertError) {
+        if (insertError) {
+          console.error('Error inserting Outlook message:', insertError);
+        } else {
           synced++;
+          console.log('Outlook message synced:', msg.id);
 
           // Trigger AI routing for incoming messages
           if (direction === 'received') {
             try {
-              // Get the message ID
               const { data: insertedMessage } = await supabase
                 .from('messages')
                 .select('id')
@@ -465,34 +521,19 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
                 .single();
 
               if (insertedMessage) {
-                console.log('Triggering AI routing for Outlook message:', insertedMessage.id);
-                // Call AI routing function asynchronously (don't await to avoid blocking)
-                supabase.functions.invoke('analyze-message-routing', {
-                  body: {
-                    conversation_id: conversationId,
-                    message_id: insertedMessage.id,
-                  },
-                }).then((response: any) => {
-                  if (response.error) {
-                    console.error('AI routing error:', response.error);
-                  } else {
-                    console.log('AI routing completed:', response.data);
-                  }
-                }).catch((error: any) => {
-                  console.error('AI routing failed:', error);
-                });
+                triggerAIRouting(supabase, conversationId, insertedMessage.id, account.user_id);
               }
             } catch (routingError) {
-              console.error('Error triggering AI routing:', routingError);
-              // Don't throw - we don't want to block sync if AI routing fails
+              console.error('Error triggering AI routing for Outlook:', routingError);
             }
           }
         }
       } catch (msgError) {
-        console.error('Error syncing message:', msg.id, msgError);
+        console.error('Error syncing Outlook message:', msg.id, msgError);
       }
     }
 
+    console.log(`Outlook sync completed: ${synced} messages synced`);
     return synced;
   } catch (error) {
     console.error('Error syncing Outlook messages:', error);
@@ -501,7 +542,7 @@ async function syncOutlookMessages(supabase: any, account: any): Promise<number>
 }
 
 // =====================================================
-// CONVERSATION MANAGEMENT
+// HELPERS
 // =====================================================
 
 async function getOrCreateConversation(
@@ -512,81 +553,77 @@ async function getOrCreateConversation(
   contactEmail: string,
   contactName: string
 ): Promise<string | null> {
-  try {
-    // Try to find existing conversation
-    const { data: existing } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('connected_account_id', accountId)
-      .eq('platform', platform)
-      .eq('participant_id', contactEmail)
-      .single();
+  // Check if conversation exists
+  const { data: existing } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('connected_account_id', accountId)
+    .eq('platform', platform)
+    .eq('participant_id', contactEmail)
+    .single();
 
-    if (existing) {
-      return existing.id;
-    }
+  if (existing) {
+    return existing.id;
+  }
 
-    // Create new conversation
-    const { data: newConv, error } = await supabase
-      .from('conversations')
-      .insert({
-        user_id: userId,
-        connected_account_id: accountId,
-        platform,
-        platform_conversation_id: `email_${contactEmail}_${Date.now()}`,
-        participant_id: contactEmail,
-        participant_name: contactName || contactEmail,
-        participant_username: contactEmail,
-        status: 'active',
-        last_message_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
+  // Create new conversation
+  const { data: newConv, error } = await supabase
+    .from('conversations')
+    .insert({
+      user_id: userId,
+      connected_account_id: accountId,
+      platform,
+      platform_conversation_id: `${platform}_${contactEmail}_${Date.now()}`,
+      participant_id: contactEmail,
+      participant_name: contactName,
+      participant_username: contactEmail,
+      status: 'unread',
+      tags: [],
+      last_message_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
 
-    if (error) {
-      console.error('Error creating conversation:', error);
-      return null;
-    }
-
-    return newConv.id;
-  } catch (error) {
-    console.error('Error in getOrCreateConversation:', error);
+  if (error) {
+    console.error('Error creating conversation:', error);
     return null;
   }
-}
 
-// =====================================================
-// HELPERS
-// =====================================================
+  return newConv?.id || null;
+}
 
 function decodeBase64Url(data: string): string {
   try {
-    // Gmail uses base64url encoding
     const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
     const decoded = atob(base64);
-
-    // Convert from Latin-1 to UTF-8
-    // atob() decodes to Latin-1, we need to properly decode UTF-8
-    const bytes = new Uint8Array(decoded.length);
-    for (let i = 0; i < decoded.length; i++) {
-      bytes[i] = decoded.charCodeAt(i);
+    // Handle UTF-8 encoding
+    return decodeURIComponent(
+      decoded
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  } catch (e) {
+    // Fallback for non-UTF-8 content
+    try {
+      const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+      return atob(base64);
+    } catch (e2) {
+      return data;
     }
-
-    // Decode UTF-8 bytes to string
-    const decoder = new TextDecoder('utf-8');
-    return decoder.decode(bytes);
-  } catch {
-    return '';
   }
 }
 
 function extractEmail(emailString: string): string {
-  const match = emailString.match(/<(.+?)>/);
+  const match = emailString.match(/<([^>]+)>/);
   return match ? match[1] : emailString.trim();
 }
 
 function extractName(emailString: string): string {
-  const match = emailString.match(/^(.+?)\s*</);
-  return match ? match[1].trim().replace(/['"]/g, '') : '';
+  const match = emailString.match(/^([^<]+)</);
+  if (match) {
+    return match[1].trim().replace(/"/g, '');
+  }
+  return emailString.split('@')[0] || emailString;
 }
