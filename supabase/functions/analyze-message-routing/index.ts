@@ -167,14 +167,18 @@ serve(async (req) => {
       // Add team name to conversation tags
       if (assignedTeam) {
         const currentTags = conversation.tags || [];
-        const newTags = [...new Set([...currentTags, assignedTeam.name])];
-        
+        // Remove any existing team tags first
+        const teamNames = teams.map(t => t.name);
+        const nonTeamTags = currentTags.filter((tag: string) => !teamNames.includes(tag));
+        // Add the new team tag
+        const newTags = [...nonTeamTags, assignedTeam.name];
+
         await supabase
           .from('conversations')
           .update({ tags: newTags })
           .eq('id', conversation.id);
-        
-        console.log('Assigned to team and added tag:', assignedTeam.name);
+
+        console.log('Removed previous team tags and assigned to team:', assignedTeam.name);
       }
     }
 

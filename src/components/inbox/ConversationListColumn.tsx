@@ -124,10 +124,16 @@ export function ConversationListColumn({
                     <div className="flex-1 min-w-0">
                       {/* Name and Time */}
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-bold text-gray-900 truncate">
+                        <p className={cn(
+                          "text-sm text-gray-900 truncate",
+                          conversation.status === 'unread' ? "font-bold" : "font-medium"
+                        )}>
                           {conversation.participant_name || conversation.participant_username || 'Inconnu'}
                         </p>
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                        <span className={cn(
+                          "text-xs flex-shrink-0 ml-2",
+                          conversation.status === 'unread' ? "text-gray-900 font-semibold" : "text-gray-500"
+                        )}>
                           {conversation.last_message_at
                             ? new Date(conversation.last_message_at).toLocaleTimeString('fr-FR', {
                                 hour: 'numeric',
@@ -139,13 +145,19 @@ export function ConversationListColumn({
 
                       {/* Username */}
                       {conversation.participant_username && (
-                        <p className="text-xs text-gray-500 mb-1">
+                        <p className={cn(
+                          "text-xs mb-1",
+                          conversation.status === 'unread' ? "text-gray-700 font-semibold" : "text-gray-500"
+                        )}>
                           @{conversation.participant_username}
                         </p>
                       )}
 
                       {/* Last Message Preview */}
-                      <p className="text-sm text-gray-600 truncate mb-2">
+                      <p className={cn(
+                        "text-sm truncate mb-2",
+                        conversation.status === 'unread' ? "text-gray-900 font-semibold" : "text-gray-600"
+                      )}>
                         {conversation.last_message_text || 'Pas encore de messages'}
                       </p>
 

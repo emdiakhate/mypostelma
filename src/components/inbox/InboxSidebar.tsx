@@ -109,9 +109,26 @@ export function InboxSidebar({
             <div className="pt-4">
               <p className="text-xs font-medium text-gray-500 uppercase px-3 py-2 flex items-center gap-2">
                 <Link2 className="w-3 h-3" />
-                Comptes
+                Boîte de réception
               </p>
               <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    onAccountSelect(null);
+                    onTeamSelect(null);
+                    onFilterSelect('all');
+                    onInboxSelect(null);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    !selectedAccount && !selectedTeam
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  )}
+                >
+                  <Inbox className="w-4 h-4 flex-shrink-0" />
+                  <span className="flex-1 text-left truncate">Tous</span>
+                </button>
                 {connectedAccounts.map((account) => {
                   const IconComponent = PLATFORM_ICON_COMPONENTS[account.platform];
                   return (
@@ -150,10 +167,27 @@ export function InboxSidebar({
           {/* Teams Section */}
           {teams.length > 0 && (
             <div className="pt-4">
-              <p className="text-xs font-semibold text-gray-900 px-3 py-2">
-                Équipes
+              <p className="text-xs font-semibold text-gray-900 px-3 py-2 uppercase">
+                ÉQUIPE
               </p>
               <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    onTeamSelect(null);
+                    onAccountSelect(null);
+                    onFilterSelect('all');
+                    onInboxSelect(null);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    !selectedTeam && !selectedAccount
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  )}
+                >
+                  <Inbox className="w-4 h-4 flex-shrink-0" />
+                  <span className="flex-1 text-left truncate">Tous</span>
+                </button>
                 {teams.map((team) => (
                   <button
                     key={team.id}

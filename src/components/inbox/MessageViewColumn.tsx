@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, Loader2, MoreVertical, Paperclip, Smile, X, FileIcon } from 'lucide-react';
+import { Send, Sparkles, Loader2, MoreVertical, Paperclip, Smile, X, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,6 @@ export function MessageViewColumn({
   const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
-  const [recording, setRecording] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -269,15 +268,6 @@ export function MessageViewColumn({
     setMessageText(prev => prev + emoji);
     setShowEmojiPicker(false);
     textareaRef.current?.focus();
-  };
-
-  const handleVoiceInput = async () => {
-    setRecording(true);
-    toast({
-      title: 'Enregistrement audio',
-      description: 'Fonctionnalité bientôt disponible',
-    });
-    setTimeout(() => setRecording(false), 1000);
   };
 
   const handleAISuggestion = async () => {
@@ -617,17 +607,6 @@ export function MessageViewColumn({
               title="Pièce jointe"
             >
               <Paperclip className="w-4 h-4 text-gray-600" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleVoiceInput}
-              disabled={recording || sending}
-              className="h-8 w-8 p-0 hover:bg-gray-100"
-              title="Enregistrement vocal"
-            >
-              <Mic className={cn('w-4 h-4 text-gray-600', recording && 'text-red-500 animate-pulse')} />
             </Button>
 
             <Button
