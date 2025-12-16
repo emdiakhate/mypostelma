@@ -69,106 +69,143 @@ interface N8NLeadResult {
 export class LeadScrapingService {
   /**
    * Scraping hybride : combine Jina.ai + N8N (Apify)
+   * Jina est requis, N8N est optionnel
    */
   static async scrapeHybrid(params: ScrapingParams): Promise<EnrichedLead[]> {
+    const startTime = Date.now();
+
     try {
-      console.log('🔍 Starting hybrid scraping:', params);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 HYBRID SCRAPING STARTED');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📋 Parameters:', {
+        query: params.query,
+        city: params.city,
+        maxResults: params.maxResults || 10,
+      });
+      console.log('');
 
       // Lancer les deux sources en parallèle
+      console.log('⏱️ Launching parallel requests...');
       const [jinaResults, n8nResults] = await Promise.allSettled([
         this.scrapeWithJina(params),
         this.scrapeWithN8N(params),
       ]);
 
-      console.log('Jina results:', jinaResults);
-      console.log('N8N results:', n8nResults);
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 RESULTS SUMMARY');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       // Extraire les résultats valides
       const jinaLeads =
         jinaResults.status === 'fulfilled' ? jinaResults.value : [];
       const n8nLeads = n8nResults.status === 'fulfilled' ? n8nResults.value : [];
 
-      console.log(
-        `✅ Jina: ${jinaLeads.length} leads, N8N: ${n8nLeads.length} leads`
-      );
+      // Détails des résultats
+      if (jinaResults.status === 'fulfilled') {
+        console.log(`✅ Jina.ai: ${jinaLeads.length} leads`);
+      } else {
+        console.error(`❌ Jina.ai failed:`, jinaResults.reason);
+      }
+
+      if (n8nResults.status === 'fulfilled') {
+        if (n8nLeads.length > 0) {
+          console.log(`✅ N8N/Apify: ${n8nLeads.length} leads`);
+        } else {
+          console.log(`⚠️ N8N/Apify: 0 leads (timeout ou échec - mode fallback Jina actif)`);
+        }
+      } else {
+        console.warn(`⚠️ N8N/Apify rejected:`, n8nResults.reason?.message || 'Unknown error');
+      }
+
+      console.log('');
+
+      // Vérifier qu'on a au moins des résultats Jina
+      if (jinaLeads.length === 0 && n8nLeads.length === 0) {
+        const elapsed = Date.now() - startTime;
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`❌ NO RESULTS - Completed in ${elapsed}ms`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('');
+        console.log('💡 Debugging tips:');
+        console.log('1. Check if Google has results for this query');
+        console.log('2. Try different city spelling');
+        console.log('3. Check console for parsing details above');
+        console.log('');
+        return [];
+      }
 
       // Fusionner et dédupliquer
+      console.log('🔄 Merging and deduplicating...');
       const mergedLeads = this.mergeAndDeduplicate(jinaLeads, n8nLeads);
 
-      console.log(`🎯 Merged: ${mergedLeads.length} unique leads`);
+      const elapsed = Date.now() - startTime;
+
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`✅ SCRAPING COMPLETED in ${elapsed}ms`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`🎯 Final result: ${mergedLeads.length} unique leads`);
+      console.log('Sources breakdown:');
+      console.log(`  - Jina.ai contributed: ${jinaLeads.length} leads`);
+      console.log(`  - N8N/Apify contributed: ${n8nLeads.length} leads`);
+      console.log(`  - After deduplication: ${mergedLeads.length} leads`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
 
       return mergedLeads;
     } catch (error) {
-      console.error('Error in hybrid scraping:', error);
+      const elapsed = Date.now() - startTime;
+      console.error('');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error(`❌ SCRAPING ERROR after ${elapsed}ms`);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('Error:', error);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('');
       throw error;
     }
   }
 
   /**
    * Scraping avec Jina.ai Reader (gratuit)
-   * Utilise Google Search pour trouver des leads
+   * Stratégie hybride: Google Search + Google Maps
    */
   private static async scrapeWithJina(
     params: ScrapingParams
   ): Promise<Partial<EnrichedLead>[]> {
     try {
-      const searchQuery = `${params.query} ${params.city}`;
-      const googleSearchUrl = `google.com/search?q=${encodeURIComponent(
-        searchQuery
-      )}`;
+      // Augmenter le nombre demandé pour compenser les filtres (demander 50% de plus)
+      const requestCount = Math.ceil((params.maxResults || 10) * 1.5);
 
-      console.log('🔎 Jina.ai scraping:', googleSearchUrl);
+      console.log(`🔎 Jina.ai scraping: requesting ${requestCount} to get ${params.maxResults} results`);
 
-      // Appeler Jina.ai Reader avec timeout
-      const response = await fetchWithTimeout(
-        `${JINA_READER_URL}/${googleSearchUrl}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'X-Return-Format': 'json',
-          },
-        },
-        10000 // 10 secondes pour Jina.ai
-      );
+      // Essayer Google Maps d'abord (plus fiable pour les leads locaux)
+      const mapsLeads = await this.scrapeJinaGoogleMaps(params, requestCount);
 
-      if (!response.ok) {
-        console.warn('Jina.ai request failed:', response.status);
-        return [];
+      // Si pas assez de résultats, compléter avec Google Search
+      if (mapsLeads.length < (params.maxResults || 10)) {
+        console.log(`📍 Maps returned ${mapsLeads.length}, complementing with Search...`);
+        const searchLeads = await this.scrapeJinaGoogleSearch(params, requestCount);
+
+        // Fusionner sans doublons
+        const combinedLeads = [...mapsLeads];
+        searchLeads.forEach(searchLead => {
+          const isDuplicate = mapsLeads.some(mapsLead =>
+            this.getLeadKey(mapsLead) === this.getLeadKey(searchLead)
+          );
+          if (!isDuplicate) {
+            combinedLeads.push(searchLead);
+          }
+        });
+
+        console.log(`✅ Combined: ${combinedLeads.length} unique leads from Jina`);
+        return combinedLeads.slice(0, params.maxResults || 10);
       }
 
-      const data = await response.json();
-      console.log('Jina.ai raw response:', JSON.stringify(data).substring(0, 500));
-
-      const leads: Partial<EnrichedLead>[] = [];
-
-      // Parser la structure de réponse Jina.ai
-      // Jina.ai retourne un objet avec 'data' contenant le contenu structuré
-      if (data && data.data) {
-        const content = data.data;
-
-        // Si le contenu est une chaîne (markdown), essayer de l'extraire
-        if (typeof content === 'string') {
-          const parsedLeads = this.parseJinaMarkdown(content, params);
-          leads.push(...parsedLeads);
-        }
-        // Si c'est un objet avec des résultats structurés
-        else if (content.results && Array.isArray(content.results)) {
-          content.results.slice(0, params.maxResults || 10).forEach((item: any) => {
-            const lead = this.parseJinaResult(item, params);
-            if (lead) leads.push(lead);
-          });
-        }
-        // Si c'est directement un tableau
-        else if (Array.isArray(content)) {
-          content.slice(0, params.maxResults || 10).forEach((item: any) => {
-            const lead = this.parseJinaResult(item, params);
-            if (lead) leads.push(lead);
-          });
-        }
-      }
-
-      console.log(`Jina.ai extracted ${leads.length} leads`);
-      return leads;
+      console.log(`✅ Jina.ai extracted ${mapsLeads.length} leads from Maps`);
+      return mapsLeads.slice(0, params.maxResults || 10);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.warn('Jina.ai request timed out');
@@ -177,6 +214,127 @@ export class LeadScrapingService {
       }
       return [];
     }
+  }
+
+  /**
+   * Scraping Google Maps via Jina.ai (meilleur pour leads locaux)
+   */
+  private static async scrapeJinaGoogleMaps(
+    params: ScrapingParams,
+    maxResults: number
+  ): Promise<Partial<EnrichedLead>[]> {
+    try {
+      const searchQuery = `${params.query} ${params.city}`;
+      const googleMapsUrl = `google.com/maps/search/${encodeURIComponent(searchQuery)}`;
+
+      console.log(`🗺️ Jina.ai scraping Google Maps: ${googleMapsUrl}`);
+
+      const response = await fetchWithTimeout(
+        `${JINA_READER_URL}/${googleMapsUrl}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'X-Return-Format': 'json',
+          },
+        },
+        15000 // 15 secondes pour Maps
+      );
+
+      if (!response.ok) {
+        console.warn('Jina.ai Maps request failed:', response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      console.log('Jina.ai Maps raw response length:', JSON.stringify(data).length);
+
+      return this.parseJinaResponse(data, params, 'maps', maxResults);
+    } catch (error: any) {
+      console.warn('Jina.ai Maps scraping failed:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Scraping Google Search via Jina.ai (fallback)
+   */
+  private static async scrapeJinaGoogleSearch(
+    params: ScrapingParams,
+    maxResults: number
+  ): Promise<Partial<EnrichedLead>[]> {
+    try {
+      const searchQuery = `${params.query} ${params.city}`;
+      const googleSearchUrl = `google.com/search?q=${encodeURIComponent(searchQuery)}`;
+
+      console.log(`🔍 Jina.ai scraping Google Search: ${googleSearchUrl}`);
+
+      const response = await fetchWithTimeout(
+        `${JINA_READER_URL}/${googleSearchUrl}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'X-Return-Format': 'json',
+          },
+        },
+        10000 // 10 secondes pour Search
+      );
+
+      if (!response.ok) {
+        console.warn('Jina.ai Search request failed:', response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      console.log('Jina.ai Search raw response length:', JSON.stringify(data).length);
+
+      return this.parseJinaResponse(data, params, 'search', maxResults);
+    } catch (error: any) {
+      console.warn('Jina.ai Search scraping failed:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Parse la réponse Jina.ai (unifié pour Maps et Search)
+   */
+  private static parseJinaResponse(
+    data: any,
+    params: ScrapingParams,
+    source: 'maps' | 'search',
+    maxResults: number
+  ): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    if (!data || !data.data) {
+      console.warn('No data in Jina response');
+      return leads;
+    }
+
+    const content = data.data;
+
+    // Si le contenu est une chaîne (markdown)
+    if (typeof content === 'string') {
+      console.log(`📝 Parsing markdown content (${content.length} chars) from ${source}`);
+      const parsedLeads = this.parseJinaMarkdown(content, params);
+      leads.push(...parsedLeads);
+    }
+    // Si c'est un objet avec des résultats structurés
+    else if (content.results && Array.isArray(content.results)) {
+      content.results.slice(0, maxResults).forEach((item: any) => {
+        const lead = this.parseJinaResult(item, params);
+        if (lead) leads.push(lead);
+      });
+    }
+    // Si c'est directement un tableau
+    else if (Array.isArray(content)) {
+      content.slice(0, maxResults).forEach((item: any) => {
+        const lead = this.parseJinaResult(item, params);
+        if (lead) leads.push(lead);
+      });
+    }
+
+    console.log(`📊 Parsed ${leads.length} leads from ${source}`);
+    return leads;
   }
 
   /**
@@ -234,52 +392,132 @@ export class LeadScrapingService {
 
   /**
    * Parse le contenu markdown de Jina.ai pour extraire les leads
+   * Utilise plusieurs stratégies de parsing pour gérer différents formats
    */
   private static parseJinaMarkdown(
     content: string,
     params: ScrapingParams
   ): Partial<EnrichedLead>[] {
     const leads: Partial<EnrichedLead>[] = [];
+    const maxResults = params.maxResults || 10;
 
-    // Pattern pour extraire les informations de business
-    // Exemple: "Restaurant ABC ★ 4.5 (123) · Adresse · Téléphone"
-    const businessPattern = /([^\n]+?)\s*[★⭐]\s*([\d.]+)\s*\(([^\)]+)\)/g;
+    console.log(`🔍 Parsing strategies for markdown (${content.length} chars)`);
+
+    // STRATÉGIE 1: Pattern avec étoiles et rating
+    // Exemple: "Restaurant ABC ★ 4.5 (123)" ou "ABC · 4,5 ⭐ (123 avis)"
+    const strategy1Leads = this.parseMarkdownStrategy1(content, params);
+    if (strategy1Leads.length > 0) {
+      console.log(`✅ Strategy 1 (ratings): found ${strategy1Leads.length} leads`);
+      leads.push(...strategy1Leads);
+    }
+
+    // STRATÉGIE 2: Pattern avec adresses structurées
+    // Exemple: "Restaurant Name\nAdresse: 123 Rue...\nTéléphone: ..."
+    if (leads.length < maxResults) {
+      const strategy2Leads = this.parseMarkdownStrategy2(content, params);
+      if (strategy2Leads.length > 0) {
+        console.log(`✅ Strategy 2 (addresses): found ${strategy2Leads.length} leads`);
+        leads.push(...strategy2Leads);
+      }
+    }
+
+    // STRATÉGIE 3: Pattern Google Maps URLs
+    // Chercher les URLs Google Maps dans le contenu
+    if (leads.length < maxResults) {
+      const strategy3Leads = this.parseMarkdownStrategy3(content, params);
+      if (strategy3Leads.length > 0) {
+        console.log(`✅ Strategy 3 (maps URLs): found ${strategy3Leads.length} leads`);
+        leads.push(...strategy3Leads);
+      }
+    }
+
+    // STRATÉGIE 4: Pattern liste avec tirets ou numéros
+    // Exemple: "- Restaurant ABC" ou "1. Restaurant ABC"
+    if (leads.length < maxResults) {
+      const strategy4Leads = this.parseMarkdownStrategy4(content, params);
+      if (strategy4Leads.length > 0) {
+        console.log(`✅ Strategy 4 (lists): found ${strategy4Leads.length} leads`);
+        leads.push(...strategy4Leads);
+      }
+    }
+
+    // STRATÉGIE 5: Pattern simple (fallback)
+    // Lignes commençant par majuscule avec longueur raisonnable
+    if (leads.length < maxResults) {
+      const strategy5Leads = this.parseMarkdownStrategy5(content, params);
+      if (strategy5Leads.length > 0) {
+        console.log(`✅ Strategy 5 (simple): found ${strategy5Leads.length} leads`);
+        leads.push(...strategy5Leads);
+      }
+    }
+
+    // Dédupliquer par nom
+    const uniqueLeads = this.deduplicateLeadsByName(leads);
+    console.log(`📊 Total after deduplication: ${uniqueLeads.length} unique leads`);
+
+    return uniqueLeads.slice(0, maxResults);
+  }
+
+  /**
+   * Stratégie 1: Parse les entrées avec ratings (★ ou ⭐)
+   */
+  private static parseMarkdownStrategy1(content: string, params: ScrapingParams): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    // Pattern flexible pour ratings
+    // Match: "Nom ★ 4.5 (123)" ou "Nom · 4,5 ⭐ (123 avis)" ou "Nom - 4.5★ (123)"
+    const patterns = [
+      /([^\n]+?)\s*[★⭐]\s*([\d.,]+)\s*\(([^\)]+)\)/g,
+      /([^\n]+?)\s*[·•-]\s*([\d.,]+)\s*[★⭐]\s*\(([^\)]+)\)/g,
+      /([^\n]+?)\s*Rating:\s*([\d.,]+)[^\n]*\(([^\)]+)\)/gi,
+    ];
+
+    patterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(content)) !== null) {
+        const [_, name, rating, reviews] = match;
+
+        if (name && name.trim() && name.length > 3 && name.length < 150) {
+          const cleanName = name.trim().replace(/^[•\-\d.]+\s*/, ''); // Enlever puces/numéros
+
+          leads.push({
+            name: cleanName,
+            category: params.query,
+            city: params.city,
+            google_rating: parseFloat(rating.replace(',', '.')) || undefined,
+            google_reviews_count: parseInt(reviews.replace(/[,\s\D]/g, '')) || undefined,
+            source: 'jina',
+            tags: ['jina_search'],
+          });
+        }
+      }
+    });
+
+    return leads;
+  }
+
+  /**
+   * Stratégie 2: Parse les adresses structurées
+   */
+  private static parseMarkdownStrategy2(content: string, params: ScrapingParams): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    // Chercher des blocs avec nom + adresse
+    const blockPattern = /^([A-Z][^\n]{5,100})\s*\n.*(?:adresse|address|rue|avenue|boulevard)[:\s]+([^\n]+)/gim;
 
     let match;
-    while ((match = businessPattern.exec(content)) !== null) {
-      const [_, name, rating, reviews] = match;
+    while ((match = blockPattern.exec(content)) !== null) {
+      const [_, name, address] = match;
 
-      if (name && name.trim()) {
+      if (name && address) {
         leads.push({
           name: name.trim(),
           category: params.query,
           city: params.city,
-          google_rating: parseFloat(rating) || undefined,
-          google_reviews_count: parseInt(reviews.replace(/[,\s]/g, '')) || undefined,
+          address: address.trim(),
           source: 'jina',
           tags: ['jina_search'],
-        } as Partial<EnrichedLead>);
-      }
-    }
-
-    // Si aucun lead trouvé avec le pattern rating, essayer un pattern plus simple
-    if (leads.length === 0) {
-      const simplePattern = /^([A-Z][^\n]{10,100})$/gm;
-      let simpleMatch;
-      let count = 0;
-
-      while ((simpleMatch = simplePattern.exec(content)) !== null && count < (params.maxResults || 10)) {
-        const name = simpleMatch[1].trim();
-        if (name && !name.startsWith('http') && !name.includes('Google')) {
-          leads.push({
-            name,
-            category: params.query,
-            city: params.city,
-            source: 'jina',
-            tags: ['jina_search'],
-          } as Partial<EnrichedLead>);
-          count++;
-        }
+        });
       }
     }
 
@@ -287,14 +525,129 @@ export class LeadScrapingService {
   }
 
   /**
+   * Stratégie 3: Extraire depuis Google Maps URLs
+   */
+  private static parseMarkdownStrategy3(content: string, params: ScrapingParams): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    // Chercher les liens Google Maps avec noms de lieux
+    const mapsPattern = /\[([^\]]+)\]\(https:\/\/(?:www\.)?google\.com\/maps[^\)]+\)/g;
+
+    let match;
+    while ((match = mapsPattern.exec(content)) !== null) {
+      const [fullMatch, name] = match;
+      const url = fullMatch.match(/\((https:\/\/[^\)]+)\)/)?.[1];
+
+      if (name && name.length > 3 && name.length < 150) {
+        leads.push({
+          name: name.trim(),
+          category: params.query,
+          city: params.city,
+          google_maps_url: url,
+          source: 'jina',
+          tags: ['jina_maps'],
+        });
+      }
+    }
+
+    return leads;
+  }
+
+  /**
+   * Stratégie 4: Parse les listes à puces ou numérotées
+   */
+  private static parseMarkdownStrategy4(content: string, params: ScrapingParams): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    // Pattern pour listes: "- Item" ou "1. Item" ou "• Item"
+    const listPattern = /^[\s]*(?:[•\-*]|\d+\.)\s+([A-Z][^\n]{5,100})/gm;
+
+    let match;
+    while ((match = listPattern.exec(content)) !== null) {
+      const name = match[1].trim();
+
+      // Filtrer les titres/headers évidents
+      if (!name.match(/^(Google|Maps|Search|Results?|About|Contact|Menu)/i)) {
+        leads.push({
+          name,
+          category: params.query,
+          city: params.city,
+          source: 'jina',
+          tags: ['jina_search'],
+        });
+      }
+    }
+
+    return leads;
+  }
+
+  /**
+   * Stratégie 5: Pattern simple (fallback)
+   */
+  private static parseMarkdownStrategy5(content: string, params: ScrapingParams): Partial<EnrichedLead>[] {
+    const leads: Partial<EnrichedLead>[] = [];
+
+    // Chercher des lignes qui ressemblent à des noms de business
+    const simplePattern = /^([A-ZÀÂÄÆÇÉÈÊËÏÎÔŒÙÛÜŸ][^\n]{8,100})$/gm;
+
+    let match;
+    while ((match = simplePattern.exec(content)) !== null) {
+      const name = match[1].trim();
+
+      // Filtrer les patterns communs à éviter
+      const excludePatterns = [
+        /^https?:\/\//i,
+        /^(Google|Maps|Search|Results?|About|Contact|Menu|More|View|See|All)/i,
+        /^\d+\s*(km|meters|miles)/i,
+        /^[A-Z]{2,}$/,  // Tout en majuscules (souvent des labels)
+      ];
+
+      const shouldExclude = excludePatterns.some(pattern => pattern.test(name));
+
+      if (!shouldExclude) {
+        leads.push({
+          name,
+          category: params.query,
+          city: params.city,
+          source: 'jina',
+          tags: ['jina_search'],
+        });
+      }
+    }
+
+    return leads;
+  }
+
+  /**
+   * Déduplique les leads par nom (ignore la casse et caractères spéciaux)
+   */
+  private static deduplicateLeadsByName(leads: Partial<EnrichedLead>[]): Partial<EnrichedLead>[] {
+    const seen = new Set<string>();
+    const unique: Partial<EnrichedLead>[] = [];
+
+    leads.forEach(lead => {
+      const normalizedName = (lead.name || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+
+      if (normalizedName && !seen.has(normalizedName)) {
+        seen.add(normalizedName);
+        unique.push(lead);
+      }
+    });
+
+    return unique;
+  }
+
+  /**
    * Scraping avec N8N (utilise Apify en backend)
-   * Réutilise le workflow existant
+   * Optionnel - si échoue, le système fonctionne quand même avec Jina
    */
   private static async scrapeWithN8N(
     params: ScrapingParams
   ): Promise<Partial<EnrichedLead>[]> {
     try {
-      console.log('🤖 N8N/Apify scraping:', params);
+      console.log('🤖 N8N/Apify scraping (optional):', params);
 
       const response = await fetchWithTimeout(
         N8N_WEBHOOK_URL,
@@ -312,11 +665,11 @@ export class LeadScrapingService {
             includeSocial: true,
           }),
         },
-        30000 // 30 secondes pour N8N/Apify (peut être plus lent)
+        60000 // 60 secondes pour N8N/Apify (Apify peut être lent)
       );
 
       if (!response.ok) {
-        console.warn('N8N request failed:', response.status);
+        console.warn(`⚠️ N8N request failed with status ${response.status} - continuing with Jina only`);
         return [];
       }
 
@@ -326,7 +679,7 @@ export class LeadScrapingService {
       const data = Array.isArray(result) ? result[0] : result;
 
       if (!data.leads) {
-        console.warn('No leads in N8N response');
+        console.warn('⚠️ No leads in N8N response - continuing with Jina only');
         return [];
       }
 
@@ -338,7 +691,7 @@ export class LeadScrapingService {
           const leadsArray = JSON.parse(data.leads);
           parsedLeads = leadsArray.map((item: any) => item.json || item);
         } catch (parseError) {
-          console.error('Error parsing N8N leads:', parseError);
+          console.error('⚠️ Error parsing N8N leads - continuing with Jina only:', parseError);
           return [];
         }
       } else if (Array.isArray(data.leads)) {
@@ -383,13 +736,13 @@ export class LeadScrapingService {
         }
       );
 
-      console.log(`N8N extracted ${leads.length} leads`);
+      console.log(`✅ N8N extracted ${leads.length} leads`);
       return leads;
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.warn('N8N request timed out');
+        console.warn('⚠️ N8N request timed out after 60s - continuing with Jina only');
       } else {
-        console.error('Error scraping with N8N:', error);
+        console.warn('⚠️ N8N scraping failed - continuing with Jina only:', error.message);
       }
       return [];
     }
