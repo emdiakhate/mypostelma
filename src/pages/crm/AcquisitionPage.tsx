@@ -49,7 +49,7 @@ import { LeadScrapingService, ScrapingParams } from '@/services/leadScraping';
 import { useSectors, useSegments, useTags, useCRMLeads } from '@/hooks/useCRM';
 import { EnrichedLead } from '@/types/crm';
 import { toast } from 'sonner';
-import { QuotaDisplay } from '@/components/QuotaDisplay';
+import { SendMessageModal } from '@/components/leads/SendMessageModal';
 
 const AcquisitionPage: React.FC = () => {
   const { sectors } = useSectors();
@@ -75,6 +75,11 @@ const AcquisitionPage: React.FC = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedSectorId, setSelectedSectorId] = useState<string>('');
   const [selectedSegmentId, setSelectedSegmentId] = useState<string>('');
+  
+  // Modal de message
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [selectedLeadForMessage, setSelectedLeadForMessage] = useState<EnrichedLead | null>(null);
+  const [messageChannel, setMessageChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   // Filtrage des segments par secteur sélectionné
@@ -240,14 +245,11 @@ const AcquisitionPage: React.FC = () => {
       {/* Formulaire de recherche */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recherche de Leads</CardTitle>
-              <CardDescription>
-                Recherche hybride (Google Search + Google Maps) - Gratuit et illimité
-              </CardDescription>
-            </div>
-            <QuotaDisplay variant="compact" showOnlyType="lead_searches" />
+          <div>
+            <CardTitle>Recherche de Leads</CardTitle>
+            <CardDescription>
+              Recherche hybride (Google Search + Google Maps) - Gratuit et illimité
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -458,26 +460,33 @@ const AcquisitionPage: React.FC = () => {
                           <Phone className="w-3 h-3" />
                         </a>
                       )}
-                      {lead.whatsapp && (
-                        <a
-                          href={`https://wa.me/${lead.whatsapp.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {(lead.whatsapp || lead.phone) && (
+                        <button
                           className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 hover:bg-green-200 rounded text-xs transition-colors"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLeadForMessage(lead);
+                            setMessageChannel('whatsapp');
+                            setMessageModalOpen(true);
+                          }}
+                          title="Envoyer WhatsApp"
                         >
                           <MessageCircle className="w-3 h-3 text-green-700" />
-                        </a>
+                        </button>
                       )}
                       {lead.email && (
-                        <a
-                          href={`mailto:${lead.email}`}
+                        <button
                           className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded text-xs transition-colors"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLeadForMessage(lead);
+                            setMessageChannel('email');
+                            setMessageModalOpen(true);
+                          }}
                           title={lead.email}
                         >
                           <Mail className="w-3 h-3 text-blue-700" />
-                        </a>
+                        </button>
                       )}
                       {lead.website && (
                         <a
@@ -772,6 +781,25 @@ const AcquisitionPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de message */}
+      {selectedLeadForMessage && (
+        <SendMessageModal
+          open={messageModalOpen}
+          onClose={() => {
+            setMessageModalOpen(false);
+            setSelectedLeadForMessage(null);
+          }}
+          lead={{
+            name: selectedLeadForMessage.name,
+            phone: selectedLeadForMessage.whatsapp || selectedLeadForMessage.phone,
+            email: selectedLeadForMessage.email,
+            category: selectedLeadForMessage.category,
+            location: selectedLeadForMessage.city,
+          }}
+          channel={messageChannel}
+        />
+      )}
     </div>
   );
 };
