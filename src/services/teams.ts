@@ -175,25 +175,52 @@ export async function getTeamMembers(teamId: string): Promise<TeamMemberWithDeta
 export async function inviteTeamMember(
   payload: InviteTeamMemberPayload,
   invitedBy: string
-): Promise<TeamMember> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .insert({
+): Promise<any> {
+  // Use edge function to send invitation email
+  const { data, error } = await supabase.functions.invoke('send-team-invitation', {
+    body: {
       team_id: payload.team_id,
       email: payload.email,
       role: payload.role || 'member',
-      invited_by: invitedBy,
-      status: 'pending',
-    })
-    .select()
-    .single();
+    },
+  });
 
   if (error) throw error;
-  return {
-    ...data,
-    role: data.role as 'admin' | 'member',
-    status: data.status as 'pending' | 'accepted' | 'declined'
-  };
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to send invitation');
+  }
+
+  return data;
+}
+
+export async function resendTeamInvitation(
+  teamId: string,
+  email: string
+): Promise<any> {
+  // Delete existing pending invitation
+  await supabase
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('email', email)
+    .eq('status', 'pending');
+
+  // Send new invitation
+  const { data, error } = await supabase.functions.invoke('send-team-invitation', {
+    body: {
+      team_id: teamId,
+      email: email,
+    },
+  });
+
+  if (error) throw error;
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to resend invitation');
+  }
+
+  return data;
 }
 
 export async function removeTeamMember(memberId: string): Promise<void> {

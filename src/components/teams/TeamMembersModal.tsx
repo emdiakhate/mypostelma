@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Trash2, Mail, Loader2, Crown, User, CheckCircle, Clock } from 'lucide-react';
+import { X, UserPlus, Trash2, Mail, Loader2, Crown, User, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getTeamMembers, inviteTeamMember, removeTeamMember, updateTeamMemberRole } from '@/services/teams';
+import { getTeamMembers, inviteTeamMember, removeTeamMember, updateTeamMemberRole, resendTeamInvitation } from '@/services/teams';
 import type { Team } from '@/types/teams';
 import type { TeamMemberWithDetails } from '@/types/teams';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface Props {
   team: Team;
@@ -20,6 +21,7 @@ export default function TeamMembersModal({ team, onClose }: Props) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,13 +64,30 @@ export default function TeamMembersModal({ team, onClose }: Props) {
         user!.id
       );
 
+      toast.success('Invitation envoyée par email !');
       setInviteEmail('');
       await loadMembers();
     } catch (err: any) {
       console.error('Error inviting member:', err);
-      setError(err.message || 'Erreur lors de l\'invitation');
+      const errorMsg = err.message || 'Erreur lors de l\'invitation';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleResend = async (email: string) => {
+    try {
+      setResendingEmail(email);
+      await resendTeamInvitation(team.id, email);
+      toast.success('Invitation renvoyée par email !');
+      await loadMembers();
+    } catch (err: any) {
+      console.error('Error resending invitation:', err);
+      toast.error(err.message || 'Erreur lors du renvoi de l\'invitation');
+    } finally {
+      setResendingEmail(null);
     }
   };
 
@@ -227,14 +246,33 @@ export default function TeamMembersModal({ team, onClose }: Props) {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleToggleRole(member)}
-                      className="text-xs"
-                    >
-                      {member.role === 'admin' ? 'Retirer admin' : 'Promouvoir admin'}
-                    </Button>
+                    {member.status === 'pending' ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResend(member.email)}
+                        disabled={resendingEmail === member.email}
+                        className="text-xs"
+                      >
+                        {resendingEmail === member.email ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            Réinviter
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleRole(member)}
+                        className="text-xs"
+                      >
+                        {member.role === 'admin' ? 'Retirer admin' : 'Promouvoir admin'}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
