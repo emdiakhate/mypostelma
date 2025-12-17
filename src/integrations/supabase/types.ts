@@ -1866,11 +1866,13 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          invitation_token: string | null
           invited_at: string | null
           invited_by: string
           role: string | null
           status: string | null
           team_id: string
+          token_expires_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -1878,11 +1880,13 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          invitation_token?: string | null
           invited_at?: string | null
           invited_by: string
           role?: string | null
           status?: string | null
           team_id: string
+          token_expires_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1890,11 +1894,13 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          invitation_token?: string | null
           invited_at?: string | null
           invited_by?: string
           role?: string | null
           status?: string | null
           team_id?: string
+          token_expires_at?: string | null
           user_id?: string | null
         }
         Relationships: [
