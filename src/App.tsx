@@ -38,6 +38,7 @@ import ConfigPage from "./pages/crm/ConfigPage";
 import AcquisitionPage from "./pages/crm/AcquisitionPage";
 import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
 import CampaignsPage from "./pages/crm/CampaignsPage";
+import TemplatesPage from "./pages/crm/TemplatesPage";
 import OAuthCallback from "./pages/OAuthCallback";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ function MainLayout() {
         <Route path="/crm/acquisition" element={<AcquisitionPage />} />
         <Route path="/crm/leads" element={<CRMLeadsPage />} />
         <Route path="/crm/campaigns" element={<CampaignsPage />} />
+        <Route path="/crm/templates" element={<TemplatesPage />} />
 
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/creation" element={<CreationPage />} />
