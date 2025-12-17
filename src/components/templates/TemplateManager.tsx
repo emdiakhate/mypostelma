@@ -72,7 +72,7 @@ export function TemplateManager() {
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_templates')
         .select('*')
         .order('created_at', { ascending: false });
@@ -130,7 +130,7 @@ export function TemplateManager() {
 
       if (editingTemplate) {
         // Update existing template
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('user_templates')
           .update({
             name: formData.name,
@@ -147,7 +147,7 @@ export function TemplateManager() {
         toast.success('Template mis à jour avec succès');
       } else {
         // Create new template
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('user_templates')
           .insert({
             user_id: user.id,
@@ -176,7 +176,7 @@ export function TemplateManager() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce template ?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_templates')
         .delete()
         .eq('id', id);

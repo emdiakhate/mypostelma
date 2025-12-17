@@ -30,6 +30,14 @@ interface SendMessageModalProps {
   channel: 'whatsapp' | 'email';
 }
 
+interface UserTemplate {
+  id: string;
+  name: string;
+  category: string;
+  subject?: string;
+  content: string;
+}
+
 export function SendMessageModal({
   open,
   onClose,
@@ -40,7 +48,7 @@ export function SendMessageModal({
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [userTemplates, setUserTemplates] = useState<any[]>([]);
+  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
 
   // Load user templates
@@ -50,7 +58,7 @@ export function SendMessageModal({
 
   const loadUserTemplates = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_templates')
         .select('*')
         .eq('channel', channel)
@@ -78,13 +86,13 @@ export function SendMessageModal({
 
   // Variables disponibles pour le remplacement
   const variables = {
-    nom: lead.name || '',
-    entreprise: lead.name || '',
-    categorie: lead.category || '',
-    ville: lead.location?.split(',')[0] || '',
-    telephone: lead.phone || '',
-    email: lead.email || '',
-    mon_prenom: 'Adja', // Remplacer par le vrai prénom de l'utilisateur connecté
+    nom: lead?.name || '',
+    entreprise: lead?.name || '',
+    categorie: lead?.category || '',
+    ville: lead?.city || '',
+    telephone: lead?.phone || '',
+    email: lead?.email || '',
+    mon_prenom: 'Adja',
     mon_nom: 'Diakhate',
     mon_entreprise: 'Postelma',
     mon_telephone: '+33 6 12 34 56 78'
@@ -104,7 +112,7 @@ export function SendMessageModal({
         }
       }
     }
-  }, [selectedTemplateId, templates, channel]);
+  }, [selectedTemplateId, templates.length, channel]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -236,7 +244,7 @@ export function SendMessageModal({
             {channel === 'whatsapp' ? 'Envoyer un WhatsApp' : 'Envoyer un Email'}
           </DialogTitle>
           <DialogDescription>
-            Message pour <span className="font-semibold">{lead.name}</span>
+            Message pour <span className="font-semibold">{lead?.name}</span>
           </DialogDescription>
         </DialogHeader>
 
