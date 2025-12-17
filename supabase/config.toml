@@ -68,3 +68,11 @@ verify_jwt = true
 
 [functions.meta-oauth-callback]
 verify_jwt = true
+
+# Needed for browser CORS preflight (OPTIONS has no Authorization header)
+[functions.send-team-invitation]
+verify_jwt = false
+
+# Invitation acceptance supports users not logged in yet
+[functions.accept-team-invitation]
+verify_jwt = false
