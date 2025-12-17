@@ -66,7 +66,7 @@ const CRMLeadsPage: React.FC = () => {
   });
 
   // Charger les leads avec filtres
-  const { leads, loading, createLead, updateLeadStatus, deleteLead } = useCRMLeads(filters);
+  const { leads, loading, createLead, updateLead, updateLeadStatus, deleteLead, loadLeads } = useCRMLeads(filters);
 
   // Vue sélectionnée
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -580,6 +580,12 @@ const CRMLeadsPage: React.FC = () => {
               lead: selectedLead,
               channel: 'whatsapp',
             });
+            setSelectedLead(null);
+          }}
+          onUpdate={async (leadId, data) => {
+            await updateLead(leadId, data);
+            // Refresh to get updated lead data
+            await loadLeads();
             setSelectedLead(null);
           }}
         />
