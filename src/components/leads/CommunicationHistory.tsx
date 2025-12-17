@@ -33,7 +33,7 @@ export function CommunicationHistory({ leadId }: CommunicationHistoryProps) {
   const loadCommunicationHistory = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('communication_logs')
         .select('*')
         .eq('lead_id', leadId)

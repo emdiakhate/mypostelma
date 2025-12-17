@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      communication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          message: string
+          provider_response: Json | null
+          recipient: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          message: string
+          provider_response?: Json | null
+          recipient: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          message?: string
+          provider_response?: Json | null
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comparative_analysis: {
         Row: {
           analysis_date: string
@@ -2067,6 +2120,45 @@ export type Database = {
           user_id?: string
           week_end_date?: string
           week_start_date?: string
+        }
+        Relationships: []
+      }
+      user_templates: {
+        Row: {
+          category: string
+          channel: string
+          content: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          subject: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          channel: string
+          content: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          channel?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
