@@ -40,6 +40,7 @@ import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
 import CampaignsPage from "./pages/crm/CampaignsPage";
 import TemplatesPage from "./pages/crm/TemplatesPage";
 import OAuthCallback from "./pages/OAuthCallback";
+import AcceptInvitationPage from "./pages/AcceptInvitationPage";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ const ProtectedRoutes = () => {
       <Route path="/checkout" element={<CheckoutSimulation />} />
       <Route path="/checkout-success" element={<CheckoutSuccess />} />
       <Route path="/connecting-account" element={<ConnectingAccountPage />} />
+      <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
       
       {/* OAuth Callback Routes */}
       <Route path="/oauth/callback" element={<OAuthCallback />} />
