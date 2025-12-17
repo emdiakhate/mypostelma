@@ -47,6 +47,7 @@ import { EnrichedLead, LeadStatus, LeadFilters, LeadFormData } from '@/types/crm
 import { cn } from '@/lib/utils';
 import AddLeadModal from '@/components/crm/AddLeadModal';
 import ImportCSVModal from '@/components/crm/ImportCSVModal';
+import { SendMessageModal } from '@/components/leads/SendMessageModal';
 
 const CRMLeadsPage: React.FC = () => {
   const { getStatusColor, getStatusLabel, getStatusIcon } = useLeadStatusHelpers();
@@ -75,6 +76,15 @@ const CRMLeadsPage: React.FC = () => {
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [messageModal, setMessageModal] = useState<{
+    open: boolean;
+    lead: EnrichedLead | null;
+    channel: 'whatsapp' | 'email';
+  }>({
+    open: false,
+    lead: null,
+    channel: 'whatsapp',
+  });
 
   // Drag & Drop state
   const [draggedLead, setDraggedLead] = useState<EnrichedLead | null>(null);
@@ -465,7 +475,11 @@ const CRMLeadsPage: React.FC = () => {
                             className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(`mailto:${lead.email}`);
+                              setMessageModal({
+                                open: true,
+                                lead: lead,
+                                channel: 'email',
+                              });
                             }}
                           >
                             <Mail className="w-3 h-3" />
@@ -478,9 +492,11 @@ const CRMLeadsPage: React.FC = () => {
                             className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(
-                                `https://wa.me/${lead.whatsapp.replace(/\D/g, '')}`
-                              );
+                              setMessageModal({
+                                open: true,
+                                lead: lead,
+                                channel: 'whatsapp',
+                              });
                             }}
                           >
                             <MessageSquare className="w-3 h-3" />
@@ -589,6 +605,18 @@ const CRMLeadsPage: React.FC = () => {
         onClose={() => setShowImportModal(false)}
         onImport={handleImportLeads}
       />
+
+      {/* Send Message Modal (Email & WhatsApp) */}
+      {messageModal.lead && (
+        <SendMessageModal
+          open={messageModal.open}
+          onClose={() =>
+            setMessageModal({ open: false, lead: null, channel: 'whatsapp' })
+          }
+          lead={messageModal.lead}
+          channel={messageModal.channel}
+        />
+      )}
     </div>
   );
 };

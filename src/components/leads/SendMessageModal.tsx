@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/select';
 import { mockMessageTemplates, replaceVariables } from '@/data/mockMessageTemplates';
 import { toast } from 'sonner';
-import { Send, MessageCircle, Mail, Sparkles } from 'lucide-react';
+import { Send, MessageCircle, Mail, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface SendMessageModalProps {
   open: boolean;
@@ -29,15 +30,16 @@ interface SendMessageModalProps {
   channel: 'whatsapp' | 'email';
 }
 
-export function SendMessageModal({ 
-  open, 
-  onClose, 
-  lead, 
-  channel 
+export function SendMessageModal({
+  open,
+  onClose,
+  lead,
+  channel
 }: SendMessageModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   // Templates selon le canal
   const templates = mockMessageTemplates[channel];
@@ -72,7 +74,7 @@ export function SendMessageModal({
     }
   }, [selectedTemplateId, templates, channel]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!message.trim()) {
       toast.error('Le message ne peut pas être vide');
       return;
@@ -83,22 +85,68 @@ export function SendMessageModal({
       return;
     }
 
-    // Ouvrir WhatsApp ou Email
-    if (channel === 'whatsapp') {
-      const phoneNumber = lead.phone.replace(/[^0-9]/g, '');
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-      
-      toast.success('WhatsApp ouvert avec le message');
-    } else if (channel === 'email') {
-      const encodedSubject = encodeURIComponent(subject);
-      const encodedBody = encodeURIComponent(message);
-      window.open(`mailto:${lead.email}?subject=${encodedSubject}&body=${encodedBody}`, '_blank');
-      
-      toast.success('Client email ouvert');
-    }
+    setIsSending(true);
 
-    onClose();
+    try {
+      if (channel === 'whatsapp') {
+        // Get phone number - use whatsapp field first, then fallback to phone
+        const phoneNumber = (lead.whatsapp || lead.phone || '').replace(/[^0-9+]/g, '');
+
+        if (!phoneNumber) {
+          toast.error('Numéro WhatsApp non disponible pour ce lead');
+          return;
+        }
+
+        const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            lead_id: lead.id,
+            recipient: phoneNumber,
+            message: message,
+          },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data?.success) {
+          throw new Error(data?.error || 'Échec de l\'envoi WhatsApp');
+        }
+
+        toast.success('Message WhatsApp envoyé avec succès !');
+      } else if (channel === 'email') {
+        if (!lead.email) {
+          toast.error('Email non disponible pour ce lead');
+          return;
+        }
+
+        const { data, error } = await supabase.functions.invoke('send-email', {
+          body: {
+            lead_id: lead.id,
+            recipient: lead.email,
+            subject: subject,
+            message: message,
+          },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data?.success) {
+          throw new Error(data?.error || 'Échec de l\'envoi email');
+        }
+
+        toast.success('Email envoyé avec succès !');
+      }
+
+      onClose();
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast.error(error.message || 'Erreur lors de l\'envoi du message');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -182,12 +230,21 @@ export function SendMessageModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSending}>
             Annuler
           </Button>
-          <Button onClick={handleSend}>
-            <Send className="w-4 h-4 mr-2" />
-            Envoyer via {channel === 'whatsapp' ? 'WhatsApp' : 'Email'}
+          <Button onClick={handleSend} disabled={isSending}>
+            {isSending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Envoi en cours...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Envoyer via {channel === 'whatsapp' ? 'WhatsApp' : 'Email'}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
