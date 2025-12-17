@@ -21,7 +21,7 @@ import {
 import { mockMessageTemplates, replaceVariables } from '@/data/mockMessageTemplates';
 import { toast } from 'sonner';
 import { Send, MessageCircle, Mail, Sparkles, Loader2, Paperclip, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SendMessageModalProps {
   open: boolean;

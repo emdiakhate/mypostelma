@@ -94,7 +94,7 @@ export function LeadDetailModal({
                   <p className="text-xs text-muted-foreground">Localisation</p>
                   <p className="text-sm font-medium">
                     {lead.city}
-                    {lead.location && `, ${lead.location}`}
+                    {lead.address && `, ${lead.address}`}
                   </p>
                 </div>
               </div>
@@ -124,13 +124,13 @@ export function LeadDetailModal({
                 </div>
               )}
 
-              {/* Date de création */}
+              {/* Date d'ajout */}
               <div className="flex items-start gap-2">
                 <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Créé le</p>
+                  <p className="text-xs text-muted-foreground">Ajouté le</p>
                   <p className="text-sm font-medium">
-                    {format(new Date(lead.created_at), 'dd MMMM yyyy', { locale: fr })}
+                    {lead.added_at ? format(new Date(lead.added_at), 'dd MMMM yyyy', { locale: fr }) : '-'}
                   </p>
                 </div>
               </div>
