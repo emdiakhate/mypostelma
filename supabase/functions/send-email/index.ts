@@ -52,7 +52,7 @@ serve(async (req) => {
     const userId = user.id;
 
     // Parse request body
-    const { lead_id, recipient, subject, message } = await req.json();
+    const { lead_id, recipient, subject, message, attachments } = await req.json();
 
     // Validate input
     if (!lead_id || !recipient || !subject || !message) {
@@ -118,6 +118,20 @@ serve(async (req) => {
       );
     }
 
+    // Prepare email payload
+    const emailPayload: any = {
+      from: FROM_EMAIL,
+      to: [recipient],
+      subject: subject,
+      html: message.replace(/\n/g, '<br>'), // Convert line breaks to HTML
+      text: message,
+    };
+
+    // Add attachments if provided
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      emailPayload.attachments = attachments;
+    }
+
     // Send via Resend API
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -125,13 +139,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [recipient],
-        subject: subject,
-        html: message.replace(/\n/g, '<br>'), // Convert line breaks to HTML
-        text: message,
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     const resendData = await resendResponse.json();

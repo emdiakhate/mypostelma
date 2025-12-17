@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils';
 import AddLeadModal from '@/components/crm/AddLeadModal';
 import ImportCSVModal from '@/components/crm/ImportCSVModal';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
+import { LeadDetailModal } from '@/components/leads/LeadDetailModal';
 
 const CRMLeadsPage: React.FC = () => {
   const { getStatusColor, getStatusLabel, getStatusIcon } = useLeadStatusHelpers();
@@ -559,37 +560,29 @@ const CRMLeadsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Lead Detail Modal - TO DO: Create separate component */}
-      {/* For now, clicking a lead just logs it */}
+      {/* Lead Detail Modal with Communication History */}
       {selectedLead && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedLead(null)}
-        >
-          <Card className="max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{selectedLead.name}</CardTitle>
-                  <CardDescription>{selectedLead.city}</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedLead(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Détails complets du lead - À implémenter
-              </p>
-              {/* TO DO: Add full lead details */}
-            </CardContent>
-          </Card>
-        </div>
+        <LeadDetailModal
+          open={!!selectedLead}
+          onClose={() => setSelectedLead(null)}
+          lead={selectedLead}
+          onSendEmail={() => {
+            setMessageModal({
+              open: true,
+              lead: selectedLead,
+              channel: 'email',
+            });
+            setSelectedLead(null);
+          }}
+          onSendWhatsApp={() => {
+            setMessageModal({
+              open: true,
+              lead: selectedLead,
+              channel: 'whatsapp',
+            });
+            setSelectedLead(null);
+          }}
+        />
       )}
 
       {/* Add Lead Modal */}
