@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Calendar, Clock, FolderOpen, Target, Hash, LayoutDashboard, Users,
-  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2, MessageCircle, Link as LinkIcon, Bot, ChevronDown, ChevronRight, BarChart2, ListTodo, Send
+  BarChart3, Menu, UserPlus, Search, TrendingUp, Crown, Shield, Pencil, Eye, FileText, Settings, LogOut, Wand2, MessageCircle, Link as LinkIcon, Bot, ChevronDown, ChevronRight, BarChart2, ListTodo, Send, FileText as TemplateIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from './UserMenu';
@@ -56,6 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/app/crm/acquisition') return 'crm-acquisition';
     if (path === '/app/crm/leads') return 'crm-leads';
     if (path === '/app/crm/campaigns') return 'crm-campaigns';
+    if (path === '/app/crm/templates') return 'crm-templates';
     if (path.startsWith('/app/crm')) return 'crm'; // Fallback pour autres pages CRM
 
     return 'dashboard'; // Par défaut sur dashboard
@@ -173,6 +174,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'crm-acquisition', label: 'Acquisition', icon: Search, active: activePage === 'crm-acquisition', url: '/app/crm/acquisition' },
       { id: 'crm-leads', label: 'Leads', icon: UserPlus, active: activePage === 'crm-leads', url: '/app/crm/leads' },
       { id: 'crm-campaigns', label: 'Campagnes', icon: Send, active: activePage === 'crm-campaigns', url: '/app/crm/campaigns' },
+      { id: 'crm-templates', label: 'Templates', icon: FileText, active: activePage === 'crm-templates', url: '/app/crm/templates' },
       { id: 'crm-config', label: 'Configuration', icon: Settings, active: activePage === 'crm-config', url: '/app/crm/config' },
     ];
 
@@ -386,6 +388,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {activePage === 'crm-acquisition' && 'CRM IA - Acquisition'}
                 {activePage === 'crm-leads' && 'CRM IA - Leads'}
                 {activePage === 'crm-campaigns' && 'CRM IA - Campagnes'}
+                {activePage === 'crm-templates' && 'CRM IA - Templates'}
                 {activePage === 'crm' && 'CRM IA'}
               </h1>
             </div>
