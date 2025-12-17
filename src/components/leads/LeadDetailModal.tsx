@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,11 +19,13 @@ import {
   Star,
   Calendar,
   Tag,
+  Pencil,
 } from 'lucide-react';
-import { EnrichedLead } from '@/types/crm';
+import { EnrichedLead, LeadFormData } from '@/types/crm';
 import { CommunicationHistory } from './CommunicationHistory';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import EditLeadModal from '@/components/crm/EditLeadModal';
 
 interface LeadDetailModalProps {
   open: boolean;
@@ -30,6 +33,7 @@ interface LeadDetailModalProps {
   lead: EnrichedLead;
   onSendEmail?: () => void;
   onSendWhatsApp?: () => void;
+  onUpdate?: (leadId: string, data: Partial<LeadFormData>) => Promise<void>;
 }
 
 export function LeadDetailModal({
@@ -38,12 +42,29 @@ export function LeadDetailModal({
   lead,
   onSendEmail,
   onSendWhatsApp,
+  onUpdate,
 }: LeadDetailModalProps) {
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleUpdate = async (leadId: string, data: Partial<LeadFormData>) => {
+    if (onUpdate) {
+      await onUpdate(leadId, data);
+    }
+  };
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
+            {onUpdate && (
+              <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
+            )}
+          </div>
           <DialogDescription>
             Détails complets du lead et historique de communication
           </DialogDescription>
@@ -234,5 +255,14 @@ export function LeadDetailModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Edit Modal */}
+    <EditLeadModal
+      open={showEditModal}
+      onClose={() => setShowEditModal(false)}
+      lead={lead}
+      onSubmit={handleUpdate}
+    />
+    </>
   );
 }

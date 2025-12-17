@@ -1,9 +1,9 @@
 /**
- * Modal pour ajouter manuellement un lead
+ * Modal pour modifier un lead existant
  */
 
-import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,17 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LeadFormData, LeadStatus } from '@/types/crm';
+import { LeadFormData, LeadStatus, EnrichedLead } from '@/types/crm';
 import { useSectors, useSegments } from '@/hooks/useCRM';
 import { toast } from 'sonner';
 
-interface AddLeadModalProps {
+interface EditLeadModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: LeadFormData) => Promise<void>;
+  lead: EnrichedLead;
+  onSubmit: (leadId: string, data: Partial<LeadFormData>) => Promise<void>;
 }
 
-const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) => {
+const EditLeadModal: React.FC<EditLeadModalProps> = ({ open, onClose, lead, onSubmit }) => {
   const { sectors } = useSectors();
   const { segments } = useSegments();
 
@@ -65,6 +66,39 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
   const [loading, setLoading] = useState(false);
 
+  // Initialiser le formulaire avec les données du lead
+  useEffect(() => {
+    if (lead) {
+      const socialMedia = lead.social_media as { instagram?: string; facebook?: string; linkedin?: string; twitter?: string } || {};
+      setFormData({
+        name: lead.name || '',
+        address: lead.address || '',
+        city: lead.city || '',
+        postal_code: lead.postal_code || '',
+        phone: lead.phone || '',
+        whatsapp: lead.whatsapp || '',
+        email: lead.email || '',
+        website: lead.website || '',
+        sector_id: lead.sector_id || undefined,
+        segment_id: lead.segment_id || undefined,
+        social_media: {
+          instagram: socialMedia.instagram || '',
+          facebook: socialMedia.facebook || '',
+          linkedin: socialMedia.linkedin || '',
+          twitter: socialMedia.twitter || '',
+        },
+        google_rating: lead.google_rating || undefined,
+        google_reviews_count: lead.google_reviews_count || undefined,
+        google_maps_url: lead.google_maps_url || '',
+        notes: lead.notes || '',
+        tags: lead.tags || [],
+        status: lead.status || 'new',
+        score: lead.score || undefined,
+        source: lead.source || 'manual',
+      });
+    }
+  }, [lead]);
+
   const handleChange = (field: keyof LeadFormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -93,38 +127,11 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
     setLoading(true);
     try {
-      await onSubmit(formData);
-      toast.success('Lead ajouté avec succès');
+      await onSubmit(lead.id, formData);
+      toast.success('Lead mis à jour avec succès');
       onClose();
-      // Reset form
-      setFormData({
-        name: '',
-        address: '',
-        city: '',
-        postal_code: '',
-        phone: '',
-        whatsapp: '',
-        email: '',
-        website: '',
-        sector_id: undefined,
-        segment_id: undefined,
-        social_media: {
-          instagram: '',
-          facebook: '',
-          linkedin: '',
-          twitter: '',
-        },
-        google_rating: undefined,
-        google_reviews_count: undefined,
-        google_maps_url: '',
-        notes: '',
-        tags: [],
-        status: 'new',
-        score: undefined,
-        source: 'manual',
-      });
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de l\'ajout du lead');
+      toast.error(error.message || 'Erreur lors de la mise à jour du lead');
     } finally {
       setLoading(false);
     }
@@ -139,16 +146,16 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Ajouter un Lead</DialogTitle>
+          <DialogTitle>Modifier le Lead</DialogTitle>
           <DialogDescription>
-            Remplissez les informations du nouveau lead. Les champs marqués * sont obligatoires.
+            Modifiez les informations du lead. Les champs marqués * sont obligatoires.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informations de base */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Informations de base</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Informations de base</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -168,7 +175,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
                   value={formData.sector_id || 'none'}
                   onValueChange={(value) => {
                     handleChange('sector_id', value === 'none' ? undefined : value);
-                    handleChange('segment_id', undefined); // Reset segment
+                    handleChange('segment_id', undefined);
                   }}
                 >
                   <SelectTrigger>
@@ -210,7 +217,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
           {/* Localisation */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Localisation</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Localisation</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -259,7 +266,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
           {/* Contact */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Contact</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Contact</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -310,7 +317,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
           {/* Réseaux sociaux */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Réseaux Sociaux</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Réseaux Sociaux</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -357,7 +364,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
           {/* Google Business */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Google Business</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Google Business</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -390,7 +397,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
           {/* CRM */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">CRM</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">CRM</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -444,10 +451,10 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Ajout en cours...' : (
+              {loading ? 'Enregistrement...' : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Ajouter le Lead
+                  Enregistrer
                 </>
               )}
             </Button>
@@ -458,4 +465,4 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
   );
 };
 
-export default AddLeadModal;
+export default EditLeadModal;
