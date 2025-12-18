@@ -2288,6 +2288,28 @@ export type Database = {
           name: string | null
           total_posts_tracked: number | null
         }
+        Insert: {
+          avg_engagement_rate?: never
+          facebook_likes?: never
+          id?: string | null
+          industry?: string | null
+          instagram_followers?: never
+          last_analyzed_at?: string | null
+          linkedin_followers?: never
+          name?: string | null
+          total_posts_tracked?: never
+        }
+        Update: {
+          avg_engagement_rate?: never
+          facebook_likes?: never
+          id?: string | null
+          industry?: string | null
+          instagram_followers?: never
+          last_analyzed_at?: string | null
+          linkedin_followers?: never
+          name?: string | null
+          total_posts_tracked?: never
+        }
         Relationships: []
       }
       competitor_latest_analysis: {
@@ -2329,7 +2351,6 @@ export type Database = {
         Row: {
           account_name: string | null
           avatar_url: string | null
-          config: Json | null
           connected_at: string | null
           error_message: string | null
           id: string | null
@@ -2345,7 +2366,6 @@ export type Database = {
         Insert: {
           account_name?: string | null
           avatar_url?: string | null
-          config?: Json | null
           connected_at?: string | null
           error_message?: string | null
           id?: string | null
@@ -2361,7 +2381,6 @@ export type Database = {
         Update: {
           account_name?: string | null
           avatar_url?: string | null
-          config?: Json | null
           connected_at?: string | null
           error_message?: string | null
           id?: string | null
@@ -2378,7 +2397,6 @@ export type Database = {
       }
       connected_accounts_with_stats: {
         Row: {
-          access_token: string | null
           account_name: string | null
           active_conversations: number | null
           avatar_url: string | null
@@ -2391,12 +2409,49 @@ export type Database = {
           messages_sent: number | null
           platform: string | null
           platform_account_id: string | null
-          refresh_token: string | null
           status: string | null
           token_expires_at: string | null
           unread_conversations: number | null
           updated_at: string | null
           user_id: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          active_conversations?: never
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string | null
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform?: string | null
+          platform_account_id?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+          unread_conversations?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          active_conversations?: never
+          avatar_url?: string | null
+          config?: Json | null
+          connected_at?: string | null
+          error_message?: string | null
+          id?: string | null
+          last_sync_at?: string | null
+          messages_received?: number | null
+          messages_sent?: number | null
+          platform?: string | null
+          platform_account_id?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+          unread_conversations?: never
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2467,7 +2522,7 @@ export type Database = {
           sentiment: string | null
           status: string | null
           tags: string[] | null
-          teams: Json[] | null
+          teams: string[] | null
           updated_at: string | null
           user_id: string | null
         }
@@ -2566,6 +2621,32 @@ export type Database = {
           name: string | null
           updated_at: string | null
           user_id: string | null
+        }
+        Insert: {
+          active_members?: never
+          assigned_conversations?: never
+          color?: string | null
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          member_count?: number | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active_members?: never
+          assigned_conversations?: never
+          color?: string | null
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          member_count?: number | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
