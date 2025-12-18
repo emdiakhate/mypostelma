@@ -30,7 +30,6 @@ import CheckoutSimulation from "./pages/CheckoutSimulation";
 import ConnectSocialAccounts from "./pages/ConnectSocialAccounts";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import ConnectingAccountPage from "./pages/ConnectingAccountPage";
-import DialogTestPage from "./pages/DialogTestPage";
 import InboxPage from "./pages/InboxPage";
 import ConnectedAccountsPage from "./pages/ConnectedAccountsPage";
 import TeamsPage from "./pages/TeamsPage";
@@ -77,7 +76,6 @@ function MainLayout() {
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/connect-accounts" element={<ConnectSocialAccounts />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/dialog-test" element={<DialogTestPage />} />
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
