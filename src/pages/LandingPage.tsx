@@ -10,7 +10,7 @@ import {
   MessageSquare, TrendingUp, Target, Globe, Sparkles,
   Instagram, Linkedin, Twitter, Maximize
 } from 'lucide-react';
-import heroImage from '@/assets/hero-dashboard-new.png';
+import heroImage from '@/assets/dashboard-preview.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -272,14 +272,14 @@ const LandingPage: React.FC = () => {
                   asChild
                 >
                   <Link to="/app/calendar">
-                    Démarrer gratuitement
+                    Démarrer
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Link>
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 backdrop-blur-sm"
+                  className="border-2 border-white bg-white/10 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 backdrop-blur-sm"
                 >
                   <Play className="mr-2 w-4 h-4" />
                   Demander une démo
@@ -536,11 +536,18 @@ const LandingPage: React.FC = () => {
                 features: ['Vérification email', 'Rôles & permissions', 'Quotas beta testeurs', 'Audit trail']
               },
               {
-                icon: <Globe className="w-8 h-8 text-teal-600" />,
+                icon: <MessageSquare className="w-8 h-8 text-teal-600" />,
                 iconBg: "bg-teal-100",
-                title: 'Connexion Upload-Post',
-                description: 'Intégration native avec Upload-Post pour publication directe multi-plateformes',
-                features: ['Publication instantanée', 'Multi-comptes', 'Analytics intégrées', 'Gestion automatique']
+                title: 'Messagerie Unifiée',
+                description: 'Gérez tous vos messages depuis une seule interface: WhatsApp, Telegram, Gmail et Outlook',
+                features: ['Boîte de réception unifiée', 'Réponses rapides', 'Routage IA', 'Pièces jointes']
+              },
+              {
+                icon: <Users className="w-8 h-8 text-orange-600" />,
+                iconBg: "bg-orange-100",
+                title: 'CRM Intégré',
+                description: 'Gérez vos leads et clients avec un CRM puissant intégré à votre workflow social',
+                features: ['Gestion des leads', 'Campagnes email/WhatsApp', 'Segments & tags', 'Historique complet']
               },
               {
                 icon: <Target className="w-8 h-8 text-red-600" />,
