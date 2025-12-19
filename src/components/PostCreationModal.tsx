@@ -43,7 +43,10 @@ interface PreviewSectionProps {
   onPreviewChange: (platform: string) => void;
   content: string;
   selectedImages: string[];
+  selectedVideo: string | null;
   generatedCaptions: Record<string, string> | null;
+  firstComments: Record<string, string>;
+  onFirstCommentChange: (platform: string, comment: string) => void;
 }
 
 const PreviewSection = memo<PreviewSectionProps>(({ 
@@ -51,8 +54,11 @@ const PreviewSection = memo<PreviewSectionProps>(({
   activePreview, 
   onPreviewChange, 
   content, 
-  selectedImages, 
-  generatedCaptions 
+  selectedImages,
+  selectedVideo,
+  generatedCaptions,
+  firstComments,
+  onFirstCommentChange
 }) => {
   const { currentUser } = useAuth();
   const [profileName, setProfileName] = useState(currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur');
@@ -92,10 +98,11 @@ const PreviewSection = memo<PreviewSectionProps>(({
     
     const previewProps = {
       content: displayContent,
-      image: selectedImages.length > 0 ? selectedImages : '',
+      image: selectedVideo || (selectedImages.length > 0 ? selectedImages : ''),
       author: profileName,
       profilePicture,
-      timestamp: '2h'
+      timestamp: '2h',
+      isVideo: !!selectedVideo
     };
 
     switch (activePreview) {
@@ -144,9 +151,25 @@ const PreviewSection = memo<PreviewSectionProps>(({
       )}
 
       {selectedPlatforms.length > 0 ? (
-        <div className="h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="h-[calc(100vh-250px)] overflow-y-auto">
           <div className="scale-[0.9] origin-top-left">
             {renderPreview()}
+          </div>
+          
+          {/* Section Premier Commentaire */}
+          <div className="mt-4 p-3 bg-white border rounded-lg">
+            <label className="block text-sm font-medium mb-2">
+              💬 Premier commentaire ({PLATFORMS.find(p => p.id === activePreview)?.name || activePreview})
+            </label>
+            <Textarea
+              value={firstComments[activePreview] || ''}
+              onChange={(e) => onFirstCommentChange(activePreview, e.target.value)}
+              placeholder="Ajoutez un premier commentaire pour ce réseau (optionnel)..."
+              className="min-h-16 resize-none text-sm"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Ce commentaire sera automatiquement publié en réponse à votre post
+            </p>
           </div>
         </div>
       ) : (
@@ -219,6 +242,9 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   const [videoImage, setVideoImage] = useState<File | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  
+  // État pour les premiers commentaires par plateforme
+  const [firstComments, setFirstComments] = useState<Record<string, string>>({});
 
   // Récupérer les images depuis localStorage au montage du composant
   useEffect(() => {
@@ -553,12 +579,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     const message = generatedCaptions?.[selectedPlatforms[0]] || content;
 
     try {
-      // Publier via l'API Meta
+      // Publier via l'API Upload-Post avec premiers commentaires
       const { results } = await publishToMultipleAccounts(
         selectedAccountsInfo,
         message,
         selectedImages,
-        generatedVideoUrl || undefined
+        generatedVideoUrl || undefined,
+        firstComments
       );
 
       // Vérifier les résultats
@@ -628,7 +655,8 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
     onSave,
     campaign,
     generatedVideoUrl,
-    initialData
+    initialData,
+    firstComments
   ]);
 
   if (!isOpen) return null;
@@ -836,7 +864,10 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           onPreviewChange={handlePreviewChange}
           content={content}
           selectedImages={selectedImages}
+          selectedVideo={generatedVideoUrl}
           generatedCaptions={generatedCaptions}
+          firstComments={firstComments}
+          onFirstCommentChange={(platform, comment) => setFirstComments(prev => ({ ...prev, [platform]: comment }))}
         />
       </div>
     </div>
