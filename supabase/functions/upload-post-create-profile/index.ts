@@ -76,6 +76,19 @@ serve(async (req) => {
     const data = await response.json();
     logStep('Upload-Post API response', { status: response.status, ok: response.ok });
 
+    // Handle 409 Conflict as success (profile already exists)
+    if (response.status === 409) {
+      logStep('Profile already exists, treating as success', { username: profileUsername });
+      return new Response(JSON.stringify({ 
+        success: true, 
+        profile: { username: profileUsername },
+        alreadyExists: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
     if (!response.ok) {
       logStep('Upload-Post API error', { data });
       const errorMessage = data.detail || data.message || 'Failed to create profile';
@@ -85,7 +98,7 @@ serve(async (req) => {
         error: errorMessage,
         statusCode: response.status
       }), {
-        status: response.status, // Preserve original status code
+        status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
