@@ -15,6 +15,7 @@ export interface PublishParams {
   video?: string;
   scheduled_date?: string; // ISO-8601 format
   platform_specific_params?: Record<string, any>;
+  first_comments?: Record<string, string>; // Premier commentaire par plateforme
 }
 
 export interface PublishResponse {

@@ -34,6 +34,7 @@ interface PublishRequest {
   video?: string;
   scheduled_date?: string; // ISO-8601 format
   platform_specific_params?: Record<string, any>;
+  first_comments?: Record<string, string>; // Premier commentaire par plateforme
 }
 
 serve(async (req) => {
@@ -131,6 +132,17 @@ serve(async (req) => {
           value.forEach(v => formData.append(`${key}[]`, v));
         } else {
           formData.append(key, String(value));
+        }
+      }
+    }
+    
+    // Ajouter les premiers commentaires par plateforme si présents
+    if (body.first_comments) {
+      for (const [platform, comment] of Object.entries(body.first_comments)) {
+        if (comment && comment.trim()) {
+          // L'API Upload Post utilise le format: platform_first_comment
+          formData.append(`${platform}_first_comment`, comment);
+          logStep('Adding first comment', { platform, comment: comment.substring(0, 50) + '...' });
         }
       }
     }

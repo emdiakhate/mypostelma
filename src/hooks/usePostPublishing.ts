@@ -21,7 +21,7 @@ interface UsePostPublishingResult {
     postId?: string;
     error?: string;
   }>;
-  publishToMultipleAccounts: (accounts: { accountId: string; platform: string }[], message: string, images?: string[], video?: string) => Promise<{
+  publishToMultipleAccounts: (accounts: { accountId: string; platform: string }[], message: string, images?: string[], video?: string, firstComments?: Record<string, string>) => Promise<{
     results: { accountId: string; platform: string; success: boolean; postId?: string; error?: string }[];
   }>;
 }
@@ -84,7 +84,8 @@ export const usePostPublishing = (): UsePostPublishingResult => {
     accounts: { accountId: string; platform: string }[],
     message: string,
     images?: string[],
-    video?: string
+    video?: string,
+    firstComments?: Record<string, string>
   ) => {
     setIsPublishing(true);
 
@@ -128,7 +129,8 @@ export const usePostPublishing = (): UsePostPublishingResult => {
         title: message,
         media_type: mediaType,
         photos: images,
-        video: video
+        video: video,
+        first_comments: firstComments
       });
 
       if (!response.success) {
