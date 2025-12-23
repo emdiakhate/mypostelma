@@ -45,8 +45,6 @@ interface PreviewSectionProps {
   selectedImages: string[];
   selectedVideo: string | null;
   generatedCaptions: Record<string, string> | null;
-  firstComments: Record<string, string>;
-  onFirstCommentChange: (platform: string, comment: string) => void;
 }
 
 const PreviewSection = memo<PreviewSectionProps>(({ 
@@ -56,9 +54,7 @@ const PreviewSection = memo<PreviewSectionProps>(({
   content, 
   selectedImages,
   selectedVideo,
-  generatedCaptions,
-  firstComments,
-  onFirstCommentChange
+  generatedCaptions
 }) => {
   const { currentUser } = useAuth();
   const [profileName, setProfileName] = useState(currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Utilisateur');
@@ -154,22 +150,6 @@ const PreviewSection = memo<PreviewSectionProps>(({
         <div className="h-[calc(100vh-250px)] overflow-y-auto">
           <div className="scale-[0.9] origin-top-left">
             {renderPreview()}
-          </div>
-          
-          {/* Section Premier Commentaire */}
-          <div className="mt-4 p-3 bg-white border rounded-lg">
-            <label className="block text-sm font-medium mb-2">
-              💬 Premier commentaire ({PLATFORMS.find(p => p.id === activePreview)?.name || activePreview})
-            </label>
-            <Textarea
-              value={firstComments[activePreview] || ''}
-              onChange={(e) => onFirstCommentChange(activePreview, e.target.value)}
-              placeholder="Ajoutez un premier commentaire pour ce réseau (optionnel)..."
-              className="min-h-16 resize-none text-sm"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Ce commentaire sera automatiquement publié en réponse à votre post
-            </p>
           </div>
         </div>
       ) : (
@@ -866,8 +846,6 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           selectedImages={selectedImages}
           selectedVideo={generatedVideoUrl}
           generatedCaptions={generatedCaptions}
-          firstComments={firstComments}
-          onFirstCommentChange={(platform, comment) => setFirstComments(prev => ({ ...prev, [platform]: comment }))}
         />
       </div>
     </div>

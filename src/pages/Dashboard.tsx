@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUploadPost } from '@/hooks/useUploadPost';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PLATFORMS } from '@/config/platforms';
-import { UserSentimentWidget } from '@/components/dashboard/UserSentimentWidget';
+import { LeadsTrendWidget } from '@/components/dashboard/LeadsTrendWidget';
 
 const Dashboard = () => {
   const { connectedAccounts, loading: accountsLoading, profile } = useUploadPost();
@@ -112,8 +112,8 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* User Sentiment Analysis Widget */}
-      <UserSentimentWidget />
+      {/* CRM Leads Trend Widget */}
+      <LeadsTrendWidget />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
