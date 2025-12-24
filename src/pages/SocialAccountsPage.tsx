@@ -1,6 +1,6 @@
 /**
  * Page de gestion des comptes sociaux
- * Utilise Upload-Post pour connecter tous les réseaux sociaux
+ * Utilise Upload-Post pour tous les réseaux SAUF Facebook qui utilise l'API Meta
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -27,6 +27,10 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import type { SocialPlatform } from '@/types/uploadPost.types';
+import { supabase } from '@/integrations/supabase/client';
+
+// Flag pour utiliser Meta API pour Facebook au lieu de Upload Post
+const USE_META_FOR_FACEBOOK = true;
 
 // Icône TikTok personnalisée
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -104,6 +108,30 @@ const AVAILABLE_PLATFORMS: {
 export default function SocialAccountsPage() {
   const { profile, connectedAccounts, loading, error, refreshProfile, connectAccounts } = useUploadPost();
   const [connecting, setConnecting] = useState(false);
+  const [metaAccounts, setMetaAccounts] = useState<any[]>([]);
+  const [loadingMeta, setLoadingMeta] = useState(false);
+
+  // Charger les comptes connectés via Meta API
+  const fetchMetaAccounts = async () => {
+    try {
+      setLoadingMeta(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('connected_accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('platform', ['facebook', 'instagram']);
+
+      if (error) throw error;
+      setMetaAccounts(data || []);
+    } catch (err) {
+      console.error('Error fetching Meta accounts:', err);
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
 
   // Vérifier si l'utilisateur revient après connexion
   useEffect(() => {
@@ -117,20 +145,61 @@ export default function SocialAccountsPage() {
       
       toast.success('🎉 Compte connecté avec succès !');
       refreshProfile();
+      fetchMetaAccounts();
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  // Créer un map des comptes connectés par plateforme
+  // Charger les comptes Meta au démarrage
+  useEffect(() => {
+    fetchMetaAccounts();
+  }, []);
+
+  // Créer un map des comptes connectés par plateforme (Upload Post)
   const connectedMap = useMemo(() => {
     const map = new Map<string, typeof connectedAccounts[0]>();
     connectedAccounts.forEach(account => {
+      // Ne pas inclure Facebook/Instagram d'Upload Post si on utilise Meta API
+      if (USE_META_FOR_FACEBOOK && (account.platform === 'facebook' || account.platform === 'instagram')) {
+        return;
+      }
       map.set(account.platform, account);
     });
     return map;
   }, [connectedAccounts]);
+
+  // Map des comptes Meta
+  const metaConnectedMap = useMemo(() => {
+    const map = new Map<string, any>();
+    metaAccounts.forEach(account => {
+      map.set(account.platform, account);
+    });
+    return map;
+  }, [metaAccounts]);
+
+  // Connexion via Meta OAuth pour Facebook/Instagram
+  const handleConnectMeta = async (platform: 'facebook' | 'instagram') => {
+    try {
+      setConnecting(true);
+      
+      // Récupérer la configuration Meta OAuth
+      const { data, error } = await supabase.functions.invoke('get-meta-oauth-config', {
+        body: { platform }
+      });
+
+      if (error) throw error;
+      if (!data?.authUrl) throw new Error('URL de connexion non disponible');
+
+      // Rediriger vers la page d'autorisation Meta
+      window.location.href = data.authUrl;
+    } catch (err: any) {
+      console.error('Meta OAuth error:', err);
+      toast.error(err.message || 'Erreur lors de la connexion Meta');
+      setConnecting(false);
+    }
+  };
 
   const handleConnectAccounts = async () => {
     try {
@@ -145,6 +214,17 @@ export default function SocialAccountsPage() {
       toast.error(err.message || 'Erreur lors de la connexion');
     } finally {
       setConnecting(false);
+    }
+  };
+
+  // Gérer le clic sur une plateforme
+  const handlePlatformClick = (platformId: string) => {
+    if (USE_META_FOR_FACEBOOK && platformId === 'facebook') {
+      handleConnectMeta('facebook');
+    } else if (USE_META_FOR_FACEBOOK && platformId === 'instagram') {
+      handleConnectMeta('instagram');
+    } else {
+      handleConnectAccounts();
     }
   };
 
@@ -201,12 +281,12 @@ export default function SocialAccountsPage() {
               className="text-sm px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20"
             >
               <Check className="w-4 h-4 mr-2 text-green-600" />
-              {connectedMap.size} / {AVAILABLE_PLATFORMS.length} connecté(s)
+              {connectedMap.size + metaConnectedMap.size} / {AVAILABLE_PLATFORMS.length} connecté(s)
             </Badge>
           </div>
         </div>
 
-        {/* Bouton principal de connexion */}
+        {/* Bouton principal de connexion (pour autres plateformes) */}
         <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -241,8 +321,14 @@ export default function SocialAccountsPage() {
         {/* Grid des plateformes */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {AVAILABLE_PLATFORMS.map((platform) => {
-            const isConnected = connectedMap.has(platform.id);
-            const accountData = connectedMap.get(platform.id);
+            // Vérifier si c'est un compte Meta ou Upload Post
+            const isMetaPlatform = USE_META_FOR_FACEBOOK && (platform.id === 'facebook' || platform.id === 'instagram');
+            const isConnected = isMetaPlatform 
+              ? metaConnectedMap.has(platform.id) 
+              : connectedMap.has(platform.id);
+            const accountData = isMetaPlatform 
+              ? metaConnectedMap.get(platform.id) 
+              : connectedMap.get(platform.id);
             const Icon = platform.icon;
 
             return (
@@ -253,7 +339,7 @@ export default function SocialAccountsPage() {
                       "rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer",
                       isConnected && "border-green-500/50 shadow-green-100 dark:shadow-green-900/20"
                     )}
-                    onClick={!isConnected ? handleConnectAccounts : undefined}
+                    onClick={!isConnected ? () => handlePlatformClick(platform.id) : undefined}
                   >
                     <CardContent className="p-6">
                       {isConnected && accountData ? (
@@ -266,16 +352,26 @@ export default function SocialAccountsPage() {
                             )}>
                               <Icon className="w-5 h-5 text-white" />
                             </div>
-                            <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                              <Check className="w-3 h-3 mr-1" />
-                              Connecté
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              {isMetaPlatform && (
+                                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                  Meta API
+                                </Badge>
+                              )}
+                              <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                                <Check className="w-3 h-3 mr-1" />
+                                Connecté
+                              </Badge>
+                            </div>
                           </div>
 
                           <div className="flex flex-col items-center text-center space-y-3 py-4">
                             <Avatar className="w-16 h-16 border-4 border-white shadow-lg">
-                              {accountData.social_images ? (
-                                <AvatarImage src={accountData.social_images} alt={accountData.display_name} />
+                              {(isMetaPlatform ? accountData.avatar_url : accountData.social_images) ? (
+                                <AvatarImage 
+                                  src={isMetaPlatform ? accountData.avatar_url : accountData.social_images} 
+                                  alt={isMetaPlatform ? accountData.account_name : accountData.display_name} 
+                                />
                               ) : (
                                 <AvatarFallback className={platform.bgColor}>
                                   <Icon className="w-8 h-8 text-white" />
@@ -285,9 +381,9 @@ export default function SocialAccountsPage() {
                             
                             <div>
                               <p className="font-bold text-lg">
-                                {accountData.display_name || accountData.username}
+                                {isMetaPlatform ? accountData.account_name : (accountData.display_name || accountData.username)}
                               </p>
-                              {accountData.username && (
+                              {!isMetaPlatform && accountData.username && (
                                 <p className="text-sm text-muted-foreground">
                                   @{accountData.username}
                                 </p>
@@ -327,7 +423,7 @@ export default function SocialAccountsPage() {
                             className="w-full"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleConnectAccounts();
+                              handlePlatformClick(platform.id);
                             }}
                           >
                             <Link2 className="mr-2 h-4 w-4" />
