@@ -1,9 +1,11 @@
 /**
  * Composant pour sélectionner les comptes connectés
- * Utilise Upload-Post pour afficher les comptes connectés
+ * Utilise Upload-Post pour les plateformes tierces ET Meta API pour Facebook/Instagram
+ * 
+ * Configuration: USE_META_FOR_FACEBOOK dans usePostPublishing.ts
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useUploadPost } from '@/hooks/useUploadPost';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,6 +17,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+
+// =============================================================================
+// CONFIGURATION: Activer Meta API pour Facebook (doit correspondre à usePostPublishing.ts)
+// =============================================================================
+const USE_META_FOR_FACEBOOK = true;
 
 // Custom TikTok icon
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -45,6 +53,14 @@ interface ConnectedAccountsSelectorProps {
   videoUrl?: string | null;
 }
 
+interface MetaConnectedAccount {
+  id: string;
+  platform: string;
+  account_name: string | null;
+  avatar_url: string | null;
+  status: string | null;
+}
+
 const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   selectedAccounts,
   onAccountsChange,
@@ -52,12 +68,52 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
   mediaFile,
   videoUrl
 }) => {
-  const { connectedAccounts, loading, connectAccounts } = useUploadPost();
+  const { connectedAccounts, loading: uploadPostLoading, connectAccounts } = useUploadPost();
+  const [metaAccounts, setMetaAccounts] = useState<MetaConnectedAccount[]>([]);
+  const [metaLoading, setMetaLoading] = useState(true);
+
+  // Charger les comptes Meta depuis connected_accounts
+  useEffect(() => {
+    const loadMetaAccounts = async () => {
+      if (!USE_META_FOR_FACEBOOK) {
+        setMetaLoading(false);
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setMetaLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('connected_accounts')
+          .select('id, platform, account_name, avatar_url, status')
+          .eq('user_id', user.id)
+          .in('platform', ['facebook', 'instagram']);
+
+        if (error) {
+          console.error('Error loading Meta accounts:', error);
+        } else {
+          setMetaAccounts(data || []);
+        }
+      } catch (err) {
+        console.error('Error loading Meta accounts:', err);
+      } finally {
+        setMetaLoading(false);
+      }
+    };
+
+    loadMetaAccounts();
+  }, []);
 
   // Vérifier si c'est une vidéo
   const isVideo = (mediaFile && mediaFile.type.startsWith('video/')) || videoUrl;
   const isImage = mediaFile && mediaFile.type.startsWith('image/');
   
+  const loading = uploadPostLoading || metaLoading;
+
   // Mapper toutes les plateformes disponibles avec leur statut de connexion
   const allPlatforms = useMemo(() => {
     const platformMap = {
@@ -70,13 +126,34 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
     };
 
     // Créer une map des comptes Upload-Post connectés
-    const connectedMap = new Map(
+    const uploadPostMap = new Map(
       connectedAccounts.map(account => [account.platform, account])
+    );
+
+    // Créer une map des comptes Meta connectés
+    const metaMap = new Map(
+      metaAccounts.map(account => [account.platform, account])
     );
 
     // Retourner toutes les plateformes avec leur statut
     return Object.entries(platformMap).map(([platformId, config]) => {
-      const uploadPostAccount = connectedMap.get(platformId as any);
+      // Pour Facebook, priorité à Meta API si activé
+      if (USE_META_FOR_FACEBOOK && platformId === 'facebook') {
+        const metaAccount = metaMap.get('facebook');
+        const isConnected = !!metaAccount && metaAccount.status === 'active';
+        return {
+          id: platformId,
+          displayName: metaAccount?.account_name || config.name,
+          username: undefined,
+          image: metaAccount?.avatar_url,
+          isConnected,
+          isMeta: true, // Marqueur pour distinguer les comptes Meta
+          ...config
+        };
+      }
+
+      // Pour les autres plateformes, utiliser Upload-Post
+      const uploadPostAccount = uploadPostMap.get(platformId as any);
       const isConnected = !!uploadPostAccount;
 
       return {
@@ -85,10 +162,11 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
         username: uploadPostAccount?.username,
         image: uploadPostAccount?.social_images,
         isConnected,
+        isMeta: false,
         ...config
       };
     });
-  }, [connectedAccounts]);
+  }, [connectedAccounts, metaAccounts]);
 
   const handlePlatformToggle = (platformId: string, isConnected: boolean) => {
     // Ne permettre la sélection que si le compte est connecté
@@ -110,6 +188,17 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       redirectUrl: window.location.href
     });
   };
+
+  // Nombre de comptes connectés (Meta + Upload-Post)
+  const totalConnectedCount = useMemo(() => {
+    const metaConnected = USE_META_FOR_FACEBOOK ? metaAccounts.filter(a => a.status === 'active').length : 0;
+    const uploadPostConnected = connectedAccounts.length;
+    // Si Meta est activé pour Facebook, ne pas compter Facebook de Upload-Post
+    const adjustedUploadPost = USE_META_FOR_FACEBOOK 
+      ? connectedAccounts.filter(a => a.platform !== 'facebook').length 
+      : uploadPostConnected;
+    return metaConnected + adjustedUploadPost;
+  }, [metaAccounts, connectedAccounts]);
 
   if (loading) {
     return (
@@ -160,6 +249,13 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
                     <span className="text-white text-xs">✓</span>
                   </div>
                 )}
+
+                {/* Badge Meta API */}
+                {platform.isMeta && platform.isConnected && (
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center" title="Connecté via Meta">
+                    <span className="text-white text-[8px] font-bold">M</span>
+                  </div>
+                )}
               </div>
               
               {/* Nom du compte */}
@@ -179,7 +275,7 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       </div>
 
       {/* Bouton pour connecter les comptes */}
-      {connectedAccounts.length === 0 && (
+      {totalConnectedCount === 0 && (
         <div className="flex items-center justify-center p-4 border border-dashed rounded-lg">
           <Button variant="outline" size="sm" onClick={handleConnectAccounts}>
             <ExternalLink className="w-4 h-4 mr-2" />
@@ -189,7 +285,7 @@ const ConnectedAccountsSelector: React.FC<ConnectedAccountsSelectorProps> = ({
       )}
 
       {/* Message d'info pour Instagram */}
-      {!isImage && connectedAccounts.some(a => a.platform === 'instagram') && selectedAccounts.includes('instagram') && (
+      {!isImage && selectedAccounts.includes('instagram') && (
         <div className="flex items-start space-x-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
           <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-amber-700">
