@@ -25,11 +25,73 @@ serve(async (req) => {
       );
     }
 
-    console.log('Returning Meta OAuth config');
+    // Parse request body to get platform
+    const body = await req.json().catch(() => ({}));
+    const platform = body.platform || 'facebook';
+
+    console.log('Building Meta OAuth URL for platform:', platform);
+    
+    // Determine the redirect URI based on request origin
+    const origin = req.headers.get('origin') || '';
+    let redirectUri: string;
+    
+    if (origin.includes('preview--mypostelma.lovable.app')) {
+      redirectUri = 'https://preview--mypostelma.lovable.app/oauth/callback';
+    } else if (origin.includes('postelma.com')) {
+      redirectUri = 'https://postelma.com/oauth/callback';
+    } else if (origin.includes('mypostelma.lovable.app')) {
+      redirectUri = 'https://mypostelma.lovable.app/oauth/callback';
+    } else {
+      // Default for local dev or other environments
+      redirectUri = 'https://mypostelma.lovable.app/oauth/callback';
+    }
+
+    console.log('Using redirect URI:', redirectUri);
+
+    // Build state parameter with platform and return URL
+    const state = {
+      platform,
+      returnUrl: '/social-accounts?connected=true',
+      originalOrigin: origin
+    };
+    const stateEncoded = btoa(JSON.stringify(state));
+
+    // Facebook OAuth scopes
+    const scopes = [
+      'public_profile',
+      'email',
+      'pages_show_list',
+      'pages_read_engagement',
+      'pages_manage_posts',
+      'pages_manage_metadata',
+    ];
+
+    // Add Instagram scopes if Instagram platform
+    if (platform === 'instagram') {
+      scopes.push(
+        'instagram_basic',
+        'instagram_content_publish',
+        'instagram_manage_comments',
+        'instagram_manage_messages'
+      );
+    }
+
+    // Build OAuth URL
+    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+      `client_id=${metaAppId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=${encodeURIComponent(scopes.join(','))}` +
+      `&state=${encodeURIComponent(stateEncoded)}` +
+      `&response_type=code`;
+
+    console.log('Built auth URL for platform:', platform);
     
     return new Response(
       JSON.stringify({ 
-        appId: metaAppId 
+        appId: metaAppId,
+        authUrl,
+        redirectUri,
+        platform
       }),
       { 
         status: 200, 
