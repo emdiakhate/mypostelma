@@ -41,8 +41,13 @@ export function InboxSidebar({
 }: InboxSidebarProps) {
 
   const getPlatformIcon = (platform: string) => {
+    const IconComponent = PLATFORM_ICON_COMPONENTS[platform as keyof typeof PLATFORM_ICON_COMPONENTS];
+    if (IconComponent) {
+      return <IconComponent className="w-4 h-4" />;
+    }
     switch (platform) {
       case 'whatsapp':
+      case 'whatsapp_twilio':
         return <MessageSquare className="w-4 h-4" />;
       case 'telegram':
         return <MessageSquare className="w-4 h-4" />;
