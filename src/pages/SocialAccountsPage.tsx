@@ -201,6 +201,24 @@ export default function SocialAccountsPage() {
     }
   };
 
+  // Déconnexion d'un compte Meta
+  const handleDisconnectMeta = async (accountId: string, platform: string) => {
+    try {
+      const { error } = await supabase
+        .from('connected_accounts')
+        .delete()
+        .eq('id', accountId);
+
+      if (error) throw error;
+      
+      toast.success(`${platform === 'facebook' ? 'Facebook' : 'Instagram'} déconnecté`);
+      fetchMetaAccounts();
+    } catch (err: any) {
+      console.error('Disconnect error:', err);
+      toast.error('Erreur lors de la déconnexion');
+    }
+  };
+
   const handleConnectAccounts = async () => {
     try {
       setConnecting(true);
@@ -390,6 +408,35 @@ export default function SocialAccountsPage() {
                               )}
                             </div>
                           </div>
+
+                          {/* Boutons d'action pour comptes Meta */}
+                          {isMetaPlatform && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConnectMeta(platform.id as 'facebook' | 'instagram');
+                                }}
+                              >
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                Reconnecter
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDisconnectMeta(accountData.id, platform.id);
+                                }}
+                              >
+                                Déconnecter
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         // Card Déconnecté

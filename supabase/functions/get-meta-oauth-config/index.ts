@@ -56,14 +56,15 @@ serve(async (req) => {
     };
     const stateEncoded = btoa(JSON.stringify(state));
 
-    // Facebook OAuth scopes
+    // Facebook OAuth scopes - IMPORTANT: pages_manage_posts est requis pour publier
     const scopes = [
       'public_profile',
       'email',
-      'pages_show_list',
-      'pages_read_engagement',
-      'pages_manage_posts',
-      'pages_manage_metadata',
+      'pages_show_list',          // Voir les pages
+      'pages_read_engagement',    // Lire l'engagement
+      'pages_manage_posts',       // CRITIQUE: Publier sur les pages
+      'pages_manage_metadata',    // Gérer les métadonnées
+      'pages_read_user_content',  // Lire le contenu utilisateur
     ];
 
     // Add Instagram scopes if Instagram platform
