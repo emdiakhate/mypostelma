@@ -42,13 +42,11 @@ export default function ConnectMetaModal({ platform, onClose, onSuccess }: Conne
       name: 'Facebook',
       icon: Facebook,
       color: 'bg-blue-600',
-      scopes: 'pages_show_list,pages_messaging,pages_read_engagement,pages_manage_metadata',
     },
     instagram: {
       name: 'Instagram',
       icon: Instagram,
       color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-      scopes: 'instagram_basic,instagram_manage_messages,pages_show_list,pages_messaging',
     },
   };
 
@@ -59,36 +57,16 @@ export default function ConnectMetaModal({ platform, onClose, onSuccess }: Conne
     try {
       setLoading(true);
 
-      if (!metaAppId) {
-        toast.error('Configuration Meta manquante. Contactez le support.');
-        return;
-      }
+      // Call edge function to get the complete OAuth URL with correct scopes
+      const { data, error } = await supabase.functions.invoke('get-meta-oauth-config', {
+        body: { platform }
+      });
 
-      // Build OAuth URL - Use configured URLs based on environment
-      // Detect environment and use appropriate redirect URL
-      const currentHost = window.location.hostname;
-      let redirectUri: string;
-      
-      if (currentHost.includes('preview--mypostelma.lovable.app')) {
-        redirectUri = 'https://preview--mypostelma.lovable.app/oauth/callback';
-      } else if (currentHost === 'postelma.com') {
-        redirectUri = 'https://postelma.com/oauth/callback';
-      } else {
-        // Default to production URL for mypostelma.lovable.app or local dev
-        redirectUri = 'https://mypostelma.lovable.app/oauth/callback';
-      }
-      
-      const state = JSON.stringify({ platform, returnUrl: window.location.pathname, originalOrigin: window.location.origin });
-      
-      const oauthUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth');
-      oauthUrl.searchParams.set('client_id', metaAppId);
-      oauthUrl.searchParams.set('redirect_uri', redirectUri);
-      oauthUrl.searchParams.set('scope', config.scopes);
-      oauthUrl.searchParams.set('state', btoa(state));
-      oauthUrl.searchParams.set('response_type', 'code');
+      if (error) throw error;
+      if (!data?.authUrl) throw new Error('URL de connexion non disponible');
 
       // Redirect to Meta OAuth
-      window.location.href = oauthUrl.toString();
+      window.location.href = data.authUrl;
     } catch (error: any) {
       console.error('Error initiating Meta OAuth:', error);
       toast.error(error?.message || 'Erreur lors de la connexion');

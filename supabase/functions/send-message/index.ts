@@ -137,6 +137,24 @@ serve(async (req) => {
         platformMessageId = result.sid;
         break;
 
+      case 'facebook':
+        result = await sendFacebookMessage(connectedAccount, conversation, {
+          recipient_id: conversation.participant_id,
+          text: text_content || '',
+          media_url,
+        });
+        platformMessageId = result.message_id;
+        break;
+
+      case 'instagram':
+        result = await sendInstagramMessage(connectedAccount, conversation, {
+          recipient_id: conversation.participant_id,
+          text: text_content || '',
+          media_url,
+        });
+        platformMessageId = result.message_id;
+        break;
+
       default:
         return new Response(
           JSON.stringify({ error: `Unsupported platform: ${platform}` }),
@@ -348,4 +366,116 @@ async function sendWhatsAppTwilio(account: any, conversation: any, payload: any)
   }
 
   return await response.json();
+}
+
+// =====================================================
+// META (FACEBOOK/INSTAGRAM) SEND FUNCTIONS
+// =====================================================
+
+async function sendFacebookMessage(account: any, conversation: any, payload: any) {
+  const { recipient_id, text, media_url } = payload;
+  const accessToken = account.access_token;
+  const pageId = account.platform_account_id;
+
+  if (!accessToken || !pageId) {
+    throw new Error('Facebook page access token or page ID not configured');
+  }
+
+  console.log('[Facebook] Sending message to:', recipient_id);
+  console.log('[Facebook] Using page ID:', pageId);
+
+  // Build message payload
+  const messagePayload: any = {
+    recipient: { id: recipient_id },
+    message: {},
+  };
+
+  if (text) {
+    messagePayload.message.text = text;
+  }
+
+  if (media_url) {
+    messagePayload.message.attachment = {
+      type: 'image',
+      payload: { url: media_url, is_reusable: true },
+    };
+  }
+
+  // Use Conversations API (Pages Messaging)
+  const response = await fetch(
+    `https://graph.facebook.com/v18.0/${pageId}/messages?access_token=${accessToken}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('[Facebook] API error:', errorData);
+    throw new Error(`Facebook API error: ${JSON.stringify(errorData)}`);
+  }
+
+  const result = await response.json();
+  console.log('[Facebook] Message sent successfully:', result);
+  
+  return { message_id: result.message_id || `fb_${Date.now()}` };
+}
+
+async function sendInstagramMessage(account: any, conversation: any, payload: any) {
+  const { recipient_id, text, media_url } = payload;
+  const accessToken = account.access_token;
+  
+  // Instagram uses the Facebook Page ID or Instagram Business Account ID
+  const igAccountId = account.config?.instagram_account_id || account.platform_account_id;
+
+  if (!accessToken || !igAccountId) {
+    throw new Error('Instagram access token or account ID not configured');
+  }
+
+  console.log('[Instagram] Sending message to:', recipient_id);
+  console.log('[Instagram] Using account ID:', igAccountId);
+
+  // Build message payload for Instagram Messaging API
+  const messagePayload: any = {
+    recipient: { id: recipient_id },
+    message: {},
+  };
+
+  if (text) {
+    messagePayload.message.text = text;
+  }
+
+  if (media_url) {
+    messagePayload.message.attachment = {
+      type: 'image',
+      payload: { url: media_url },
+    };
+  }
+
+  // Instagram Messaging API uses the same format as Facebook
+  const response = await fetch(
+    `https://graph.facebook.com/v18.0/${igAccountId}/messages?access_token=${accessToken}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('[Instagram] API error:', errorData);
+    throw new Error(`Instagram API error: ${JSON.stringify(errorData)}`);
+  }
+
+  const result = await response.json();
+  console.log('[Instagram] Message sent successfully:', result);
+  
+  return { message_id: result.message_id || `ig_${Date.now()}` };
 }

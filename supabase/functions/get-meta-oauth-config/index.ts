@@ -65,6 +65,7 @@ serve(async (req) => {
       'pages_manage_posts',       // CRITIQUE: Publier sur les pages
       'pages_manage_metadata',    // Gérer les métadonnées
       'pages_read_user_content',  // Lire le contenu utilisateur
+      'pages_messaging',          // INBOX: Recevoir et envoyer des messages
     ];
 
     // Add Instagram scopes if Instagram platform
@@ -73,7 +74,7 @@ serve(async (req) => {
         'instagram_basic',
         'instagram_content_publish',
         'instagram_manage_comments',
-        'instagram_manage_messages'
+        'instagram_manage_messages'  // INBOX: Messages Instagram
       );
     }
 
