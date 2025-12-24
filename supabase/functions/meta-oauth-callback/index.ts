@@ -205,7 +205,28 @@ serve(async (req) => {
       const pagesResponse = await fetch(pagesUrl);
       const pagesData = await pagesResponse.json();
 
+      console.log("[Meta OAuth] Pages response:", JSON.stringify(pagesData));
+
       const pages: FacebookPage[] = pagesData.data || [];
+      
+      // IMPORTANT: Si aucune page n'est trouvée, retourner une erreur explicative
+      if (pages.length === 0) {
+        console.log("[Meta OAuth] No Facebook pages found for user");
+        return new Response(
+          JSON.stringify({
+            error: "Aucune page Facebook trouvée",
+            message: "Vous devez être administrateur d'au moins une page Facebook pour publier.",
+            instructions: [
+              "1. Créez une page Facebook ou demandez à être admin d'une page existante",
+              "2. Assurez-vous que votre app Meta a les permissions pages_manage_posts",
+              "3. Lors de la connexion, autorisez l'accès à vos pages",
+              "4. Réessayez la connexion"
+            ],
+            hint: "L'API Meta nécessite une page Facebook pour publier du contenu."
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       
       accountData.config = {
         pages: pages.map((p) => ({
@@ -214,13 +235,14 @@ serve(async (req) => {
         })),
       };
 
-      // If there's at least one page, use the first page as the primary account
-      if (pages.length > 0) {
-        accountData.account_name = pages[0].name;
-        accountData.platform_account_id = pages[0].id;
-        // Store the page access token (longer-lived and more permissions)
-        accountData.access_token = pages[0].access_token;
-      }
+      // Use the first page as the primary account with PAGE ACCESS TOKEN
+      accountData.account_name = pages[0].name;
+      accountData.platform_account_id = pages[0].id;
+      // CRITICAL: Store the PAGE access token (not user token) - required for publishing
+      accountData.access_token = pages[0].access_token;
+      
+      console.log("[Meta OAuth] Using page:", pages[0].name, "with ID:", pages[0].id);
+      console.log("[Meta OAuth] Page access token obtained:", !!pages[0].access_token);
     }
 
     // Save to database
