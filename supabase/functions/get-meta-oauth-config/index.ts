@@ -79,12 +79,17 @@ serve(async (req) => {
     }
 
     // Build OAuth URL
+    // auth_type=rerequest : force Meta to re-demander les permissions (utile si l’utilisateur a refusé ou si les scopes ont changé)
+    // return_scopes=true : permet de diagnostiquer les scopes retournés par Meta
     const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
       `client_id=${metaAppId}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=${encodeURIComponent(scopes.join(','))}` +
       `&state=${encodeURIComponent(stateEncoded)}` +
-      `&response_type=code`;
+      `&response_type=code` +
+      `&auth_type=rerequest` +
+      `&return_scopes=true` +
+      `&display=popup`;
 
     console.log('Built auth URL for platform:', platform);
     
