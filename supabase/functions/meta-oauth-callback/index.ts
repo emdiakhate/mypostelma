@@ -130,6 +130,68 @@ serve(async (req) => {
 
     console.log("[Meta OAuth] User info:", { id: userInfo.id, name: userInfo.name });
 
+    const fetchTokenDiagnostics = async () => {
+      try {
+        const [permsRes, debugRes] = await Promise.all([
+          fetch(`https://graph.facebook.com/v18.0/me/permissions?access_token=${finalToken}`),
+          fetch(
+            `https://graph.facebook.com/v18.0/debug_token?input_token=${finalToken}&access_token=${META_APP_ID}|${META_APP_SECRET}`
+          ),
+        ]);
+
+        const [permsJson, debugJson] = await Promise.all([permsRes.json(), debugRes.json()]);
+
+        const grantedPermissions = Array.isArray(permsJson?.data)
+          ? permsJson.data
+              .filter((p: any) => p?.status === 'granted')
+              .map((p: any) => p.permission)
+              .filter(Boolean)
+          : [];
+
+        const debugData = debugJson?.data || null;
+
+        console.log('[Meta OAuth] Permissions (granted):', JSON.stringify(grantedPermissions));
+        console.log('[Meta OAuth] Debug token (subset):',
+          JSON.stringify(
+            debugData
+              ? {
+                  is_valid: debugData.is_valid,
+                  user_id: debugData.user_id,
+                  scopes: debugData.scopes,
+                  expires_at: debugData.expires_at,
+                }
+              : debugJson
+          )
+        );
+
+        return {
+          facebook_user: {
+            id: userInfo.id,
+            name: userInfo.name,
+            email: userInfo.email,
+          },
+          granted_permissions: grantedPermissions,
+          token: debugData
+            ? {
+                is_valid: debugData.is_valid,
+                user_id: debugData.user_id,
+                scopes: debugData.scopes,
+                expires_at: debugData.expires_at,
+              }
+            : null,
+        };
+      } catch (e) {
+        console.log('[Meta OAuth] Diagnostics failed:', e);
+        return {
+          facebook_user: {
+            id: userInfo.id,
+            name: userInfo.name,
+            email: userInfo.email,
+          },
+        };
+      }
+    };
+
     let accountData: any = {
       platform: platform,
       platform_account_id: userInfo.id,
@@ -150,10 +212,36 @@ serve(async (req) => {
       const pagesResponse = await fetch(pagesUrl);
       const pagesData = await pagesResponse.json();
 
-      console.log("[Meta OAuth] Pages response:", JSON.stringify(pagesData));
+       console.log("[Meta OAuth] Pages response:", JSON.stringify(pagesData));
 
-      const pages: FacebookPage[] = pagesData.data || [];
-      const pageWithInstagram = pages.find((p) => p.instagram_business_account);
+       const pages: FacebookPage[] = pagesData.data || [];
+
+       // Si Meta renvoie 0 page, l’erreur « IG Business non trouvé » est trompeuse.
+       // On retourne la même erreur que pour Facebook + diagnostics.
+       if (pages.length === 0) {
+         console.log('[Meta OAuth] No Facebook pages found for user (instagram flow)');
+         const diagnostics = await fetchTokenDiagnostics();
+
+         return new Response(
+           JSON.stringify({
+             error: "Aucune page Facebook trouvée",
+             message:
+               "Meta ne retourne aucune page accessible pour ce compte. Vérifiez que vous êtes connecté avec le bon profil Facebook (celui qui est admin de la page).",
+             instructions: [
+               "1. Vérifiez que vous êtes bien admin de la Page (New Page Experience: accès Facebook complet)",
+               "2. Reconnectez en acceptant toutes les permissions et l'accès aux Pages",
+               "3. Si la Page est gérée via Business Manager, assurez-vous d'avoir les droits de gestion",
+               "4. Réessayez la connexion",
+             ],
+             hint:
+               "Instagram (API Meta) nécessite une Page Facebook avec un compte Instagram Business lié.",
+             diagnostics,
+           }),
+           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+         );
+       }
+
+       const pageWithInstagram = pages.find((p) => p.instagram_business_account);
 
       if (pageWithInstagram && pageWithInstagram.instagram_business_account) {
         // Get Instagram account details
@@ -205,28 +293,33 @@ serve(async (req) => {
       const pagesResponse = await fetch(pagesUrl);
       const pagesData = await pagesResponse.json();
 
-      console.log("[Meta OAuth] Pages response:", JSON.stringify(pagesData));
+       console.log("[Meta OAuth] Pages response:", JSON.stringify(pagesData));
 
-      const pages: FacebookPage[] = pagesData.data || [];
-      
-      // IMPORTANT: Si aucune page n'est trouvée, retourner une erreur explicative
-      if (pages.length === 0) {
-        console.log("[Meta OAuth] No Facebook pages found for user");
-        return new Response(
-          JSON.stringify({
-            error: "Aucune page Facebook trouvée",
-            message: "Vous devez être administrateur d'au moins une page Facebook pour publier.",
-            instructions: [
-              "1. Créez une page Facebook ou demandez à être admin d'une page existante",
-              "2. Assurez-vous que votre app Meta a les permissions pages_manage_posts",
-              "3. Lors de la connexion, autorisez l'accès à vos pages",
-              "4. Réessayez la connexion"
-            ],
-            hint: "L'API Meta nécessite une page Facebook pour publier du contenu."
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+       const pages: FacebookPage[] = pagesData.data || [];
+
+       // IMPORTANT: Si aucune page n'est trouvée, retourner une erreur explicative + diagnostics
+       if (pages.length === 0) {
+         console.log("[Meta OAuth] No Facebook pages found for user");
+         const diagnostics = await fetchTokenDiagnostics();
+
+         return new Response(
+           JSON.stringify({
+             error: "Aucune page Facebook trouvée",
+             message:
+               "Meta ne retourne aucune page accessible pour ce compte. Vérifiez que vous êtes connecté avec le bon profil Facebook (celui qui est admin de la page).",
+             instructions: [
+               "1. Vérifiez que vous êtes bien admin de la Page (New Page Experience: accès Facebook complet)",
+               "2. Reconnectez en acceptant toutes les permissions et l'accès aux Pages",
+               "3. Si la Page est gérée via Business Manager, assurez-vous d'avoir les droits de gestion",
+               "4. Réessayez la connexion",
+             ],
+             hint:
+               "Pour publier et messageries, l'API Meta nécessite une Page Facebook accessible via /me/accounts.",
+             diagnostics,
+           }),
+           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+         );
+       }
       
       accountData.config = {
         pages: pages.map((p) => ({
