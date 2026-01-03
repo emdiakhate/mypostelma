@@ -75,6 +75,14 @@ import ComptesSociauxPageNew from './pages/marketing/comptes-sociaux';
 import InboxPageNew from './pages/marketing/inbox';
 import AutomationPageNew from './pages/marketing/automation';
 
+// Nouvelles pages Reporting (Phase 4 - Migration Reporting)
+import AnalyticsPageNew from './pages/reporting/analytics';
+import CompetitorsPageNew from './pages/reporting/concurrence/competitors';
+import ComparePageNew from './pages/reporting/concurrence/compare';
+import AnalysePageNew from './pages/reporting/concurrence/analyse';
+import RapportsPageNew from './pages/reporting/rapports';
+import ExportsPageNew from './pages/reporting/exports';
+
 // Nouvelles pages (à importer au fur et à mesure de leur création)
 // import DashboardNew from './pages/dashboard/index';
 // etc...
@@ -458,7 +466,7 @@ export const RoutesV2 = () => {
         path="/reporting/analytics"
         element={
           isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
-            <div>Analytics - En construction</div>
+            <AnalyticsPageNew />
           ) : (
             <AnalyticsOld />
           )
@@ -467,10 +475,10 @@ export const RoutesV2 = () => {
 
       {/* Concurrence */}
       <Route
-        path="/reporting/concurrence"
+        path="/reporting/concurrence/competitors"
         element={
           isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
-            <div>Concurrence - En construction</div>
+            <CompetitorsPageNew />
           ) : (
             <CompetitorsPageOld />
           )
@@ -481,7 +489,7 @@ export const RoutesV2 = () => {
         path="/reporting/concurrence/compare"
         element={
           isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
-            <div>Comparaison Concurrents - En construction</div>
+            <ComparePageNew />
           ) : (
             <CompetitorsComparePageOld />
           )
@@ -492,17 +500,43 @@ export const RoutesV2 = () => {
         path="/reporting/concurrence/analyse"
         element={
           isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
-            <div>Analyse Comparative - En construction</div>
+            <AnalysePageNew />
           ) : (
             <ComparativeAnalysisPageOld />
           )
         }
       />
 
+      {/* Rapports personnalisés (nouveau) */}
+      <Route
+        path="/reporting/rapports"
+        element={
+          isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
+            <RapportsPageNew />
+          ) : (
+            <div>Rapports Personnalisés - Activez ENABLE_NEW_REPORTING</div>
+          )
+        }
+      />
+
+      {/* Exports de données (nouveau) */}
+      <Route
+        path="/reporting/exports"
+        element={
+          isFeatureEnabled('ENABLE_NEW_REPORTING') ? (
+            <ExportsPageNew />
+          ) : (
+            <div>Exports de Données - Activez ENABLE_NEW_REPORTING</div>
+          )
+        }
+      />
+
       {/* Redirections anciennes routes Reporting */}
       <Route path="/analytics" element={<Navigate to="/reporting/analytics" replace />} />
-      <Route path="/competitors" element={<Navigate to="/reporting/concurrence" replace />} />
+      <Route path="/competitors" element={<Navigate to="/reporting/concurrence/competitors" replace />} />
+      <Route path="/app/competitors" element={<Navigate to="/reporting/concurrence/competitors" replace />} />
       <Route path="/competitors/compare" element={<Navigate to="/reporting/concurrence/compare" replace />} />
+      <Route path="/app/competitors/compare" element={<Navigate to="/reporting/concurrence/compare" replace />} />
       <Route path="/comparative-analysis" element={<Navigate to="/reporting/concurrence/analyse" replace />} />
 
       {/* ================================================================
