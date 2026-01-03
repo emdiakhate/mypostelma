@@ -1,0 +1,234 @@
+/**
+ * Inbox Page - Unified Inbox with 3 Column Layout
+ * Column 1: Teams/Filters (left sidebar)
+ * Column 2: Conversations List
+ * Column 3: Messages View
+ */
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { getConversations } from '@/services/inbox';
+import { getTeams } from '@/services/teams';
+import { getConnectedAccountsWithStats, syncAccountMessages } from '@/services/connectedAccounts';
+import type { ConversationWithLastMessage, Platform } from '@/types/inbox';
+import type { Team } from '@/types/teams';
+import type { ConnectedAccountWithStats } from '@/types/inbox';
+import { InboxSidebar } from '@/components/inbox/InboxSidebar';
+import { ConversationListColumn } from '@/components/inbox/ConversationListColumn';
+import { MessageViewColumn } from '@/components/inbox/MessageViewColumn';
+
+export default function InboxPage() {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<ConversationWithLastMessage[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationWithLastMessage | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccountWithStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'unread' | 'assigned' | 'unassigned'>('all');
+  const [selectedInbox, setSelectedInbox] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadTeams();
+      loadConnectedAccounts();
+      loadConversations();
+    }
+  }, [user, selectedTeam, selectedAccount, selectedFilter]);
+
+  const loadTeams = async () => {
+    if (!user) return;
+
+    try {
+      const data = await getTeams(user.id);
+      setTeams(data);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
+
+  const loadConnectedAccounts = async () => {
+    if (!user) return;
+
+    try {
+      const data = await getConnectedAccountsWithStats(user.id);
+      setConnectedAccounts(data);
+    } catch (error) {
+      console.error('Error loading connected accounts:', error);
+    }
+  };
+
+  const loadConversations = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      const filters: any = {};
+
+      // Filter by status
+      if (selectedFilter === 'unread') {
+        filters.status = ['unread'];
+      } else if (selectedFilter === 'assigned') {
+        filters.assigned_to = user.id;
+      } else if (selectedFilter === 'unassigned') {
+        // This will be filtered client-side
+      }
+
+      // Filter by connected account
+      if (selectedInbox) {
+        filters.connected_account_id = selectedInbox;
+      }
+
+      const data = await getConversations(filters);
+
+      // Filter by team if selected (client-side since teams are loaded separately)
+      let filteredData = data;
+      if (selectedTeam) {
+        filteredData = data.filter((conv: any) => {
+          if (!conv.teams || conv.teams.length === 0) return false;
+          return conv.teams.some((t: any) => t.team_id === selectedTeam);
+        });
+      }
+
+      // Filter by connected account if selected
+      if (selectedAccount) {
+        filteredData = filteredData.filter((conv: any) => {
+          return conv.connected_account_id === selectedAccount;
+        });
+      }
+
+      // Filter by unassigned if selected
+      if (selectedFilter === 'unassigned') {
+        filteredData = filteredData.filter((conv: any) => !conv.assigned_to);
+      }
+
+      setConversations(filteredData);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('inbox-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        },
+        async () => {
+          await loadConversations();
+          // Refresh selected conversation if it's currently open
+          if (selectedConversation) {
+            const { data } = await supabase
+              .from('conversations_with_last_message')
+              .select('*')
+              .eq('id', selectedConversation.id)
+              .single();
+            if (data) {
+              setSelectedConversation(data as unknown as ConversationWithLastMessage);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedConversation]);
+
+  // Auto-sync connected accounts every 5 minutes
+  useEffect(() => {
+    if (!user || connectedAccounts.length === 0) return;
+
+    const syncAllAccounts = async () => {
+      console.log('Auto-syncing connected accounts...');
+
+      // Only sync email accounts (gmail, outlook)
+      const emailAccounts = connectedAccounts.filter(
+        acc => (acc.platform === 'gmail' || acc.platform === 'outlook') && acc.status === 'active'
+      );
+
+      for (const account of emailAccounts) {
+        try {
+          console.log(`Syncing account: ${account.account_name}`);
+          await syncAccountMessages(account.id);
+        } catch (error) {
+          console.error(`Failed to sync account ${account.account_name}:`, error);
+        }
+      }
+
+      // Reload conversations after sync
+      await loadConversations();
+    };
+
+    // Initial sync after 5 seconds
+    const initialTimeout = setTimeout(syncAllAccounts, 5000);
+
+    // Then sync every 5 minutes
+    const syncInterval = setInterval(syncAllAccounts, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(syncInterval);
+    };
+  }, [user, connectedAccounts]);
+
+  return (
+    <div className="h-[calc(100vh-73px)] flex bg-gray-50">
+      {/* Column 1: Teams & Filters Sidebar */}
+      <InboxSidebar
+        teams={teams}
+        connectedAccounts={connectedAccounts}
+        selectedTeam={selectedTeam}
+        selectedAccount={selectedAccount}
+        selectedFilter={selectedFilter}
+        selectedInbox={selectedInbox}
+        onTeamSelect={setSelectedTeam}
+        onAccountSelect={setSelectedAccount}
+        onFilterSelect={setSelectedFilter}
+        onInboxSelect={setSelectedInbox}
+      />
+
+      {/* Column 2: Conversations List */}
+      <ConversationListColumn
+        conversations={conversations}
+        selectedConversation={selectedConversation}
+        loading={loading}
+        selectedFilter={selectedFilter}
+        onConversationSelect={setSelectedConversation}
+        onFilterSelect={setSelectedFilter}
+        onRefresh={loadConversations}
+      />
+
+      {/* Column 3: Messages View */}
+      <MessageViewColumn
+        conversation={selectedConversation}
+        onConversationUpdate={loadConversations}
+      />
+    </div>
+  );
+}

@@ -63,6 +63,18 @@ import ProspectsPageNew from './pages/crm/prospects/index';
 import ClientsPageNew from './pages/crm/clients/index';
 import ConfigPageNew from './pages/crm/config';
 
+// Nouvelles pages Marketing (Phase 3 - Migration Marketing)
+import PublicationsPageNew from './pages/marketing/publications/index';
+import PostDetailPageNew from './pages/marketing/publications/[id]';
+import CalendarPageNew from './pages/marketing/publications/calendar';
+import CreationPageNew from './pages/marketing/creation';
+import ArchivesPageNew from './pages/marketing/archives';
+import CampaignsPageNew from './pages/marketing/campagnes/index';
+import TemplatesPageNew from './pages/marketing/templates/index';
+import ComptesSociauxPageNew from './pages/marketing/comptes-sociaux';
+import InboxPageNew from './pages/marketing/inbox';
+import AutomationPageNew from './pages/marketing/automation';
+
 // Nouvelles pages (à importer au fur et à mesure de leur création)
 // import DashboardNew from './pages/dashboard/index';
 // etc...
@@ -204,7 +216,7 @@ export const RoutesV2 = () => {
         path="/marketing/publications"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Publications - En construction</div>
+            <PublicationsPageNew />
           ) : (
             <PublicationsPageOld />
           )
@@ -215,7 +227,7 @@ export const RoutesV2 = () => {
         path="/marketing/publications/:id"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Post Detail - En construction</div>
+            <PostDetailPageNew />
           ) : (
             <PostDetailPageOld />
           )
@@ -226,7 +238,7 @@ export const RoutesV2 = () => {
         path="/marketing/publications/calendar"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Calendar - En construction</div>
+            <CalendarPageNew />
           ) : (
             <IndexOld />
           )
@@ -238,7 +250,7 @@ export const RoutesV2 = () => {
         path="/marketing/creation"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Studio Création - En construction</div>
+            <CreationPageNew />
           ) : (
             <CreationPageOld />
           )
@@ -250,7 +262,7 @@ export const RoutesV2 = () => {
         path="/marketing/archives"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Archives - En construction</div>
+            <ArchivesPageNew />
           ) : (
             <ArchivesPageOld />
           )
@@ -262,7 +274,7 @@ export const RoutesV2 = () => {
         path="/marketing/campagnes"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Campagnes - En construction</div>
+            <CampaignsPageNew />
           ) : (
             <CampaignsPageOld />
           )
@@ -274,7 +286,7 @@ export const RoutesV2 = () => {
         path="/marketing/templates"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Templates - En construction</div>
+            <TemplatesPageNew />
           ) : (
             <TemplatesPageOld />
           )
@@ -286,7 +298,7 @@ export const RoutesV2 = () => {
         path="/marketing/comptes-sociaux"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Comptes Sociaux - En construction</div>
+            <ComptesSociauxPageNew />
           ) : (
             <ConnectedAccountsPageOld />
           )
@@ -298,7 +310,7 @@ export const RoutesV2 = () => {
         path="/marketing/inbox"
         element={
           isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
-            <div>Inbox - En construction</div>
+            <InboxPageNew />
           ) : (
             <InboxPageOld />
           )
@@ -308,7 +320,13 @@ export const RoutesV2 = () => {
       {/* Automation (nouveau) */}
       <Route
         path="/marketing/automation"
-        element={<div>Automation Marketing - En construction</div>}
+        element={
+          isFeatureEnabled('ENABLE_NEW_MARKETING') ? (
+            <AutomationPageNew />
+          ) : (
+            <div>Automation Marketing - Activez ENABLE_NEW_MARKETING</div>
+          )
+        }
       />
 
       {/* Redirections anciennes routes Marketing */}
