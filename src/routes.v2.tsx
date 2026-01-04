@@ -83,9 +83,21 @@ import AnalysePageNew from './pages/reporting/concurrence/analyse';
 import RapportsPageNew from './pages/reporting/rapports';
 import ExportsPageNew from './pages/reporting/exports';
 
-// Nouvelles pages (à importer au fur et à mesure de leur création)
-// import DashboardNew from './pages/dashboard/index';
-// etc...
+// Nouvelles pages Vente (Phase 5 - Création Module Vente)
+import CataloguePageNew from './pages/vente/catalogue';
+import DevisPageNew from './pages/vente/devis/index';
+import CommandesPageNew from './pages/vente/commandes/index';
+import ServiceClientPageNew from './pages/vente/service-client';
+import StockPageNew from './pages/vente/stock';
+
+// Nouvelles pages Compta (Phase 6 - Création Module Compta)
+import DevisComptaPageNew from './pages/compta/devis';
+import FacturesPageNew from './pages/compta/factures';
+import ContratsPageNew from './pages/compta/contrats';
+import PaiementsPageNew from './pages/compta/paiements';
+
+// Nouvelles pages Dashboard (Phase 7 - Refonte Dashboard)
+import DashboardNew from './pages/dashboard/index';
 
 // ============================================================================
 // COMPOSANTS DE REDIRECTION CONDITIONNELLE
@@ -140,8 +152,7 @@ export const RoutesV2 = () => {
         path="/dashboard"
         element={
           isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? (
-            // <DashboardNew />
-            <div>Nouveau Dashboard - En construction</div>
+            <DashboardNew />
           ) : (
             <DashboardOld />
           )
@@ -354,55 +365,60 @@ export const RoutesV2 = () => {
           MODULE VENTE (nouveau)
           ================================================================ */}
 
+      {/* Catalogue */}
       <Route
         path="/vente/catalogue"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Catalogue Produits - En construction</div>
+            <CataloguePageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Devis */}
       <Route
         path="/vente/devis"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Devis - En construction</div>
+            <DevisPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Commandes */}
       <Route
         path="/vente/commandes"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Commandes - En construction</div>
+            <CommandesPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Service Client */}
       <Route
         path="/vente/service-client"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Service Client - En construction</div>
+            <ServiceClientPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Stock */}
       <Route
         path="/vente/stock"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Stock - En construction</div>
+            <StockPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
@@ -413,44 +429,48 @@ export const RoutesV2 = () => {
           MODULE COMPTA (nouveau)
           ================================================================ */}
 
+      {/* Devis Compta */}
       <Route
         path="/compta/devis"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Devis Compta - En construction</div>
+            <DevisComptaPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Factures */}
       <Route
         path="/compta/factures"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Factures - En construction</div>
+            <FacturesPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Contrats */}
       <Route
         path="/compta/contrats"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Contrats - En construction</div>
+            <ContratsPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Paiements */}
       <Route
         path="/compta/paiements"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Paiements - En construction</div>
+            <PaiementsPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
