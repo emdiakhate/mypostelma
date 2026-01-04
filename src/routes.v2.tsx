@@ -90,6 +90,12 @@ import CommandesPageNew from './pages/vente/commandes/index';
 import ServiceClientPageNew from './pages/vente/service-client';
 import StockPageNew from './pages/vente/stock';
 
+// Nouvelles pages Compta (Phase 6 - Création Module Compta)
+import DevisComptaPageNew from './pages/compta/devis';
+import FacturesPageNew from './pages/compta/factures';
+import ContratsPageNew from './pages/compta/contrats';
+import PaiementsPageNew from './pages/compta/paiements';
+
 // Nouvelles pages (à importer au fur et à mesure de leur création)
 // import DashboardNew from './pages/dashboard/index';
 // etc...
@@ -425,44 +431,48 @@ export const RoutesV2 = () => {
           MODULE COMPTA (nouveau)
           ================================================================ */}
 
+      {/* Devis Compta */}
       <Route
         path="/compta/devis"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Devis Compta - En construction</div>
+            <DevisComptaPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Factures */}
       <Route
         path="/compta/factures"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Factures - En construction</div>
+            <FacturesPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Contrats */}
       <Route
         path="/compta/contrats"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Contrats - En construction</div>
+            <ContratsPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Paiements */}
       <Route
         path="/compta/paiements"
         element={
           isFeatureEnabled('ENABLE_COMPTA_MODULE') ? (
-            <div>Paiements - En construction</div>
+            <PaiementsPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
