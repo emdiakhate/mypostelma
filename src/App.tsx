@@ -4,11 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
+import { isFeatureEnabled } from "@/config/featureFlags";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage";
-import Dashboard from "./pages/Dashboard";
+import DashboardOld from "./pages/Dashboard";
+import DashboardNew from "./pages/dashboard/index";
 import Index from "./pages/Index";
 import PostDetailPage from "./pages/PostDetailPage";
 import Analytics from "./pages/Analytics";
@@ -48,7 +50,12 @@ function MainLayout() {
   return (
     <Layout>
       <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? <DashboardNew /> : <DashboardOld />
+          }
+        />
         <Route path="/calendar" element={<Index />} />
         <Route path="/analytics" element={<Analytics />} />
 
