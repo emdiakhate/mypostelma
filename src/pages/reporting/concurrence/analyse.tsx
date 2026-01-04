@@ -73,14 +73,14 @@ export default function AnalyseComparativePage() {
 
     // Calcul des scores moyens des concurrents
     const competitorAvgs = {
-      followers: competitors.reduce((sum, c) => sum + (c.instagram_followers || 0), 0) / (competitors.length || 1),
+      followers: competitors.reduce((sum, c) => sum + (Number(c.instagram_followers) || 0), 0) / (competitors.length || 1),
       engagement: 3.5, // Mock - À calculer depuis les données réelles
       contentQuality: 75, // Mock - À calculer avec IA
       postingFrequency: 4.2, // Mock - posts par semaine
     };
 
     const myMetrics = {
-      followers: business.instagram_followers || 0,
+      followers: Number(business.instagram_followers) || 0,
       engagement: 2.8, // Mock
       contentQuality: 68, // Mock
       postingFrequency: 3.1, // Mock
