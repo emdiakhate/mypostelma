@@ -83,6 +83,13 @@ import AnalysePageNew from './pages/reporting/concurrence/analyse';
 import RapportsPageNew from './pages/reporting/rapports';
 import ExportsPageNew from './pages/reporting/exports';
 
+// Nouvelles pages Vente (Phase 5 - Création Module Vente)
+import CataloguePageNew from './pages/vente/catalogue';
+import DevisPageNew from './pages/vente/devis/index';
+import CommandesPageNew from './pages/vente/commandes/index';
+import ServiceClientPageNew from './pages/vente/service-client';
+import StockPageNew from './pages/vente/stock';
+
 // Nouvelles pages (à importer au fur et à mesure de leur création)
 // import DashboardNew from './pages/dashboard/index';
 // etc...
@@ -354,55 +361,60 @@ export const RoutesV2 = () => {
           MODULE VENTE (nouveau)
           ================================================================ */}
 
+      {/* Catalogue */}
       <Route
         path="/vente/catalogue"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Catalogue Produits - En construction</div>
+            <CataloguePageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Devis */}
       <Route
         path="/vente/devis"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Devis - En construction</div>
+            <DevisPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Commandes */}
       <Route
         path="/vente/commandes"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Commandes - En construction</div>
+            <CommandesPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Service Client */}
       <Route
         path="/vente/service-client"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Service Client - En construction</div>
+            <ServiceClientPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
         }
       />
 
+      {/* Stock */}
       <Route
         path="/vente/stock"
         element={
           isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <div>Stock - En construction</div>
+            <StockPageNew />
           ) : (
             <Navigate to="/dashboard" replace />
           )
