@@ -24,15 +24,18 @@ export const FEATURE_FLAGS = {
  * Fonction helper pour vérifier si un feature flag est activé
  */
 export const isFeatureEnabled = (flag: keyof typeof FEATURE_FLAGS): boolean => {
-  // En développement, on peut override via localStorage
-  if (typeof window !== 'undefined') {
+  const defaultValue = FEATURE_FLAGS[flag];
+
+  // En développement, on peut override via localStorage (uniquement pour activer des features)
+  // ⚠️ Si un flag est activé dans le code, on ignore tout override qui tenterait de le désactiver.
+  if (!defaultValue && typeof window !== 'undefined') {
     const override = localStorage.getItem(`feature_${flag}`);
     if (override !== null) {
       return override === 'true';
     }
   }
 
-  return FEATURE_FLAGS[flag];
+  return defaultValue;
 };
 
 /**
