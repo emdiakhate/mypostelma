@@ -96,9 +96,8 @@ import FacturesPageNew from './pages/compta/factures';
 import ContratsPageNew from './pages/compta/contrats';
 import PaiementsPageNew from './pages/compta/paiements';
 
-// Nouvelles pages (à importer au fur et à mesure de leur création)
-// import DashboardNew from './pages/dashboard/index';
-// etc...
+// Nouvelles pages Dashboard (Phase 7 - Refonte Dashboard)
+import DashboardNew from './pages/dashboard/index';
 
 // ============================================================================
 // COMPOSANTS DE REDIRECTION CONDITIONNELLE
@@ -153,8 +152,7 @@ export const RoutesV2 = () => {
         path="/dashboard"
         element={
           isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? (
-            // <DashboardNew />
-            <div>Nouveau Dashboard - En construction</div>
+            <DashboardNew />
           ) : (
             <DashboardOld />
           )
