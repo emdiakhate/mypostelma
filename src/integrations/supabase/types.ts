@@ -2204,6 +2204,515 @@ export type Database = {
         }
         Relationships: []
       }
+      vente_order_items: {
+        Row: {
+          description: string
+          id: string
+          order_id: string
+          order_index: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          description: string
+          id?: string
+          order_id: string
+          order_index?: number
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          order_id?: string
+          order_index?: number
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vente_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_orders: {
+        Row: {
+          client_address: string | null
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          delivered_at: string | null
+          id: string
+          notes: string | null
+          number: string
+          payment_status: string
+          quote_id: string | null
+          shipped_at: string | null
+          shipping_address: string | null
+          status: string
+          total_ht: number
+          total_ttc: number
+          tracking_number: string | null
+          tva_rate: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          number: string
+          payment_status?: string
+          quote_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          status?: string
+          total_ht: number
+          total_ttc: number
+          tracking_number?: string | null
+          tva_rate?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_address?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          number?: string
+          payment_status?: string
+          quote_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          tracking_number?: string | null
+          tva_rate?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "vente_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_products: {
+        Row: {
+          category: string
+          cost: number | null
+          created_at: string | null
+          description: string
+          id: string
+          name: string
+          price: number
+          sku: string | null
+          status: string
+          stock: number | null
+          type: string
+          unit: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          cost?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          name: string
+          price: number
+          sku?: string | null
+          status?: string
+          stock?: number | null
+          type: string
+          unit: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          cost?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          name?: string
+          price?: number
+          sku?: string | null
+          status?: string
+          stock?: number | null
+          type?: string
+          unit?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vente_quote_items: {
+        Row: {
+          description: string
+          id: string
+          order_index: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          quote_id: string
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          description: string
+          id?: string
+          order_index?: number
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          quote_id: string
+          total: number
+          unit_price: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          order_index?: number
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          quote_id?: string
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_quote_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "vente_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_quotes: {
+        Row: {
+          accepted_at: string | null
+          client_address: string | null
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          number: string
+          rejected_at: string | null
+          sent_at: string | null
+          status: string
+          total_ht: number
+          total_ttc: number
+          tva_rate: number
+          updated_at: string | null
+          user_id: string
+          valid_until: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_address?: string | null
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          number: string
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: string
+          total_ht: number
+          total_ttc: number
+          tva_rate?: number
+          updated_at?: string | null
+          user_id: string
+          valid_until: string
+        }
+        Update: {
+          accepted_at?: string | null
+          client_address?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          number?: string
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          tva_rate?: number
+          updated_at?: string | null
+          user_id?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
+      vente_stock_items: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          last_restocked_at: string | null
+          location: string
+          min_quantity: number
+          product_id: string
+          product_name: string
+          quantity: number
+          sku: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          last_restocked_at?: string | null
+          location: string
+          min_quantity?: number
+          product_id: string
+          product_name: string
+          quantity?: number
+          sku: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          last_restocked_at?: string | null
+          location?: string
+          min_quantity?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sku?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_stock_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_stock_movements: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          order_id: string | null
+          quantity: number
+          reason: string
+          reference: string | null
+          stock_item_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          order_id?: string | null
+          quantity: number
+          reason: string
+          reference?: string | null
+          stock_item_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          order_id?: string | null
+          quantity?: number
+          reason?: string
+          reference?: string | null
+          stock_item_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vente_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "vente_stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_ticket_responses: {
+        Row: {
+          attachments: string[] | null
+          author: string
+          author_email: string | null
+          created_at: string | null
+          id: string
+          is_staff: boolean
+          message: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          author: string
+          author_email?: string | null
+          created_at?: string | null
+          id?: string
+          is_staff?: boolean
+          message: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: string[] | null
+          author?: string
+          author_email?: string | null
+          created_at?: string | null
+          id?: string
+          is_staff?: boolean
+          message?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_ticket_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "vente_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vente_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          client_email: string
+          client_name: string
+          closed_at: string | null
+          created_at: string | null
+          description: string
+          id: string
+          number: string
+          order_id: string | null
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          client_email: string
+          client_name: string
+          closed_at?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          number: string
+          order_id?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          client_email?: string
+          client_name?: string
+          closed_at?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          number?: string
+          order_id?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vente_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vente_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_logs: {
         Row: {
           body: Json | null
