@@ -68,6 +68,13 @@ import ProspectsPageNew from "./pages/crm/prospects/index";
 import ClientsPageNew from "./pages/crm/clients/index";
 import ConfigPageNew from "./pages/crm/config";
 
+// Vente Module Pages
+import CataloguePageNew from "./pages/vente/catalogue";
+import DevisPageNew from "./pages/vente/devis/index";
+import CommandesPageNew from "./pages/vente/commandes/index";
+import ServiceClientPageNew from "./pages/vente/service-client";
+import StockPageNew from "./pages/vente/stock";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -117,6 +124,15 @@ function MainLayout() {
         <Route path="/reporting/concurrence/competitors" element={<CompetitorsPageNew />} />
         <Route path="/reporting/concurrence/compare" element={<ComparePageNew />} />
         <Route path="/reporting/concurrence/analyse" element={<AnalysePageNew />} />
+
+        {/* ================================================================
+            MODULE VENTE
+            ================================================================ */}
+        <Route path="/vente/catalogue" element={<CataloguePageNew />} />
+        <Route path="/vente/devis" element={<DevisPageNew />} />
+        <Route path="/vente/commandes" element={<CommandesPageNew />} />
+        <Route path="/vente/service-client" element={<ServiceClientPageNew />} />
+        <Route path="/vente/stock" element={<StockPageNew />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)
