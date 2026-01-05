@@ -36,6 +36,147 @@ import type {
 } from '@/types/vente';
 import { calculateTTC, TVA_RATE } from '@/types/vente';
 
+// Helper pour mapper les données DB vers les types locaux
+const mapDbProduct = (item: any): Product => ({
+  id: item.id,
+  user_id: item.user_id,
+  name: item.name,
+  description: item.description,
+  type: item.type as 'product' | 'service',
+  category: item.category,
+  price: Number(item.price),
+  cost: item.cost ? Number(item.cost) : undefined,
+  stock: item.stock ?? undefined,
+  unit: item.unit,
+  sku: item.sku ?? undefined,
+  status: item.status as 'active' | 'archived',
+  created_at: new Date(item.created_at),
+  updated_at: new Date(item.updated_at),
+});
+
+const mapDbQuote = (item: any): Quote => ({
+  id: item.id,
+  user_id: item.user_id,
+  number: item.number,
+  client_name: item.client_name,
+  client_email: item.client_email,
+  client_phone: item.client_phone ?? undefined,
+  client_address: item.client_address ?? undefined,
+  status: item.status as Quote['status'],
+  total_ht: Number(item.total_ht),
+  total_ttc: Number(item.total_ttc),
+  tva_rate: Number(item.tva_rate),
+  valid_until: new Date(item.valid_until),
+  created_at: new Date(item.created_at),
+  updated_at: new Date(item.updated_at),
+  sent_at: item.sent_at ? new Date(item.sent_at) : undefined,
+  accepted_at: item.accepted_at ? new Date(item.accepted_at) : undefined,
+  rejected_at: item.rejected_at ? new Date(item.rejected_at) : undefined,
+  notes: item.notes ?? undefined,
+  items: (item.items || []).map((i: any) => ({
+    id: i.id,
+    quote_id: i.quote_id,
+    product_id: i.product_id ?? undefined,
+    product_name: i.product_name,
+    description: i.description,
+    quantity: Number(i.quantity),
+    unit_price: Number(i.unit_price),
+    total: Number(i.total),
+    order_index: i.order_index,
+  })).sort((a: QuoteItem, b: QuoteItem) => a.order_index - b.order_index),
+});
+
+const mapDbOrder = (item: any): Order => ({
+  id: item.id,
+  user_id: item.user_id,
+  number: item.number,
+  client_name: item.client_name,
+  client_email: item.client_email,
+  client_phone: item.client_phone ?? undefined,
+  client_address: item.client_address ?? undefined,
+  status: item.status as Order['status'],
+  payment_status: item.payment_status as Order['payment_status'],
+  total_ht: Number(item.total_ht),
+  total_ttc: Number(item.total_ttc),
+  tva_rate: Number(item.tva_rate),
+  created_at: new Date(item.created_at),
+  updated_at: new Date(item.updated_at),
+  confirmed_at: item.confirmed_at ? new Date(item.confirmed_at) : undefined,
+  shipped_at: item.shipped_at ? new Date(item.shipped_at) : undefined,
+  delivered_at: item.delivered_at ? new Date(item.delivered_at) : undefined,
+  tracking_number: item.tracking_number ?? undefined,
+  shipping_address: item.shipping_address ?? undefined,
+  notes: item.notes ?? undefined,
+  quote_id: item.quote_id ?? undefined,
+  items: (item.items || []).map((i: any) => ({
+    id: i.id,
+    order_id: i.order_id,
+    product_id: i.product_id ?? undefined,
+    product_name: i.product_name,
+    description: i.description,
+    quantity: Number(i.quantity),
+    unit_price: Number(i.unit_price),
+    total: Number(i.total),
+    order_index: i.order_index,
+  })).sort((a: OrderItem, b: OrderItem) => a.order_index - b.order_index),
+});
+
+const mapDbTicket = (item: any): Ticket => ({
+  id: item.id,
+  user_id: item.user_id,
+  number: item.number,
+  subject: item.subject,
+  description: item.description,
+  client_name: item.client_name,
+  client_email: item.client_email,
+  status: item.status as Ticket['status'],
+  priority: item.priority as Ticket['priority'],
+  category: item.category,
+  assigned_to: item.assigned_to ?? undefined,
+  created_at: new Date(item.created_at),
+  updated_at: new Date(item.updated_at),
+  resolved_at: item.resolved_at ? new Date(item.resolved_at) : undefined,
+  closed_at: item.closed_at ? new Date(item.closed_at) : undefined,
+  order_id: item.order_id ?? undefined,
+  responses: (item.responses || []).map((r: any) => ({
+    id: r.id,
+    ticket_id: r.ticket_id,
+    author: r.author,
+    author_email: r.author_email ?? undefined,
+    message: r.message,
+    is_staff: r.is_staff,
+    created_at: new Date(r.created_at),
+    attachments: r.attachments ?? undefined,
+  })),
+});
+
+const mapDbStockItem = (item: any): StockItem => ({
+  id: item.id,
+  user_id: item.user_id,
+  product_id: item.product_id,
+  product_name: item.product_name,
+  sku: item.sku,
+  category: item.category,
+  quantity: item.quantity,
+  min_quantity: item.min_quantity,
+  location: item.location,
+  last_restocked_at: item.last_restocked_at ? new Date(item.last_restocked_at) : undefined,
+  created_at: new Date(item.created_at),
+  updated_at: new Date(item.updated_at),
+  movements: (item.movements || []).map((m: any) => ({
+    id: m.id,
+    user_id: m.user_id,
+    stock_item_id: m.stock_item_id,
+    type: m.type as StockMovement['type'],
+    quantity: m.quantity,
+    reason: m.reason,
+    created_at: new Date(m.created_at),
+    created_by: m.created_by,
+    order_id: m.order_id ?? undefined,
+    reference: m.reference ?? undefined,
+  })),
+});
+
 // ============================================================================
 // 1. HOOK PRODUITS/SERVICES
 // ============================================================================
@@ -49,7 +190,7 @@ export const useProducts = (filters?: ProductFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('vente_products')
+        .from('vente_products' as any)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -83,11 +224,7 @@ export const useProducts = (filters?: ProductFilters) => {
 
       if (error) throw error;
 
-      setProducts((data || []).map((item) => ({
-        ...item,
-        created_at: new Date(item.created_at),
-        updated_at: new Date(item.updated_at),
-      })));
+      setProducts((data || []).map(mapDbProduct));
     } catch (error: any) {
       console.error('Error loading products:', error);
       toast({
@@ -106,20 +243,18 @@ export const useProducts = (filters?: ProductFilters) => {
 
   const createProduct = async (productData: Omit<Product, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
+
       const { data, error } = await supabase
-        .from('vente_products')
-        .insert([productData])
+        .from('vente_products' as any)
+        .insert([{ ...productData, user_id: userData.user.id }])
         .select()
         .single();
 
       if (error) throw error;
 
-      const newProduct: Product = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-      };
-
+      const newProduct = mapDbProduct(data);
       setProducts([newProduct, ...products]);
       toast({
         title: 'Produit créé',
@@ -138,10 +273,10 @@ export const useProducts = (filters?: ProductFilters) => {
     }
   };
 
-  const updateProduct = async (productId: string, updates: Partial<Product>) => {
+  const updateProduct = async (productId: string, updates: Partial<Omit<Product, 'created_at' | 'updated_at'>>) => {
     try {
       const { data, error } = await supabase
-        .from('vente_products')
+        .from('vente_products' as any)
         .update(updates)
         .eq('id', productId)
         .select()
@@ -149,12 +284,7 @@ export const useProducts = (filters?: ProductFilters) => {
 
       if (error) throw error;
 
-      const updatedProduct: Product = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-      };
-
+      const updatedProduct = mapDbProduct(data);
       setProducts(products.map((p) => (p.id === productId ? updatedProduct : p)));
       toast({
         title: 'Produit mis à jour',
@@ -176,7 +306,7 @@ export const useProducts = (filters?: ProductFilters) => {
   const deleteProduct = async (productId: string) => {
     try {
       const { error } = await supabase
-        .from('vente_products')
+        .from('vente_products' as any)
         .delete()
         .eq('id', productId);
 
@@ -229,7 +359,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('vente_quotes')
+        .from('vente_quotes' as any)
         .select('*, items:vente_quote_items(*)')
         .order('created_at', { ascending: false });
 
@@ -271,18 +401,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
 
       if (error) throw error;
 
-      setQuotes(
-        (data || []).map((item) => ({
-          ...item,
-          created_at: new Date(item.created_at),
-          updated_at: new Date(item.updated_at),
-          valid_until: new Date(item.valid_until),
-          sent_at: item.sent_at ? new Date(item.sent_at) : undefined,
-          accepted_at: item.accepted_at ? new Date(item.accepted_at) : undefined,
-          rejected_at: item.rejected_at ? new Date(item.rejected_at) : undefined,
-          items: (item.items || []).sort((a: any, b: any) => a.order_index - b.order_index),
-        }))
-      );
+      setQuotes((data || []).map(mapDbQuote));
     } catch (error: any) {
       console.error('Error loading quotes:', error);
       toast({
@@ -301,23 +420,20 @@ export const useQuotes = (filters?: QuoteFilters) => {
 
   const createQuote = async (quoteInput: CreateQuoteInput) => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
+
       // Calculate totals
       const totalHT = quoteInput.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
       const totalTTC = calculateTTC(totalHT);
 
-      // Generate quote number
-      const { count } = await supabase
-        .from('vente_quotes')
-        .select('*', { count: 'exact', head: true });
-
-      const quoteNumber = `DEV-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`;
-
-      // Create quote
+      // Create quote (number will be auto-generated by trigger)
       const { data: quoteData, error: quoteError } = await supabase
-        .from('vente_quotes')
+        .from('vente_quotes' as any)
         .insert([
           {
-            number: quoteNumber,
+            user_id: userData.user.id,
+            number: '', // Will be auto-generated
             client_name: quoteInput.client_name,
             client_email: quoteInput.client_email,
             client_phone: quoteInput.client_phone,
@@ -336,8 +452,9 @@ export const useQuotes = (filters?: QuoteFilters) => {
       if (quoteError) throw quoteError;
 
       // Create quote items
+      const quoteDataAny = quoteData as any;
       const itemsData = quoteInput.items.map((item, index) => ({
-        quote_id: quoteData.id,
+        quote_id: quoteDataAny.id,
         product_id: item.product_id,
         product_name: item.product_name,
         description: item.description,
@@ -348,24 +465,17 @@ export const useQuotes = (filters?: QuoteFilters) => {
       }));
 
       const { data: itemsResult, error: itemsError } = await supabase
-        .from('vente_quote_items')
+        .from('vente_quote_items' as any)
         .insert(itemsData)
         .select();
 
       if (itemsError) throw itemsError;
 
-      const newQuote: Quote = {
-        ...quoteData,
-        created_at: new Date(quoteData.created_at),
-        updated_at: new Date(quoteData.updated_at),
-        valid_until: new Date(quoteData.valid_until),
-        items: itemsResult || [],
-      };
-
+      const newQuote = mapDbQuote({ ...quoteDataAny, items: itemsResult || [] });
       setQuotes([newQuote, ...quotes]);
       toast({
         title: 'Devis créé',
-        description: `Le devis ${quoteNumber} a été créé avec succès.`,
+        description: `Le devis ${newQuote.number} a été créé avec succès.`,
       });
 
       return newQuote;
@@ -397,7 +507,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
       }
 
       const { data, error } = await supabase
-        .from('vente_quotes')
+        .from('vente_quotes' as any)
         .update(updates)
         .eq('id', quoteId)
         .select('*, items:vente_quote_items(*)')
@@ -405,17 +515,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
 
       if (error) throw error;
 
-      const updatedQuote: Quote = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        valid_until: new Date(data.valid_until),
-        sent_at: data.sent_at ? new Date(data.sent_at) : undefined,
-        accepted_at: data.accepted_at ? new Date(data.accepted_at) : undefined,
-        rejected_at: data.rejected_at ? new Date(data.rejected_at) : undefined,
-        items: (data.items || []).sort((a: any, b: any) => a.order_index - b.order_index),
-      };
-
+      const updatedQuote = mapDbQuote(data);
       setQuotes(quotes.map((q) => (q.id === quoteId ? updatedQuote : q)));
       toast({
         title: 'Statut mis à jour',
@@ -473,10 +573,10 @@ export const useQuotes = (filters?: QuoteFilters) => {
   const deleteQuote = async (quoteId: string) => {
     try {
       // Delete items first
-      await supabase.from('vente_quote_items').delete().eq('quote_id', quoteId);
+      await supabase.from('vente_quote_items' as any).delete().eq('quote_id', quoteId);
 
       // Delete quote
-      const { error } = await supabase.from('vente_quotes').delete().eq('id', quoteId);
+      const { error } = await supabase.from('vente_quotes' as any).delete().eq('id', quoteId);
 
       if (error) throw error;
 
@@ -519,7 +619,7 @@ export const useOrders = (filters?: OrderFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('vente_orders')
+        .from('vente_orders' as any)
         .select('*, items:vente_order_items(*)')
         .order('created_at', { ascending: false });
 
@@ -569,17 +669,7 @@ export const useOrders = (filters?: OrderFilters) => {
 
       if (error) throw error;
 
-      setOrders(
-        (data || []).map((item) => ({
-          ...item,
-          created_at: new Date(item.created_at),
-          updated_at: new Date(item.updated_at),
-          confirmed_at: item.confirmed_at ? new Date(item.confirmed_at) : undefined,
-          shipped_at: item.shipped_at ? new Date(item.shipped_at) : undefined,
-          delivered_at: item.delivered_at ? new Date(item.delivered_at) : undefined,
-          items: (item.items || []).sort((a: any, b: any) => a.order_index - b.order_index),
-        }))
-      );
+      setOrders((data || []).map(mapDbOrder));
     } catch (error: any) {
       console.error('Error loading orders:', error);
       toast({
@@ -598,23 +688,20 @@ export const useOrders = (filters?: OrderFilters) => {
 
   const createOrder = async (orderInput: CreateOrderInput) => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
+
       // Calculate totals
       const totalHT = orderInput.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
       const totalTTC = calculateTTC(totalHT);
 
-      // Generate order number
-      const { count } = await supabase
-        .from('vente_orders')
-        .select('*', { count: 'exact', head: true });
-
-      const orderNumber = `CMD-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`;
-
-      // Create order
+      // Create order (number will be auto-generated by trigger)
       const { data: orderData, error: orderError } = await supabase
-        .from('vente_orders')
+        .from('vente_orders' as any)
         .insert([
           {
-            number: orderNumber,
+            user_id: userData.user.id,
+            number: '', // Will be auto-generated
             client_name: orderInput.client_name,
             client_email: orderInput.client_email,
             client_phone: orderInput.client_phone,
@@ -635,8 +722,9 @@ export const useOrders = (filters?: OrderFilters) => {
       if (orderError) throw orderError;
 
       // Create order items
+      const orderDataAny = orderData as any;
       const itemsData = orderInput.items.map((item, index) => ({
-        order_id: orderData.id,
+        order_id: orderDataAny.id,
         product_id: item.product_id,
         product_name: item.product_name,
         description: item.description,
@@ -647,23 +735,17 @@ export const useOrders = (filters?: OrderFilters) => {
       }));
 
       const { data: itemsResult, error: itemsError } = await supabase
-        .from('vente_order_items')
+        .from('vente_order_items' as any)
         .insert(itemsData)
         .select();
 
       if (itemsError) throw itemsError;
 
-      const newOrder: Order = {
-        ...orderData,
-        created_at: new Date(orderData.created_at),
-        updated_at: new Date(orderData.updated_at),
-        items: itemsResult || [],
-      };
-
+      const newOrder = mapDbOrder({ ...orderDataAny, items: itemsResult || [] });
       setOrders([newOrder, ...orders]);
       toast({
         title: 'Commande créée',
-        description: `La commande ${orderNumber} a été créée avec succès.`,
+        description: `La commande ${newOrder.number} a été créée avec succès.`,
       });
 
       return newOrder;
@@ -681,23 +763,21 @@ export const useOrders = (filters?: OrderFilters) => {
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     try {
       const updates: any = { status };
-      const currentOrder = orders.find((o) => o.id === orderId);
 
-      if (status === 'confirmed' && !currentOrder?.confirmed_at) {
+      if (status === 'confirmed') {
         updates.confirmed_at = new Date().toISOString();
       }
 
-      if (status === 'shipped' && !currentOrder?.shipped_at) {
+      if (status === 'shipped') {
         updates.shipped_at = new Date().toISOString();
-        updates.tracking_number = `FR${Math.random().toString().slice(2, 11)}`;
       }
 
-      if (status === 'delivered' && !currentOrder?.delivered_at) {
+      if (status === 'delivered') {
         updates.delivered_at = new Date().toISOString();
       }
 
       const { data, error } = await supabase
-        .from('vente_orders')
+        .from('vente_orders' as any)
         .update(updates)
         .eq('id', orderId)
         .select('*, items:vente_order_items(*)')
@@ -705,16 +785,7 @@ export const useOrders = (filters?: OrderFilters) => {
 
       if (error) throw error;
 
-      const updatedOrder: Order = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        confirmed_at: data.confirmed_at ? new Date(data.confirmed_at) : undefined,
-        shipped_at: data.shipped_at ? new Date(data.shipped_at) : undefined,
-        delivered_at: data.delivered_at ? new Date(data.delivered_at) : undefined,
-        items: (data.items || []).sort((a: any, b: any) => a.order_index - b.order_index),
-      };
-
+      const updatedOrder = mapDbOrder(data);
       setOrders(orders.map((o) => (o.id === orderId ? updatedOrder : o)));
       toast({
         title: 'Statut mis à jour',
@@ -736,7 +807,7 @@ export const useOrders = (filters?: OrderFilters) => {
   const updatePaymentStatus = async (orderId: string, paymentStatus: Order['payment_status']) => {
     try {
       const { data, error } = await supabase
-        .from('vente_orders')
+        .from('vente_orders' as any)
         .update({ payment_status: paymentStatus })
         .eq('id', orderId)
         .select('*, items:vente_order_items(*)')
@@ -744,16 +815,7 @@ export const useOrders = (filters?: OrderFilters) => {
 
       if (error) throw error;
 
-      const updatedOrder: Order = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        confirmed_at: data.confirmed_at ? new Date(data.confirmed_at) : undefined,
-        shipped_at: data.shipped_at ? new Date(data.shipped_at) : undefined,
-        delivered_at: data.delivered_at ? new Date(data.delivered_at) : undefined,
-        items: (data.items || []).sort((a: any, b: any) => a.order_index - b.order_index),
-      };
-
+      const updatedOrder = mapDbOrder(data);
       setOrders(orders.map((o) => (o.id === orderId ? updatedOrder : o)));
       toast({
         title: 'Paiement mis à jour',
@@ -775,10 +837,10 @@ export const useOrders = (filters?: OrderFilters) => {
   const deleteOrder = async (orderId: string) => {
     try {
       // Delete items first
-      await supabase.from('vente_order_items').delete().eq('order_id', orderId);
+      await supabase.from('vente_order_items' as any).delete().eq('order_id', orderId);
 
       // Delete order
-      const { error } = await supabase.from('vente_orders').delete().eq('id', orderId);
+      const { error } = await supabase.from('vente_orders' as any).delete().eq('id', orderId);
 
       if (error) throw error;
 
@@ -821,7 +883,7 @@ export const useTickets = (filters?: TicketFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('vente_tickets')
+        .from('vente_tickets' as any)
         .select('*, responses:vente_ticket_responses(*)')
         .order('created_at', { ascending: false });
 
@@ -871,19 +933,7 @@ export const useTickets = (filters?: TicketFilters) => {
 
       if (error) throw error;
 
-      setTickets(
-        (data || []).map((item) => ({
-          ...item,
-          created_at: new Date(item.created_at),
-          updated_at: new Date(item.updated_at),
-          resolved_at: item.resolved_at ? new Date(item.resolved_at) : undefined,
-          closed_at: item.closed_at ? new Date(item.closed_at) : undefined,
-          responses: (item.responses || []).map((r: any) => ({
-            ...r,
-            created_at: new Date(r.created_at),
-          })),
-        }))
-      );
+      setTickets((data || []).map(mapDbTicket));
     } catch (error: any) {
       console.error('Error loading tickets:', error);
       toast({
@@ -902,18 +952,16 @@ export const useTickets = (filters?: TicketFilters) => {
 
   const createTicket = async (ticketInput: CreateTicketInput) => {
     try {
-      // Generate ticket number
-      const { count } = await supabase
-        .from('vente_tickets')
-        .select('*', { count: 'exact', head: true });
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
 
-      const ticketNumber = `TICKET-${String((count || 0) + 1).padStart(3, '0')}`;
-
-      const { data, error } = await supabase
-        .from('vente_tickets')
+      // Create ticket (number will be auto-generated by trigger)
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('vente_tickets' as any)
         .insert([
           {
-            number: ticketNumber,
+            user_id: userData.user.id,
+            number: '', // Will be auto-generated
             subject: ticketInput.subject,
             description: ticketInput.description,
             client_name: ticketInput.client_name,
@@ -924,22 +972,17 @@ export const useTickets = (filters?: TicketFilters) => {
             order_id: ticketInput.order_id,
           },
         ])
-        .select('*, responses:vente_ticket_responses(*)')
+        .select()
         .single();
 
-      if (error) throw error;
+      if (ticketError) throw ticketError;
 
-      const newTicket: Ticket = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        responses: [],
-      };
-
+      const ticketDataAny = ticketData as any;
+      const newTicket = mapDbTicket({ ...ticketDataAny, responses: [] });
       setTickets([newTicket, ...tickets]);
       toast({
         title: 'Ticket créé',
-        description: `Le ticket ${ticketNumber} a été créé avec succès.`,
+        description: `Le ticket ${newTicket.number} a été créé avec succès.`,
       });
 
       return newTicket;
@@ -957,18 +1000,17 @@ export const useTickets = (filters?: TicketFilters) => {
   const updateTicketStatus = async (ticketId: string, status: Ticket['status']) => {
     try {
       const updates: any = { status };
-      const currentTicket = tickets.find((t) => t.id === ticketId);
 
-      if (status === 'resolved' && !currentTicket?.resolved_at) {
+      if (status === 'resolved') {
         updates.resolved_at = new Date().toISOString();
       }
 
-      if (status === 'closed' && !currentTicket?.closed_at) {
+      if (status === 'closed') {
         updates.closed_at = new Date().toISOString();
       }
 
       const { data, error } = await supabase
-        .from('vente_tickets')
+        .from('vente_tickets' as any)
         .update(updates)
         .eq('id', ticketId)
         .select('*, responses:vente_ticket_responses(*)')
@@ -976,18 +1018,7 @@ export const useTickets = (filters?: TicketFilters) => {
 
       if (error) throw error;
 
-      const updatedTicket: Ticket = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        resolved_at: data.resolved_at ? new Date(data.resolved_at) : undefined,
-        closed_at: data.closed_at ? new Date(data.closed_at) : undefined,
-        responses: (data.responses || []).map((r: any) => ({
-          ...r,
-          created_at: new Date(r.created_at),
-        })),
-      };
-
+      const updatedTicket = mapDbTicket(data);
       setTickets(tickets.map((t) => (t.id === ticketId ? updatedTicket : t)));
       toast({
         title: 'Statut mis à jour',
@@ -1009,33 +1040,22 @@ export const useTickets = (filters?: TicketFilters) => {
   const addResponse = async (responseInput: CreateTicketResponseInput) => {
     try {
       const { data, error } = await supabase
-        .from('vente_ticket_responses')
+        .from('vente_ticket_responses' as any)
         .insert([responseInput])
         .select()
         .single();
 
       if (error) throw error;
 
-      const newResponse: TicketResponse = {
-        ...data,
-        created_at: new Date(data.created_at),
-      };
-
-      // Update ticket with new response
-      setTickets(
-        tickets.map((t) =>
-          t.id === responseInput.ticket_id
-            ? { ...t, responses: [...t.responses, newResponse], updated_at: new Date() }
-            : t
-        )
-      );
+      // Reload tickets to get updated responses
+      await loadTickets();
 
       toast({
         title: 'Réponse ajoutée',
-        description: 'Votre réponse a été envoyée.',
+        description: 'La réponse a été ajoutée au ticket.',
       });
 
-      return newResponse;
+      return data;
     } catch (error: any) {
       console.error('Error adding response:', error);
       toast({
@@ -1050,10 +1070,10 @@ export const useTickets = (filters?: TicketFilters) => {
   const deleteTicket = async (ticketId: string) => {
     try {
       // Delete responses first
-      await supabase.from('vente_ticket_responses').delete().eq('ticket_id', ticketId);
+      await supabase.from('vente_ticket_responses' as any).delete().eq('ticket_id', ticketId);
 
       // Delete ticket
-      const { error } = await supabase.from('vente_tickets').delete().eq('id', ticketId);
+      const { error } = await supabase.from('vente_tickets' as any).delete().eq('id', ticketId);
 
       if (error) throw error;
 
@@ -1092,16 +1112,18 @@ export const useStock = (filters?: StockFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const loadStock = useCallback(async () => {
+  const loadStockItems = useCallback(async () => {
     try {
       setLoading(true);
       let query = supabase
-        .from('vente_stock_items')
+        .from('vente_stock_items' as any)
         .select('*, movements:vente_stock_movements(*)')
-        .order('created_at', { ascending: false });
+        .order('product_name', { ascending: true });
 
       if (filters?.search) {
-        query = query.or(`product_name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`);
+        query = query.or(
+          `product_name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`
+        );
       }
 
       if (filters?.location) {
@@ -1116,18 +1138,9 @@ export const useStock = (filters?: StockFilters) => {
 
       if (error) throw error;
 
-      let items = (data || []).map((item) => ({
-        ...item,
-        created_at: new Date(item.created_at),
-        updated_at: new Date(item.updated_at),
-        last_restocked_at: item.last_restocked_at ? new Date(item.last_restocked_at) : undefined,
-        movements: (item.movements || []).map((m: any) => ({
-          ...m,
-          created_at: new Date(m.created_at),
-        })),
-      }));
+      let items = (data || []).map(mapDbStockItem);
 
-      // Apply status filter
+      // Filter by stock status
       if (filters?.status && filters.status !== 'all') {
         items = items.filter((item) => {
           if (filters.status === 'out') return item.quantity === 0;
@@ -1139,7 +1152,7 @@ export const useStock = (filters?: StockFilters) => {
 
       setStockItems(items);
     } catch (error: any) {
-      console.error('Error loading stock:', error);
+      console.error('Error loading stock items:', error);
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -1151,124 +1164,49 @@ export const useStock = (filters?: StockFilters) => {
   }, [filters, toast]);
 
   useEffect(() => {
-    loadStock();
-  }, [loadStock]);
+    loadStockItems();
+  }, [loadStockItems]);
 
-  const createStockItem = async (
-    stockData: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'movements'>
-  ) => {
+  const updateStockQuantity = async (stockItemId: string, newQuantity: number) => {
     try {
       const { data, error } = await supabase
-        .from('vente_stock_items')
-        .insert([stockData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newItem: StockItem = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        last_restocked_at: data.last_restocked_at ? new Date(data.last_restocked_at) : undefined,
-        movements: [],
-      };
-
-      setStockItems([newItem, ...stockItems]);
-      toast({
-        title: 'Article créé',
-        description: 'L\'article a été ajouté au stock.',
-      });
-
-      return newItem;
-    } catch (error: any) {
-      console.error('Error creating stock item:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de créer l\'article.',
-      });
-      return null;
-    }
-  };
-
-  const updateStockItem = async (itemId: string, updates: Partial<StockItem>) => {
-    try {
-      const { data, error } = await supabase
-        .from('vente_stock_items')
-        .update(updates)
-        .eq('id', itemId)
+        .from('vente_stock_items' as any)
+        .update({ quantity: newQuantity })
+        .eq('id', stockItemId)
         .select('*, movements:vente_stock_movements(*)')
         .single();
 
       if (error) throw error;
 
-      const updatedItem: StockItem = {
-        ...data,
-        created_at: new Date(data.created_at),
-        updated_at: new Date(data.updated_at),
-        last_restocked_at: data.last_restocked_at ? new Date(data.last_restocked_at) : undefined,
-        movements: (data.movements || []).map((m: any) => ({
-          ...m,
-          created_at: new Date(m.created_at),
-        })),
-      };
-
-      setStockItems(stockItems.map((item) => (item.id === itemId ? updatedItem : item)));
+      const updatedItem = mapDbStockItem(data);
+      setStockItems(stockItems.map((s) => (s.id === stockItemId ? updatedItem : s)));
       toast({
-        title: 'Article mis à jour',
-        description: 'L\'article a été modifié avec succès.',
+        title: 'Stock mis à jour',
+        description: 'La quantité a été modifiée.',
       });
 
       return updatedItem;
     } catch (error: any) {
-      console.error('Error updating stock item:', error);
+      console.error('Error updating stock:', error);
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de mettre à jour l\'article.',
+        description: 'Impossible de mettre à jour le stock.',
       });
       return null;
-    }
-  };
-
-  const deleteStockItem = async (itemId: string) => {
-    try {
-      // Delete movements first
-      await supabase.from('vente_stock_movements').delete().eq('stock_item_id', itemId);
-
-      // Delete stock item
-      const { error } = await supabase.from('vente_stock_items').delete().eq('id', itemId);
-
-      if (error) throw error;
-
-      setStockItems(stockItems.filter((item) => item.id !== itemId));
-      toast({
-        title: 'Article supprimé',
-        description: 'L\'article a été supprimé du stock.',
-      });
-    } catch (error: any) {
-      console.error('Error deleting stock item:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer l\'article.',
-      });
     }
   };
 
   return {
     stockItems,
     loading,
-    createStockItem,
-    updateStockItem,
-    deleteStockItem,
-    loadStock,
+    updateStockQuantity,
+    loadStockItems,
   };
 };
 
 // ============================================================================
-// 6. HOOK MOUVEMENTS DE STOCK
+// 6. HOOK MOUVEMENTS STOCK
 // ============================================================================
 
 export const useStockMovements = (stockItemId?: string) => {
@@ -1286,19 +1224,25 @@ export const useStockMovements = (stockItemId?: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('vente_stock_movements')
+        .from('vente_stock_movements' as any)
         .select('*')
         .eq('stock_item_id', stockItemId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setMovements(
-        (data || []).map((m) => ({
-          ...m,
-          created_at: new Date(m.created_at),
-        }))
-      );
+      setMovements((data || []).map((m: any) => ({
+        id: m.id,
+        user_id: m.user_id,
+        stock_item_id: m.stock_item_id,
+        type: m.type as StockMovement['type'],
+        quantity: m.quantity,
+        reason: m.reason,
+        created_at: new Date(m.created_at),
+        created_by: m.created_by,
+        order_id: m.order_id ?? undefined,
+        reference: m.reference ?? undefined,
+      })));
     } catch (error: any) {
       console.error('Error loading movements:', error);
       toast({
@@ -1315,62 +1259,53 @@ export const useStockMovements = (stockItemId?: string) => {
     loadMovements();
   }, [loadMovements]);
 
-  const addMovement = async (movementInput: CreateStockMovementInput) => {
+  const createMovement = async (movementInput: CreateStockMovementInput) => {
     try {
-      // Get current stock item
-      const { data: stockItem, error: stockError } = await supabase
-        .from('vente_stock_items')
-        .select('quantity')
-        .eq('id', movementInput.stock_item_id)
-        .single();
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
 
-      if (stockError) throw stockError;
-
-      // Calculate new quantity
-      let newQuantity = stockItem.quantity;
-      if (movementInput.type === 'in' || movementInput.type === 'adjustment') {
-        newQuantity += movementInput.quantity;
-      } else if (movementInput.type === 'out') {
-        newQuantity -= movementInput.quantity;
-      }
-      newQuantity = Math.max(0, newQuantity);
-
-      // Create movement
-      const { data: movementData, error: movementError } = await supabase
-        .from('vente_stock_movements')
-        .insert([movementInput])
+      const { data, error } = await supabase
+        .from('vente_stock_movements' as any)
+        .insert([
+          {
+            user_id: userData.user.id,
+            stock_item_id: movementInput.stock_item_id,
+            type: movementInput.type,
+            quantity: movementInput.quantity,
+            reason: movementInput.reason,
+            created_by: userData.user.email || 'Unknown',
+            order_id: movementInput.order_id,
+            reference: movementInput.reference,
+          },
+        ])
         .select()
         .single();
 
-      if (movementError) throw movementError;
+      if (error) throw error;
 
-      // Update stock quantity
-      const updates: any = { quantity: newQuantity };
-      if (movementInput.type === 'in') {
-        updates.last_restocked_at = new Date().toISOString();
-      }
-
-      const { error: updateError } = await supabase
-        .from('vente_stock_items')
-        .update(updates)
-        .eq('id', movementInput.stock_item_id);
-
-      if (updateError) throw updateError;
-
+      const dataAny = data as any;
       const newMovement: StockMovement = {
-        ...movementData,
-        created_at: new Date(movementData.created_at),
+        id: dataAny.id,
+        user_id: dataAny.user_id,
+        stock_item_id: dataAny.stock_item_id,
+        type: dataAny.type as StockMovement['type'],
+        quantity: dataAny.quantity,
+        reason: dataAny.reason,
+        created_at: new Date(dataAny.created_at),
+        created_by: dataAny.created_by,
+        order_id: dataAny.order_id ?? undefined,
+        reference: dataAny.reference ?? undefined,
       };
 
       setMovements([newMovement, ...movements]);
       toast({
         title: 'Mouvement enregistré',
-        description: 'Le mouvement de stock a été enregistré avec succès.',
+        description: 'Le mouvement de stock a été enregistré.',
       });
 
       return newMovement;
     } catch (error: any) {
-      console.error('Error adding movement:', error);
+      console.error('Error creating movement:', error);
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -1383,7 +1318,29 @@ export const useStockMovements = (stockItemId?: string) => {
   return {
     movements,
     loading,
-    addMovement,
+    createMovement,
     loadMovements,
   };
 };
+
+// ============================================================================
+// HOOK PRINCIPAL (COMBINÉ)
+// ============================================================================
+
+export const useVente = () => {
+  const products = useProducts();
+  const quotes = useQuotes();
+  const orders = useOrders();
+  const tickets = useTickets();
+  const stock = useStock();
+
+  return {
+    products,
+    quotes,
+    orders,
+    tickets,
+    stock,
+  };
+};
+
+export default useVente;
