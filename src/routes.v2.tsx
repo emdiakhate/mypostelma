@@ -99,6 +99,11 @@ import PaiementsPageNew from './pages/compta/paiements';
 // Nouvelles pages Dashboard (Phase 7 - Refonte Dashboard)
 import DashboardNew from './pages/dashboard/index';
 
+// Nouvelles pages Admin (Phase 8 - Migration Module Admin)
+import EquipesPageNew from './pages/admin/equipes';
+import ParametresPageNew from './pages/admin/parametres';
+import SystemePageNew from './pages/admin/systeme';
+
 // ============================================================================
 // COMPOSANTS DE REDIRECTION CONDITIONNELLE
 // ============================================================================
@@ -568,7 +573,7 @@ export const RoutesV2 = () => {
         path="/admin/equipes"
         element={
           isFeatureEnabled('ENABLE_NEW_ADMIN') ? (
-            <div>Équipes - En construction</div>
+            <EquipesPageNew />
           ) : (
             <TeamsPageOld />
           )
@@ -580,7 +585,7 @@ export const RoutesV2 = () => {
         path="/admin/parametres"
         element={
           isFeatureEnabled('ENABLE_NEW_ADMIN') ? (
-            <div>Paramètres - En construction</div>
+            <ParametresPageNew />
           ) : (
             <SettingsPageOld />
           )
@@ -592,21 +597,9 @@ export const RoutesV2 = () => {
         path="/admin/systeme"
         element={
           isFeatureEnabled('ENABLE_NEW_ADMIN') ? (
-            <div>Administration - En construction</div>
+            <SystemePageNew />
           ) : (
             <AdminPageOld />
-          )
-        }
-      />
-
-      {/* Acquisition */}
-      <Route
-        path="/admin/acquisition"
-        element={
-          isFeatureEnabled('ENABLE_NEW_ADMIN') ? (
-            <div>Acquisition - En construction</div>
-          ) : (
-            <AcquisitionPageOld />
           )
         }
       />
@@ -615,7 +608,9 @@ export const RoutesV2 = () => {
       <Route path="/teams" element={<Navigate to="/admin/equipes" replace />} />
       <Route path="/settings" element={<Navigate to="/admin/parametres" replace />} />
       <Route path="/admin" element={<Navigate to="/admin/systeme" replace />} />
-      <Route path="/crm/acquisition" element={<Navigate to="/admin/acquisition" replace />} />
+      {/* Acquisition redirigée vers Prospects (CRM) */}
+      <Route path="/admin/acquisition" element={<Navigate to="/crm/prospects" replace />} />
+      <Route path="/crm/acquisition" element={<Navigate to="/crm/prospects" replace />} />
 
       {/* ================================================================
           ROUTE PAR DÉFAUT
