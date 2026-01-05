@@ -43,6 +43,31 @@ import TemplatesPage from "./pages/crm/TemplatesPage";
 import OAuthCallback from "./pages/OAuthCallback";
 import AcceptInvitationPage from "./pages/AcceptInvitationPage";
 
+// Marketing Module Pages
+import PublicationsPageNew from "./pages/marketing/publications/index";
+import PostDetailPageNew from "./pages/marketing/publications/[id]";
+import CalendarPageNew from "./pages/marketing/publications/calendar";
+import CreationPageNew from "./pages/marketing/creation";
+import ArchivesPageNew from "./pages/marketing/archives";
+import CampaignsPageNew from "./pages/marketing/campagnes/index";
+import TemplatesPageNew from "./pages/marketing/templates/index";
+import ComptesSociauxPageNew from "./pages/marketing/comptes-sociaux";
+import InboxPageNew from "./pages/marketing/inbox";
+import AutomationPageNew from "./pages/marketing/automation";
+
+// Reporting Module Pages
+import AnalyticsPageNew from "./pages/reporting/analytics";
+import CompetitorsPageNew from "./pages/reporting/concurrence/competitors";
+import ComparePageNew from "./pages/reporting/concurrence/compare";
+import AnalysePageNew from "./pages/reporting/concurrence/analyse";
+
+// CRM New Pages
+import CRMLeadsPageNew from "./pages/crm/leads/index";
+import LeadDetailPageNew from "./pages/crm/leads/[id]";
+import ProspectsPageNew from "./pages/crm/prospects/index";
+import ClientsPageNew from "./pages/crm/clients/index";
+import ConfigPageNew from "./pages/crm/config";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -50,20 +75,58 @@ function MainLayout() {
   return (
     <Layout>
       <Routes>
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
             isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? <DashboardNew /> : <DashboardOld />
           }
         />
+
+        {/* ================================================================
+            MODULE MARKETING
+            ================================================================ */}
+        <Route path="/marketing/publications" element={<PublicationsPageNew />} />
+        <Route path="/marketing/publications/:id" element={<PostDetailPageNew />} />
+        <Route path="/marketing/publications/calendar" element={<CalendarPageNew />} />
+        <Route path="/marketing/creation" element={<CreationPageNew />} />
+        <Route path="/marketing/archives" element={<ArchivesPageNew />} />
+        <Route path="/marketing/campagnes" element={<CampaignsPageNew />} />
+        <Route path="/marketing/templates" element={<TemplatesPageNew />} />
+        <Route path="/marketing/comptes-sociaux" element={<ComptesSociauxPageNew />} />
+        <Route path="/marketing/inbox" element={<InboxPageNew />} />
+        <Route path="/marketing/automation" element={<AutomationPageNew />} />
+
+        {/* ================================================================
+            MODULE CRM
+            ================================================================ */}
+        <Route path="/crm/prospects" element={<ProspectsPageNew />} />
+        <Route path="/crm/leads" element={<CRMLeadsPageNew />} />
+        <Route path="/crm/leads/:id" element={<LeadDetailPageNew />} />
+        <Route path="/crm/clients" element={<ClientsPageNew />} />
+        <Route path="/crm/config" element={<ConfigPageNew />} />
+        <Route path="/crm/acquisition" element={<AcquisitionPage />} />
+        <Route path="/crm/campaigns" element={<CampaignsPage />} />
+        <Route path="/crm/templates" element={<TemplatesPage />} />
+
+        {/* ================================================================
+            MODULE REPORTING
+            ================================================================ */}
+        <Route path="/reporting/analytics" element={<AnalyticsPageNew />} />
+        <Route path="/reporting/concurrence" element={<CompetitorsPageNew />} />
+        <Route path="/reporting/concurrence/competitors" element={<CompetitorsPageNew />} />
+        <Route path="/reporting/concurrence/compare" element={<ComparePageNew />} />
+        <Route path="/reporting/concurrence/analyse" element={<AnalysePageNew />} />
+
+        {/* ================================================================
+            ANCIENNES ROUTES (rétrocompatibilité)
+            ================================================================ */}
         <Route path="/calendar" element={<Index />} />
         <Route path="/analytics" element={<Analytics />} />
-
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/messages" element={<InboxPage />} />
         <Route path="/connections" element={<ConnectedAccountsPage />} />
         <Route path="/teams" element={<TeamsPage />} />
-
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/competitors" element={<CompetitorsPage />} />
         <Route path="/competitors/compare" element={<CompetitorsComparePage />} />
@@ -72,19 +135,12 @@ function MainLayout() {
         <Route path="/settings/accounts" element={<SocialAccountsPage />} />
         <Route path="/leads" element={<LeadsPage />} />
         <Route path="/leads/:id" element={<LeadDetailPage />} />
-
-        {/* CRM IA Routes */}
-        <Route path="/crm/config" element={<ConfigPage />} />
-        <Route path="/crm/acquisition" element={<AcquisitionPage />} />
-        <Route path="/crm/leads" element={<CRMLeadsPage />} />
-        <Route path="/crm/campaigns" element={<CampaignsPage />} />
-        <Route path="/crm/templates" element={<TemplatesPage />} />
-
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/creation" element={<CreationPage />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/connect-accounts" element={<ConnectSocialAccounts />} />
         <Route path="/admin" element={<AdminPage />} />
+
         {/* 404 */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
