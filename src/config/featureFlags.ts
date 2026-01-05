@@ -12,7 +12,7 @@ export const FEATURE_FLAGS = {
   // Flags par module
   ENABLE_NEW_SIDEBAR: false,
   ENABLE_NEW_DASHBOARD: true,
-  ENABLE_NEW_CRM: false,
+  ENABLE_NEW_CRM: true,
   ENABLE_NEW_MARKETING: false,
   ENABLE_VENTE_MODULE: false,
   ENABLE_COMPTA_MODULE: false,
