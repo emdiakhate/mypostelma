@@ -186,6 +186,14 @@ export const useProducts = (filters?: ProductFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Extraire les valeurs de filters pour éviter les boucles infinies
+  const search = filters?.search;
+  const type = filters?.type;
+  const category = filters?.category;
+  const status = filters?.status;
+  const minPrice = filters?.min_price;
+  const maxPrice = filters?.max_price;
+
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -194,30 +202,30 @@ export const useProducts = (filters?: ProductFilters) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (filters?.search) {
+      if (search) {
         query = query.or(
-          `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`
+          `name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`
         );
       }
 
-      if (filters?.type) {
-        query = query.eq('type', filters.type);
+      if (type) {
+        query = query.eq('type', type);
       }
 
-      if (filters?.category) {
-        query = query.eq('category', filters.category);
+      if (category) {
+        query = query.eq('category', category);
       }
 
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
+      if (status) {
+        query = query.eq('status', status);
       }
 
-      if (filters?.min_price !== undefined) {
-        query = query.gte('price', filters.min_price);
+      if (minPrice !== undefined) {
+        query = query.gte('price', minPrice);
       }
 
-      if (filters?.max_price !== undefined) {
-        query = query.lte('price', filters.max_price);
+      if (maxPrice !== undefined) {
+        query = query.lte('price', maxPrice);
       }
 
       const { data, error } = await query;
@@ -235,7 +243,7 @@ export const useProducts = (filters?: ProductFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [search, type, category, status, minPrice, maxPrice, toast]);
 
   useEffect(() => {
     loadProducts();
