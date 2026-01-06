@@ -47,7 +47,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useStockMovements, useStockProducts, useWarehouses } from '@/hooks/useStock';
+import { useStock } from '@/hooks/useStock';
 import {
   StockMovement,
   MovementType,
@@ -69,27 +69,19 @@ export default function StockMouvementsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Hooks
+  const { products, warehouses, movements } = useStock();
+
   const {
-    movements,
+    movements: stockMovements,
     loading: loadingMovements,
     createMovement,
     loadMovements,
-  } = useStockMovements({
-    movement_type: filterMovementType === 'all' ? undefined : filterMovementType,
-    reference_type: filterReferenceType === 'all' ? undefined : filterReferenceType,
-  });
+  } = movements;
 
-  const {
-    products,
-    loading: loadingProducts,
-    loadProducts,
-  } = useStockProducts({ status: 'active', is_stockable: true });
+  const { warehouses: warehousesList, loading: loadingWarehouses, loadWarehouses } = warehouses;
 
-  const {
-    warehouses,
-    loading: loadingWarehouses,
-    loadWarehouses,
-  } = useWarehouses({ is_active: true });
+  // Filtrer uniquement les produits physiques (type='product')
+  const stockableProducts = products.products.filter((p) => p.type === 'product' && p.status === 'active');
 
   const [newMovement, setNewMovement] = useState<Partial<CreateStockMovementInput>>({
     product_id: '',
@@ -106,8 +98,6 @@ export default function StockMouvementsPage() {
 
   useEffect(() => {
     loadMovements();
-    loadProducts();
-    loadWarehouses();
   }, [filterMovementType, filterReferenceType]);
 
   const handleCreateMovement = async () => {
@@ -204,7 +194,7 @@ export default function StockMouvementsPage() {
     });
   };
 
-  const filteredMovements = movements.filter((movement) => {
+  const filteredMovements = stockMovements.filter((movement) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -215,10 +205,10 @@ export default function StockMouvementsPage() {
   });
 
   const stats = {
-    total: movements.length,
-    in: movements.filter((m) => m.movement_type === 'IN').length,
-    out: movements.filter((m) => m.movement_type === 'OUT').length,
-    transfer: movements.filter((m) => m.movement_type === 'TRANSFER').length,
+    total: stockMovements.length,
+    in: stockMovements.filter((m) => m.movement_type === 'IN').length,
+    out: stockMovements.filter((m) => m.movement_type === 'OUT').length,
+    transfer: stockMovements.filter((m) => m.movement_type === 'TRANSFER').length,
   };
 
   const getMovementIcon = (type: MovementType) => {
@@ -306,7 +296,7 @@ export default function StockMouvementsPage() {
                         <SelectValue placeholder="Sélectionner un produit..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {products.map((product) => (
+                        {stockableProducts.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.name} {product.sku && `(${product.sku})`}
                           </SelectItem>
@@ -330,7 +320,7 @@ export default function StockMouvementsPage() {
                         <SelectValue placeholder="Sélectionner un entrepôt..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses.map((warehouse) => (
+                        {warehousesList.map((warehouse) => (
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             {warehouse.name} ({warehouse.city})
                           </SelectItem>
@@ -353,7 +343,7 @@ export default function StockMouvementsPage() {
                         <SelectValue placeholder="Sélectionner un entrepôt..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses.map((warehouse) => (
+                        {warehousesList.map((warehouse) => (
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             {warehouse.name} ({warehouse.city})
                           </SelectItem>
@@ -377,7 +367,7 @@ export default function StockMouvementsPage() {
                           <SelectValue placeholder="Source..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {warehouses.map((warehouse) => (
+                          {warehousesList.map((warehouse) => (
                             <SelectItem key={warehouse.id} value={warehouse.id}>
                               {warehouse.name}
                             </SelectItem>
@@ -397,7 +387,7 @@ export default function StockMouvementsPage() {
                           <SelectValue placeholder="Destination..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {warehouses.map((warehouse) => (
+                          {warehousesList.map((warehouse) => (
                             <SelectItem key={warehouse.id} value={warehouse.id}>
                               {warehouse.name}
                             </SelectItem>
@@ -421,7 +411,7 @@ export default function StockMouvementsPage() {
                         <SelectValue placeholder="Sélectionner un entrepôt..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses.map((warehouse) => (
+                        {warehousesList.map((warehouse) => (
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             {warehouse.name} ({warehouse.city})
                           </SelectItem>
