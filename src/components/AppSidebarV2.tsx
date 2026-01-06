@@ -261,13 +261,6 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         badge: 'Nouveau',
         children: [
           {
-            id: 'stock-produits',
-            label: 'Produits',
-            icon: Package,
-            path: '/app/stock/produits',
-            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
-          },
-          {
             id: 'stock-entrepots',
             label: 'Entrepôts',
             icon: Warehouse,

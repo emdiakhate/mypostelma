@@ -76,7 +76,6 @@ import ServiceClientPageNew from "./pages/vente/service-client";
 
 
 // Stock Module Pages
-import StockProduitsPage from "./pages/stock/produits";
 import StockEntrepotsPage from "./pages/stock/entrepots";
 import StockMouvementsPage from "./pages/stock/mouvements";
 import StockTransfertsPage from "./pages/stock/transferts";
@@ -144,7 +143,6 @@ function MainLayout() {
         {/* ================================================================
             MODULE STOCK
             ================================================================ */}
-        <Route path="/stock/produits" element={<StockProduitsPage />} />
         <Route path="/stock/entrepots" element={<StockEntrepotsPage />} />
         <Route path="/stock/mouvements" element={<StockMouvementsPage />} />
         <Route path="/stock/transferts" element={<StockTransfertsPage />} />
