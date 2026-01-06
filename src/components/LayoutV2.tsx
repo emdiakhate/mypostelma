@@ -60,7 +60,7 @@ const LayoutV2: React.FC<LayoutV2Props> = ({ children }) => {
     if (path === '/app/vente/devis') return 'Vente - Devis';
     if (path === '/app/vente/commandes') return 'Vente - Commandes';
     if (path === '/app/vente/service-client') return 'Vente - Service Client';
-    if (path === '/app/vente/stock') return 'Vente - Stock';
+    
 
     // Compta
     if (path === '/app/compta/devis') return 'Comptabilité - Devis';
