@@ -179,7 +179,7 @@ export default function StockTransfertsPage() {
         warehouse_from_id: newTransfer.warehouse_from_id,
         warehouse_to_id: newTransfer.warehouse_to_id,
         reason: newTransfer.reason,
-        reference_type: 'MANUAL',
+        reference_type: 'OTHER',
         reference_number: newTransfer.reference_number || undefined,
         notes: newTransfer.notes || undefined,
       };

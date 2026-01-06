@@ -67,7 +67,7 @@ export interface CreateWarehouseInput {
 // ============================================================================
 
 export type MovementType = 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT';
-export type ReferenceType = 'SALE' | 'PURCHASE' | 'RETURN' | 'MANUAL' | 'LOSS' | 'PRODUCTION';
+export type ReferenceType = 'PURCHASE' | 'SALE' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION' | 'RETURN' | 'OTHER';
 
 export interface StockMovement {
   id: string;
