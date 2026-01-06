@@ -5,7 +5,7 @@
  * Produits physiques, digitaux et services avec gestion stock.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -110,9 +110,6 @@ export default function StockProduitsPage() {
     status: 'active',
   });
 
-  useEffect(() => {
-    loadProducts();
-  }, [filterType, filterCategory, filterStatus, searchQuery]);
 
   const filteredProducts = products;
 

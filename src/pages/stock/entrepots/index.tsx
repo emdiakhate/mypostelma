@@ -5,7 +5,7 @@
  * Support multi-location pour la gestion du stock.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -115,9 +115,6 @@ export default function StockEntrepotsPage() {
     is_active: true,
   });
 
-  useEffect(() => {
-    loadWarehouses();
-  }, [filterType, filterCity, filterActive, searchQuery]);
 
   const filteredWarehouses = warehouses;
 

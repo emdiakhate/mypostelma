@@ -96,11 +96,6 @@ export default function StockTransfertsPage() {
   const [availableStock, setAvailableStock] = useState<number | null>(null);
   const [checkingStock, setCheckingStock] = useState(false);
 
-  useEffect(() => {
-    loadMovements();
-    loadProducts();
-    loadWarehouses();
-  }, []);
 
   // Vérifier le stock disponible quand produit et entrepôt source changent
   useEffect(() => {

@@ -5,7 +5,7 @@
  * IN (entrée), OUT (sortie), TRANSFER (transfert), ADJUSTMENT (ajustement).
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,11 +104,6 @@ export default function StockMouvementsPage() {
     notes: '',
   });
 
-  useEffect(() => {
-    loadMovements();
-    loadProducts();
-    loadWarehouses();
-  }, [filterMovementType, filterReferenceType]);
 
   const handleCreateMovement = async () => {
     try {
