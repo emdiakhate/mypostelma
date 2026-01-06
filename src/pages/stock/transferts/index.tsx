@@ -48,10 +48,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import {
   useStockMovements,
-  useStockProducts,
   useWarehouses,
   useStockLevels,
 } from '@/hooks/useStock';
+import { useProducts } from '@/hooks/useVente';
 import { CreateStockMovementInput } from '@/types/stock';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -70,10 +70,12 @@ export default function StockTransfertsPage() {
   } = useStockMovements({ movement_type: 'TRANSFER' });
 
   const {
-    products,
+    products: allProducts,
     loading: loadingProducts,
-    loadProducts,
-  } = useStockProducts({ status: 'active', is_stockable: true });
+  } = useProducts({ status: 'active' });
+  
+  // Filtrer uniquement les produits physiques (stockables)
+  const products = allProducts.filter((p) => p.type === 'product');
 
   const {
     warehouses,
