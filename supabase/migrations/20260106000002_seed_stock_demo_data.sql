@@ -73,7 +73,7 @@ SELECT
   -- Quantité basée sur le stock défini dans vente_products (ou 100 par défaut)
   COALESCE(p.stock, 100),
   'Stock initial',
-  'MANUAL',
+  'PURCHASE',
   'INIT-' || SUBSTRING(p.id::text, 1, 8),
   -- Coût unitaire = cost du produit (ou prix / 2 si pas de cost)
   COALESCE(p.cost, p.price * 0.5),
@@ -153,7 +153,7 @@ SELECT
   -- Transfert entre 10 et 30 unités
   10 + (RANDOM() * 20)::INTEGER,
   'Réapprovisionnement boutique',
-  'MANUAL',
+  'TRANSFER',
   'TRF-' || LPAD((RANDOM() * 9999)::INTEGER::TEXT, 4, '0'),
   'system',
   NOW() - INTERVAL '7 days' + (RANDOM() * INTERVAL '6 days')
