@@ -252,13 +252,6 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             path: '/app/vente/service-client',
             disabled: !isFeatureEnabled('ENABLE_VENTE_MODULE'),
           },
-          {
-            id: 'vente-stock',
-            label: 'Stock',
-            icon: Boxes,
-            path: '/app/vente/stock',
-            disabled: !isFeatureEnabled('ENABLE_VENTE_MODULE'),
-          },
         ],
       },
       {
