@@ -46,12 +46,7 @@ import {
   Package,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  useStockMovements,
-  useWarehouses,
-  useStockLevels,
-} from '@/hooks/useStock';
-import { useProducts } from '@/hooks/useVente';
+import { useStock } from '@/hooks/useStock';
 import { CreateStockMovementInput } from '@/types/stock';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -62,28 +57,22 @@ export default function StockTransfertsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Hooks
+  const { products, warehouses, movements, stockLevels } = useStock();
+
   const {
-    movements,
+    movements: stockMovements,
     loading: loadingMovements,
     createMovement,
     loadMovements,
-  } = useStockMovements({ movement_type: 'TRANSFER' });
+  } = movements;
 
-  const {
-    products: allProducts,
-    loading: loadingProducts,
-  } = useProducts({ status: 'active' });
-  
-  // Filtrer uniquement les produits physiques (stockables)
-  const products = allProducts.filter((p) => p.type === 'product');
+  const { warehouses: warehousesList, loading: loadingWarehouses } = warehouses;
 
-  const {
-    warehouses,
-    loading: loadingWarehouses,
-    loadWarehouses,
-  } = useWarehouses({ is_active: true });
+  // Filtrer uniquement les produits physiques actifs (type='product')
+  const stockableProducts = products.products.filter((p) => p.type === 'product' && p.status === 'active');
+  const loadingProducts = products.loading;
 
-  const { checkStockAvailable, getProductStock } = useStockLevels();
+  const { checkStockAvailable, getProductStock } = stockLevels;
 
   const [newTransfer, setNewTransfer] = useState({
     product_id: '',
@@ -226,7 +215,7 @@ export default function StockTransfertsPage() {
     setAvailableStock(null);
   };
 
-  const filteredTransfers = movements.filter((movement) => {
+  const filteredTransfers = stockMovements.filter((movement) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -238,8 +227,8 @@ export default function StockTransfertsPage() {
   });
 
   const stats = {
-    total: movements.length,
-    thisMonth: movements.filter((m) => {
+    total: stockMovements.length,
+    thisMonth: stockMovements.filter((m) => {
       const date = new Date(m.created_at);
       const now = new Date();
       return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
@@ -247,15 +236,15 @@ export default function StockTransfertsPage() {
   };
 
   const getSelectedProduct = () => {
-    return products.find((p) => p.id === newTransfer.product_id);
+    return stockableProducts.find((p) => p.id === newTransfer.product_id);
   };
 
   const getSelectedWarehouseFrom = () => {
-    return warehouses.find((w) => w.id === newTransfer.warehouse_from_id);
+    return warehousesList.find((w) => w.id === newTransfer.warehouse_from_id);
   };
 
   const getSelectedWarehouseTo = () => {
-    return warehouses.find((w) => w.id === newTransfer.warehouse_to_id);
+    return warehousesList.find((w) => w.id === newTransfer.warehouse_to_id);
   };
 
   const isStockSufficient =
@@ -307,7 +296,7 @@ export default function StockTransfertsPage() {
                       <SelectValue placeholder="Sélectionner un produit..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {products.map((product) => (
+                      {stockableProducts.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name} {product.sku && `(${product.sku})`}
                         </SelectItem>
@@ -329,7 +318,7 @@ export default function StockTransfertsPage() {
                         <SelectValue placeholder="Source..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses.map((warehouse) => (
+                        {warehousesList.map((warehouse) => (
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             {warehouse.name} ({warehouse.city})
                           </SelectItem>
