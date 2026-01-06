@@ -1881,14 +1881,7 @@ export type Database = {
             foreignKeyName: "stock_digital_assets_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "stock_levels"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "stock_digital_assets_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "stock_products"
+            referencedRelation: "vente_products"
             referencedColumns: ["id"]
           },
         ]
@@ -1953,13 +1946,6 @@ export type Database = {
             foreignKeyName: "stock_movements_destination_warehouse_id_fkey"
             columns: ["destination_warehouse_id"]
             isOneToOne: false
-            referencedRelation: "stock_levels"
-            referencedColumns: ["warehouse_id"]
-          },
-          {
-            foreignKeyName: "stock_movements_destination_warehouse_id_fkey"
-            columns: ["destination_warehouse_id"]
-            isOneToOne: false
             referencedRelation: "stock_warehouses"
             referencedColumns: ["id"]
           },
@@ -1967,22 +1953,8 @@ export type Database = {
             foreignKeyName: "stock_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "stock_levels"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "stock_movements_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "stock_products"
+            referencedRelation: "vente_products"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_movements_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "stock_levels"
-            referencedColumns: ["warehouse_id"]
           },
           {
             foreignKeyName: "stock_movements_warehouse_id_fkey"
@@ -1992,75 +1964,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      stock_products: {
-        Row: {
-          barcode: string | null
-          category: string | null
-          cost_price: number | null
-          created_at: string | null
-          description: string | null
-          id: string
-          image_url: string | null
-          is_stockable: boolean | null
-          max_stock_quantity: number | null
-          metadata: Json | null
-          min_stock_quantity: number | null
-          name: string
-          price: number | null
-          sku: string | null
-          status: string | null
-          tax_rate: number | null
-          type: string
-          unit: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          barcode?: string | null
-          category?: string | null
-          cost_price?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_stockable?: boolean | null
-          max_stock_quantity?: number | null
-          metadata?: Json | null
-          min_stock_quantity?: number | null
-          name: string
-          price?: number | null
-          sku?: string | null
-          status?: string | null
-          tax_rate?: number | null
-          type?: string
-          unit?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          barcode?: string | null
-          category?: string | null
-          cost_price?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_stockable?: boolean | null
-          max_stock_quantity?: number | null
-          metadata?: Json | null
-          min_stock_quantity?: number | null
-          name?: string
-          price?: number | null
-          sku?: string | null
-          status?: string | null
-          tax_rate?: number | null
-          type?: string
-          unit?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
       stock_warehouses: {
         Row: {
@@ -3412,20 +3315,34 @@ export type Database = {
       stock_levels: {
         Row: {
           average_cost: number | null
+          category: string | null
           current_quantity: number | null
-          is_stockable: boolean | null
-          max_stock_quantity: number | null
-          min_stock_quantity: number | null
+          last_movement_at: string | null
           product_id: string | null
           product_name: string | null
           product_type: string | null
           sku: string | null
           user_id: string | null
+          warehouse_city: string | null
           warehouse_id: string | null
           warehouse_name: string | null
-          warehouse_type: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams_with_stats: {
         Row: {
@@ -3471,6 +3388,18 @@ export type Database = {
       }
     }
     Functions: {
+      check_stock_available: {
+        Args: {
+          p_product_id: string
+          p_quantity: number
+          p_warehouse_id: string
+        }
+        Returns: boolean
+      }
+      get_stock_quantity: {
+        Args: { p_product_id: string; p_warehouse_id?: string }
+        Returns: number
+      }
       get_user_quotas: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
         Args: {

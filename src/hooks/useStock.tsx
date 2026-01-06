@@ -75,36 +75,36 @@ const mapDbStockMovement = (item: any): StockMovement => ({
   product_id: item.product_id,
   movement_type: item.movement_type,
   quantity: Number(item.quantity),
-  warehouse_from_id: item.warehouse_from_id,
-  warehouse_to_id: item.warehouse_to_id,
+  warehouse_from_id: item.warehouse_id, // DB column is 'warehouse_id'
+  warehouse_to_id: item.destination_warehouse_id, // DB column is 'destination_warehouse_id'
   reason: item.reason,
   reference_type: item.reference_type,
   reference_id: item.reference_id,
-  reference_number: item.reference_number,
+  reference_number: item.reference_id,
   unit_cost: item.unit_cost ? Number(item.unit_cost) : undefined,
   total_cost: item.total_cost ? Number(item.total_cost) : undefined,
   notes: item.notes,
   created_at: new Date(item.created_at),
-  created_by: item.created_by,
-  created_by_name: item.created_by_name,
+  created_by: item.performed_by, // DB column is 'performed_by'
+  created_by_name: item.performed_by,
   // Relations avec vente_products
   product: item.vente_products ? mapDbProduct(item.vente_products) : undefined,
-  warehouse_from: item.warehouse_from ? mapDbWarehouse(item.warehouse_from) : undefined,
-  warehouse_to: item.warehouse_to ? mapDbWarehouse(item.warehouse_to) : undefined,
+  warehouse_from: item.stock_warehouses ? mapDbWarehouse(item.stock_warehouses) : undefined,
+  warehouse_to: item.destination_warehouse ? mapDbWarehouse(item.destination_warehouse) : undefined,
 });
 
 const mapDbDigitalAsset = (item: any): DigitalAsset => ({
   id: item.id,
   user_id: item.user_id,
   product_id: item.product_id,
-  code_or_license: item.code_or_license,
-  activation_key: item.activation_key,
+  code_or_license: item.code, // DB column is 'code'
+  activation_key: item.license_key, // DB column is 'license_key'
   status: item.status,
-  assigned_to_customer: item.assigned_to_customer,
+  assigned_to_customer: item.assigned_to,
   assigned_at: item.assigned_at ? new Date(item.assigned_at) : undefined,
-  order_id: item.order_id,
+  order_id: undefined,
   expires_at: item.expires_at ? new Date(item.expires_at) : undefined,
-  notes: item.notes,
+  notes: undefined,
   created_at: new Date(item.created_at),
   updated_at: new Date(item.updated_at),
   // Relation avec vente_products
@@ -341,21 +341,31 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
         ? movementInput.unit_cost * movementInput.quantity
         : undefined;
 
+      // Mapper les champs pour la DB
+      const dbInput = {
+        user_id: userData.user.id,
+        product_id: movementInput.product_id,
+        warehouse_id: movementInput.warehouse_from_id || movementInput.warehouse_to_id,
+        destination_warehouse_id: movementInput.movement_type === 'TRANSFER' ? movementInput.warehouse_to_id : null,
+        movement_type: movementInput.movement_type,
+        quantity: movementInput.quantity,
+        unit_cost: movementInput.unit_cost,
+        total_cost,
+        reference_type: movementInput.reference_type,
+        reference_id: movementInput.reference_number,
+        reason: movementInput.reason,
+        notes: movementInput.notes,
+        performed_by: userData.user.email,
+      };
+
       const { data, error } = await supabase
         .from('stock_movements')
-        .insert([
-          {
-            ...movementInput,
-            total_cost,
-            user_id: userData.user.id,
-            created_by: userData.user.email,
-          },
-        ])
+        .insert([dbInput])
         .select(`
           *,
-          vente_products(*),
-          warehouse_from:stock_warehouses!stock_movements_warehouse_from_id_fkey(*),
-          warehouse_to:stock_warehouses!stock_movements_warehouse_to_id_fkey(*)
+          vente_products:product_id(*),
+          stock_warehouses:warehouse_id(*),
+          destination_warehouse:destination_warehouse_id(*)
         `)
         .single();
 
@@ -438,10 +448,20 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
+      // Map les champs du type local vers les colonnes DB
+      const dbInput = {
+        user_id: userData.user.id,
+        product_id: assetInput.product_id,
+        code: assetInput.code_or_license, // DB column is 'code'
+        license_key: assetInput.activation_key, // DB column is 'license_key'
+        expires_at: assetInput.expires_at?.toISOString(),
+        status: 'AVAILABLE',
+      };
+
       const { data, error } = await supabase
         .from('stock_digital_assets')
-        .insert([{ ...assetInput, user_id: userData.user.id, status: 'AVAILABLE' }])
-        .select('*, vente_products(*)')
+        .insert([dbInput])
+        .select('*, vente_products:product_id(*)')
         .single();
 
       if (error) throw error;
@@ -458,11 +478,18 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
 
   const updateAsset = async (assetId: string, updates: Partial<CreateDigitalAssetInput>) => {
     try {
+      // Map les champs du type local vers les colonnes DB
+      const dbUpdates: Record<string, any> = {};
+      if (updates.code_or_license !== undefined) dbUpdates.code = updates.code_or_license;
+      if (updates.activation_key !== undefined) dbUpdates.license_key = updates.activation_key;
+      if (updates.expires_at !== undefined) dbUpdates.expires_at = updates.expires_at?.toISOString();
+      if (updates.product_id !== undefined) dbUpdates.product_id = updates.product_id;
+
       const { data, error } = await supabase
         .from('stock_digital_assets')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', assetId)
-        .select('*, vente_products(*)')
+        .select('*, vente_products:product_id(*)')
         .single();
 
       if (error) throw error;
