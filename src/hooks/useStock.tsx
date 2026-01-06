@@ -1,21 +1,21 @@
 /**
- * useStock Hook - Module Stock Complet
+ * useStock Hook - Module Stock
  *
- * Hook principal pour le module Stock avec 5 sous-hooks:
- * 1. useStockProducts - Gestion produits (référentiel)
- * 2. useWarehouses - Gestion entrepôts/boutiques
- * 3. useStockMovements - Gestion mouvements de stock
- * 4. useDigitalAssets - Gestion licences/codes digitaux
- * 5. useStockLevels - Calcul stock actuel (vue matérialisée)
+ * Hook principal pour le module Stock avec 4 hooks:
+ * 1. useWarehouses - Gestion entrepôts/boutiques
+ * 2. useStockMovements - Gestion mouvements de stock
+ * 3. useDigitalAssets - Gestion licences/codes digitaux
+ * 4. useStockLevels - Calcul stock actuel (vue matérialisée)
+ *
+ * NOTE: Les produits proviennent de useProducts (module Vente)
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useProducts } from './useVente'; // Import produits de Vente
+import type { Product } from '@/types/vente'; // Import type Product
 import type {
-  StockProduct,
-  StockProductFilters,
-  CreateStockProductInput,
   Warehouse,
   WarehouseFilters,
   CreateWarehouseInput,
@@ -27,26 +27,24 @@ import type {
   CreateDigitalAssetInput,
   StockLevel,
   StockLevelFilters,
-  StockStats,
-  ProductStockSummary,
 } from '@/types/stock';
 
-// Helper pour mapper les données DB vers les types locaux
-const mapDbStockProduct = (item: any): StockProduct => ({
+// ============================================================================
+// MAPPERS (DB → Types TypeScript)
+// ============================================================================
+
+const mapDbProduct = (item: any): Product => ({
   id: item.id,
   user_id: item.user_id,
   name: item.name,
   description: item.description,
   type: item.type,
   category: item.category,
+  price: item.price ? Number(item.price) : 0,
+  cost: item.cost ? Number(item.cost) : undefined,
+  stock: item.stock ? Number(item.stock) : undefined,
+  unit: item.unit,
   sku: item.sku,
-  barcode: item.barcode,
-  price: item.price ? Number(item.price) : undefined,
-  cost_price: item.cost_price ? Number(item.cost_price) : undefined,
-  tax_rate: item.tax_rate ? Number(item.tax_rate) : undefined,
-  is_stockable: item.is_stockable ?? true,
-  track_serial: item.track_serial ?? false,
-  image_url: item.image_url,
   status: item.status,
   created_at: new Date(item.created_at),
   updated_at: new Date(item.updated_at),
@@ -89,6 +87,10 @@ const mapDbStockMovement = (item: any): StockMovement => ({
   created_at: new Date(item.created_at),
   created_by: item.created_by,
   created_by_name: item.created_by_name,
+  // Relations avec vente_products
+  product: item.vente_products ? mapDbProduct(item.vente_products) : undefined,
+  warehouse_from: item.warehouse_from ? mapDbWarehouse(item.warehouse_from) : undefined,
+  warehouse_to: item.warehouse_to ? mapDbWarehouse(item.warehouse_to) : undefined,
 });
 
 const mapDbDigitalAsset = (item: any): DigitalAsset => ({
@@ -105,7 +107,8 @@ const mapDbDigitalAsset = (item: any): DigitalAsset => ({
   notes: item.notes,
   created_at: new Date(item.created_at),
   updated_at: new Date(item.updated_at),
-  product: item.stock_products ? mapDbStockProduct(item.stock_products) : undefined,
+  // Relation avec vente_products
+  product: item.vente_products ? mapDbProduct(item.vente_products) : undefined,
 });
 
 const mapDbStockLevel = (item: any): StockLevel => ({
@@ -113,177 +116,18 @@ const mapDbStockLevel = (item: any): StockLevel => ({
   product_id: item.product_id,
   product_name: item.product_name,
   product_type: item.product_type,
+  category: item.category,
   sku: item.sku,
   warehouse_id: item.warehouse_id,
   warehouse_name: item.warehouse_name,
+  warehouse_city: item.warehouse_city,
   current_quantity: Number(item.current_quantity),
   average_cost: item.average_cost ? Number(item.average_cost) : undefined,
   last_movement_at: item.last_movement_at ? new Date(item.last_movement_at) : undefined,
 });
 
 // ============================================================================
-// 1. HOOK PRODUITS STOCK
-// ============================================================================
-
-export const useStockProducts = (filters?: StockProductFilters) => {
-  const [products, setProducts] = useState<StockProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Éviter les boucles de fetch dues à l'identité de l'objet `filters`
-  const search = filters?.search;
-  const type = filters?.type;
-  const category = filters?.category;
-  const status = filters?.status;
-  const isStockable = filters?.is_stockable;
-
-  const loadProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('stock_products' as any)
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (search) {
-        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
-      }
-
-      if (type) {
-        query = query.eq('type', type);
-      }
-
-      if (category) {
-        query = query.eq('category', category);
-      }
-
-      if (status) {
-        query = query.eq('status', status);
-      }
-
-      if (isStockable !== undefined) {
-        query = query.eq('is_stockable', isStockable);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setProducts((data || []).map(mapDbStockProduct));
-    } catch (error: any) {
-      console.error('Error loading stock products:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de charger les produits.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [search, type, category, status, isStockable, toast]);
-
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
-  const createProduct = async (productInput: CreateStockProductInput) => {
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Non authentifié');
-
-      const { data, error } = await supabase
-        .from('stock_products' as any)
-        .insert([{ ...productInput, user_id: userData.user.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newProduct = mapDbStockProduct(data);
-      setProducts([newProduct, ...products]);
-      toast({
-        title: 'Produit créé',
-        description: 'Le produit a été ajouté au référentiel.',
-      });
-
-      return newProduct;
-    } catch (error: any) {
-      console.error('Error creating product:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de créer le produit.',
-      });
-      return null;
-    }
-  };
-
-  const updateProduct = async (productId: string, updates: Partial<StockProduct>) => {
-    try {
-      const { data, error } = await supabase
-        .from('stock_products' as any)
-        .update(updates)
-        .eq('id', productId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const updatedProduct = mapDbStockProduct(data);
-      setProducts(products.map((p) => (p.id === productId ? updatedProduct : p)));
-      toast({
-        title: 'Produit mis à jour',
-        description: 'Le produit a été modifié avec succès.',
-      });
-
-      return updatedProduct;
-    } catch (error: any) {
-      console.error('Error updating product:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le produit.',
-      });
-      return null;
-    }
-  };
-
-  const deleteProduct = async (productId: string) => {
-    try {
-      const { error } = await supabase
-        .from('stock_products' as any)
-        .delete()
-        .eq('id', productId);
-
-      if (error) throw error;
-
-      setProducts(products.filter((p) => p.id !== productId));
-      toast({
-        title: 'Produit supprimé',
-        description: 'Le produit a été supprimé du référentiel.',
-      });
-    } catch (error: any) {
-      console.error('Error deleting product:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer le produit.',
-      });
-    }
-  };
-
-  return {
-    products,
-    loading,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    loadProducts,
-  };
-};
-
-// ============================================================================
-// 2. HOOK ENTREPÔTS/BOUTIQUES
+// 1. HOOK WAREHOUSES / ENTREPÔTS
 // ============================================================================
 
 export const useWarehouses = (filters?: WarehouseFilters) => {
@@ -301,7 +145,7 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('stock_warehouses' as any)
+        .from('stock_warehouses')
         .select('*')
         .order('name', { ascending: true });
 
@@ -347,7 +191,7 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
       if (!userData.user) throw new Error('Non authentifié');
 
       const { data, error } = await supabase
-        .from('stock_warehouses' as any)
+        .from('stock_warehouses')
         .insert([{ ...warehouseInput, user_id: userData.user.id }])
         .select()
         .single();
@@ -355,28 +199,19 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
       if (error) throw error;
 
       const newWarehouse = mapDbWarehouse(data);
-      setWarehouses([newWarehouse, ...warehouses]);
-      toast({
-        title: 'Entrepôt créé',
-        description: 'L\'entrepôt a été ajouté avec succès.',
-      });
+      setWarehouses((prev) => [newWarehouse, ...prev]);
 
       return newWarehouse;
     } catch (error: any) {
       console.error('Error creating warehouse:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de créer l\'entrepôt.',
-      });
-      return null;
+      throw error;
     }
   };
 
-  const updateWarehouse = async (warehouseId: string, updates: Partial<Warehouse>) => {
+  const updateWarehouse = async (warehouseId: string, updates: Partial<CreateWarehouseInput>) => {
     try {
       const { data, error } = await supabase
-        .from('stock_warehouses' as any)
+        .from('stock_warehouses')
         .update(updates)
         .eq('id', warehouseId)
         .select()
@@ -385,60 +220,45 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
       if (error) throw error;
 
       const updatedWarehouse = mapDbWarehouse(data);
-      setWarehouses(warehouses.map((w) => (w.id === warehouseId ? updatedWarehouse : w)));
-      toast({
-        title: 'Entrepôt mis à jour',
-        description: 'L\'entrepôt a été modifié avec succès.',
-      });
+      setWarehouses((prev) =>
+        prev.map((w) => (w.id === warehouseId ? updatedWarehouse : w))
+      );
 
       return updatedWarehouse;
     } catch (error: any) {
       console.error('Error updating warehouse:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour l\'entrepôt.',
-      });
-      return null;
+      throw error;
     }
   };
 
   const deleteWarehouse = async (warehouseId: string) => {
     try {
       const { error } = await supabase
-        .from('stock_warehouses' as any)
+        .from('stock_warehouses')
         .delete()
         .eq('id', warehouseId);
 
       if (error) throw error;
 
-      setWarehouses(warehouses.filter((w) => w.id !== warehouseId));
-      toast({
-        title: 'Entrepôt supprimé',
-        description: 'L\'entrepôt a été supprimé.',
-      });
+      setWarehouses((prev) => prev.filter((w) => w.id !== warehouseId));
     } catch (error: any) {
       console.error('Error deleting warehouse:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer l\'entrepôt.',
-      });
+      throw error;
     }
   };
 
   return {
     warehouses,
     loading,
+    loadWarehouses,
     createWarehouse,
     updateWarehouse,
     deleteWarehouse,
-    loadWarehouses,
   };
 };
 
 // ============================================================================
-// 3. HOOK MOUVEMENTS DE STOCK
+// 2. HOOK STOCK MOVEMENTS / MOUVEMENTS DE STOCK
 // ============================================================================
 
 export const useStockMovements = (filters?: StockMovementFilters) => {
@@ -458,8 +278,13 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('stock_movements' as any)
-        .select('*')
+        .from('stock_movements')
+        .select(`
+          *,
+          vente_products(*),
+          warehouse_from:stock_warehouses!stock_movements_warehouse_from_id_fkey(*),
+          warehouse_to:stock_warehouses!stock_movements_warehouse_to_id_fkey(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (productId) {
@@ -511,83 +336,51 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
-      // Calcul total_cost
-      const totalCost =
-        movementInput.unit_cost && movementInput.quantity
-          ? movementInput.unit_cost * movementInput.quantity
-          : undefined;
+      // Calculer total_cost si unit_cost fourni
+      const total_cost = movementInput.unit_cost
+        ? movementInput.unit_cost * movementInput.quantity
+        : undefined;
 
       const { data, error } = await supabase
-        .from('stock_movements' as any)
+        .from('stock_movements')
         .insert([
           {
             ...movementInput,
+            total_cost,
             user_id: userData.user.id,
-            total_cost: totalCost,
-            created_by: userData.user.id,
-            created_by_name: userData.user.email || 'Unknown',
+            created_by: userData.user.email,
           },
         ])
-        // IMPORTANT: éviter les jointures PostgREST ici (FK parfois absentes → erreurs de schéma)
-        .select('*')
+        .select(`
+          *,
+          vente_products(*),
+          warehouse_from:stock_warehouses!stock_movements_warehouse_from_id_fkey(*),
+          warehouse_to:stock_warehouses!stock_movements_warehouse_to_id_fkey(*)
+        `)
         .single();
 
       if (error) throw error;
 
       const newMovement = mapDbStockMovement(data);
-      setMovements([newMovement, ...movements]);
-      toast({
-        title: 'Mouvement enregistré',
-        description: 'Le mouvement de stock a été enregistré avec succès.',
-      });
+      setMovements((prev) => [newMovement, ...prev]);
 
       return newMovement;
     } catch (error: any) {
       console.error('Error creating movement:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible d\'enregistrer le mouvement.',
-      });
-      return null;
-    }
-  };
-
-  const deleteMovement = async (movementId: string) => {
-    try {
-      const { error } = await supabase
-        .from('stock_movements' as any)
-        .delete()
-        .eq('id', movementId);
-
-      if (error) throw error;
-
-      setMovements(movements.filter((m) => m.id !== movementId));
-      toast({
-        title: 'Mouvement supprimé',
-        description: 'Le mouvement a été supprimé.',
-      });
-    } catch (error: any) {
-      console.error('Error deleting movement:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer le mouvement.',
-      });
+      throw error;
     }
   };
 
   return {
     movements,
     loading,
-    createMovement,
-    deleteMovement,
     loadMovements,
+    createMovement,
   };
 };
 
 // ============================================================================
-// 4. HOOK DIGITAL ASSETS
+// 3. HOOK DIGITAL ASSETS / ACTIFS DIGITAUX
 // ============================================================================
 
 export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
@@ -604,8 +397,8 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('stock_digital_assets' as any)
-        .select('*, stock_products(*)')
+        .from('stock_digital_assets')
+        .select('*, vente_products(*)')
         .order('created_at', { ascending: false });
 
       if (productId) {
@@ -630,7 +423,7 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de charger les assets digitaux.',
+        description: 'Impossible de charger les actifs digitaux.',
       });
     } finally {
       setLoading(false);
@@ -646,98 +439,72 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
       if (!userData.user) throw new Error('Non authentifié');
 
       const { data, error } = await supabase
-        .from('stock_digital_assets' as any)
+        .from('stock_digital_assets')
         .insert([{ ...assetInput, user_id: userData.user.id, status: 'AVAILABLE' }])
-        .select('*, stock_products(*)')
+        .select('*, vente_products(*)')
         .single();
 
       if (error) throw error;
 
       const newAsset = mapDbDigitalAsset(data);
-      setAssets([newAsset, ...assets]);
-      toast({
-        title: 'Asset créé',
-        description: 'L\'asset digital a été ajouté.',
-      });
+      setAssets((prev) => [newAsset, ...prev]);
 
       return newAsset;
     } catch (error: any) {
       console.error('Error creating digital asset:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de créer l\'asset.',
-      });
-      return null;
+      throw error;
     }
   };
 
-  const updateAsset = async (assetId: string, updates: Partial<DigitalAsset>) => {
+  const updateAsset = async (assetId: string, updates: Partial<CreateDigitalAssetInput>) => {
     try {
-      const { data, error} = await supabase
-        .from('stock_digital_assets' as any)
+      const { data, error } = await supabase
+        .from('stock_digital_assets')
         .update(updates)
         .eq('id', assetId)
-        .select('*, stock_products(*)')
+        .select('*, vente_products(*)')
         .single();
 
       if (error) throw error;
 
       const updatedAsset = mapDbDigitalAsset(data);
-      setAssets(assets.map((a) => (a.id === assetId ? updatedAsset : a)));
-      toast({
-        title: 'Asset mis à jour',
-        description: 'L\'asset a été modifié.',
-      });
+      setAssets((prev) => prev.map((a) => (a.id === assetId ? updatedAsset : a)));
 
       return updatedAsset;
     } catch (error: any) {
-      console.error('Error updating asset:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour l\'asset.',
-      });
-      return null;
+      console.error('Error updating digital asset:', error);
+      throw error;
     }
   };
 
   const deleteAsset = async (assetId: string) => {
     try {
       const { error } = await supabase
-        .from('stock_digital_assets' as any)
+        .from('stock_digital_assets')
         .delete()
         .eq('id', assetId);
 
       if (error) throw error;
 
-      setAssets(assets.filter((a) => a.id !== assetId));
-      toast({
-        title: 'Asset supprimé',
-        description: 'L\'asset a été supprimé.',
-      });
+      setAssets((prev) => prev.filter((a) => a.id !== assetId));
     } catch (error: any) {
-      console.error('Error deleting asset:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer l\'asset.',
-      });
+      console.error('Error deleting digital asset:', error);
+      throw error;
     }
   };
 
   return {
     assets,
     loading,
+    loadAssets,
     createAsset,
     updateAsset,
     deleteAsset,
-    loadAssets,
   };
 };
 
 // ============================================================================
-// 5. HOOK STOCK LEVELS (Vue calculée)
+// 4. HOOK STOCK LEVELS / NIVEAUX DE STOCK
 // ============================================================================
 
 export const useStockLevels = (filters?: StockLevelFilters) => {
@@ -756,9 +523,9 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('stock_levels' as any)
+        .from('stock_levels')
         .select('*')
-        .order('current_quantity', { ascending: true });
+        .order('product_name', { ascending: true });
 
       if (productId) {
         query = query.eq('product_id', productId);
@@ -826,7 +593,6 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
     }
   };
 
-  // Fonction helper pour vérifier stock disponible
   const checkStockAvailable = async (
     productId: string,
     warehouseId: string,
@@ -851,18 +617,18 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
 };
 
 // ============================================================================
-// 6. HOOK PRINCIPAL (COMBINÉ)
+// 5. HOOK PRINCIPAL (COMBINÉ)
 // ============================================================================
 
 export const useStock = () => {
-  const products = useStockProducts();
+  const products = useProducts(); // Produits depuis module Vente
   const warehouses = useWarehouses();
   const movements = useStockMovements();
   const digitalAssets = useDigitalAssets();
   const stockLevels = useStockLevels();
 
   return {
-    products,
+    products, // useProducts du module Vente
     warehouses,
     movements,
     digitalAssets,

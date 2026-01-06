@@ -2,66 +2,15 @@
  * Types pour le module Stock (Gestion Inventaire)
  *
  * Module indépendant pour gérer:
- * - Produits physiques, digitaux et services
- * - Multi-boutique / Multi-entrepôt
  * - Mouvements de stock (IN/OUT/TRANSFER/ADJUSTMENT)
+ * - Multi-boutique / Multi-entrepôt
  * - Licences et codes pour produits digitaux
  * - Calcul stock basé sur mouvements (best practice)
+ *
+ * NOTE: Utilise vente_products comme référentiel unique de produits
  */
 
-// ============================================================================
-// PRODUITS
-// ============================================================================
-
-export type ProductType = 'PHYSICAL' | 'DIGITAL' | 'SERVICE';
-export type ProductStatus = 'active' | 'archived';
-
-export interface StockProduct {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  type: ProductType;
-  category?: string;
-  sku?: string;
-  barcode?: string;
-  // Prix et coûts
-  price?: number;
-  cost_price?: number;
-  tax_rate?: number;
-  // Gestion stock
-  is_stockable: boolean; // false pour services
-  track_serial: boolean; // true pour numéros de série (Phase 2)
-  // Métadonnées
-  image_url?: string;
-  status: ProductStatus;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface StockProductFilters {
-  search?: string;
-  type?: ProductType;
-  category?: string;
-  status?: ProductStatus;
-  is_stockable?: boolean;
-}
-
-export interface CreateStockProductInput {
-  name: string;
-  description?: string;
-  type: ProductType;
-  category?: string;
-  sku?: string;
-  barcode?: string;
-  price?: number;
-  cost_price?: number;
-  tax_rate?: number;
-  is_stockable?: boolean;
-  track_serial?: boolean;
-  image_url?: string;
-  status?: ProductStatus;
-}
+import { Product } from './vente';
 
 // ============================================================================
 // ENTREPÔTS / BOUTIQUES
@@ -145,7 +94,7 @@ export interface StockMovement {
   created_by?: string;
   created_by_name?: string;
   // Relations (chargées avec join)
-  product?: StockProduct;
+  product?: Product; // Référence vente_products
   warehouse_from?: Warehouse;
   warehouse_to?: Warehouse;
 }
@@ -199,7 +148,7 @@ export interface DigitalAsset {
   created_at: Date;
   updated_at: Date;
   // Relations
-  product?: StockProduct;
+  product?: Product; // Référence vente_products
 }
 
 export interface DigitalAssetFilters {
@@ -224,10 +173,12 @@ export interface StockLevel {
   user_id: string;
   product_id: string;
   product_name: string;
-  product_type: ProductType;
+  product_type: 'product' | 'service'; // De vente_products.type
+  category?: string;
   sku?: string;
   warehouse_id: string;
   warehouse_name: string;
+  warehouse_city?: string;
   current_quantity: number;
   average_cost?: number;
   last_movement_at?: Date;
@@ -238,7 +189,7 @@ export interface StockLevelFilters {
   warehouse_id?: string;
   min_quantity?: number;
   max_quantity?: number;
-  product_type?: ProductType;
+  product_type?: 'product' | 'service';
 }
 
 // ============================================================================
@@ -268,7 +219,7 @@ export interface WarehouseStats {
 export interface ProductStockSummary {
   product_id: string;
   product_name: string;
-  product_type: ProductType;
+  product_type: 'product' | 'service';
   sku?: string;
   total_quantity: number; // Total tous entrepôts
   warehouses: {
@@ -281,6 +232,23 @@ export interface ProductStockSummary {
 // ============================================================================
 // HELPERS
 // ============================================================================
+
+/**
+ * Vérifie si un produit est stockable (type 'product')
+ * Les services ne sont pas gérés en stock
+ */
+export const isProductStockable = (product: Product): boolean => {
+  return product.type === 'product';
+};
+
+/**
+ * Vérifie si un produit est un service digital
+ * (dans vente_products, les produits digitaux sont type='service')
+ */
+export const isProductDigital = (product: Product): boolean => {
+  // Dans notre cas, un produit digital est un service avec des assets
+  return product.type === 'service';
+};
 
 export const getMovementSign = (movementType: MovementType): number => {
   switch (movementType) {
@@ -318,13 +286,11 @@ export const getStockStatus = (
   return 'ok';
 };
 
-export const getProductTypeLabel = (type: ProductType): string => {
+export const getProductTypeLabel = (type: 'product' | 'service'): string => {
   switch (type) {
-    case 'PHYSICAL':
-      return 'Physique';
-    case 'DIGITAL':
-      return 'Digital';
-    case 'SERVICE':
+    case 'product':
+      return 'Produit';
+    case 'service':
       return 'Service';
     default:
       return type;
@@ -379,8 +345,6 @@ export const getMovementTypeColor = (type: MovementType): string => {
 // ============================================================================
 // CONSTANTES
 // ============================================================================
-
-export const PRODUCT_TYPES: ProductType[] = ['PHYSICAL', 'DIGITAL', 'SERVICE'];
 
 export const WAREHOUSE_TYPES: WarehouseType[] = ['STORE', 'WAREHOUSE', 'MOBILE', 'OTHER'];
 
