@@ -84,7 +84,6 @@ export default function StockProduitsPage() {
   const {
     products,
     loading,
-    error,
     createProduct,
     updateProduct,
     deleteProduct,

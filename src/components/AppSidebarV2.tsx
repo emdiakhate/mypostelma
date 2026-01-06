@@ -49,6 +49,9 @@ import {
   TrendingUp,
   Shield,
   LogOut,
+  Warehouse,
+  ArrowRightLeft,
+  AlertCircle,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -100,12 +103,13 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
     const path = location.pathname;
     const expanded: string[] = [];
 
-    if (path.startsWith('/app/crm')) expanded.push('crm');
-    if (path.startsWith('/app/marketing')) expanded.push('marketing');
-    if (path.startsWith('/app/vente')) expanded.push('vente');
-    if (path.startsWith('/app/compta')) expanded.push('compta');
-    if (path.startsWith('/app/reporting')) expanded.push('reporting');
-    if (path.startsWith('/app/admin')) expanded.push('admin');
+    if (path.startsWith('/app/crm') || path.startsWith('/crm')) expanded.push('crm');
+    if (path.startsWith('/app/marketing') || path.startsWith('/marketing')) expanded.push('marketing');
+    if (path.startsWith('/app/vente') || path.startsWith('/vente')) expanded.push('vente');
+    if (path.startsWith('/app/stock') || path.startsWith('/stock')) expanded.push('stock');
+    if (path.startsWith('/app/compta') || path.startsWith('/compta')) expanded.push('compta');
+    if (path.startsWith('/app/reporting') || path.startsWith('/reporting')) expanded.push('reporting');
+    if (path.startsWith('/app/admin') || path.startsWith('/admin')) expanded.push('admin');
 
     setExpandedMenus(expanded);
   }, [location.pathname]);
@@ -254,6 +258,49 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             icon: Boxes,
             path: '/app/vente/stock',
             disabled: !isFeatureEnabled('ENABLE_VENTE_MODULE'),
+          },
+        ],
+      },
+      {
+        id: 'stock',
+        label: 'Stock',
+        icon: Warehouse,
+        badge: 'Nouveau',
+        children: [
+          {
+            id: 'stock-produits',
+            label: 'Produits',
+            icon: Package,
+            path: '/stock/produits',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-entrepots',
+            label: 'Entrepôts',
+            icon: Warehouse,
+            path: '/stock/entrepots',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-mouvements',
+            label: 'Mouvements',
+            icon: TrendingUp,
+            path: '/stock/mouvements',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-transferts',
+            label: 'Transferts',
+            icon: ArrowRightLeft,
+            path: '/stock/transferts',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-alertes',
+            label: 'Alertes',
+            icon: AlertCircle,
+            path: '/stock/alertes',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
           },
         ],
       },
