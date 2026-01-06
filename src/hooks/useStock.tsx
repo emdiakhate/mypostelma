@@ -281,9 +281,9 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
         .from('stock_movements')
         .select(`
           *,
-          vente_products(*),
-          warehouse_from:stock_warehouses!stock_movements_warehouse_from_id_fkey(*),
-          warehouse_to:stock_warehouses!stock_movements_warehouse_to_id_fkey(*)
+          vente_products:vente_products!stock_movements_product_id_fkey(*),
+          stock_warehouses:stock_warehouses!stock_movements_warehouse_id_fkey(*),
+          destination_warehouse:stock_warehouses!stock_movements_destination_warehouse_id_fkey(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -292,7 +292,9 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       }
 
       if (warehouseId) {
-        query = query.or(`warehouse_from_id.eq.${warehouseId},warehouse_to_id.eq.${warehouseId}`);
+        query = query.or(
+          `warehouse_id.eq.${warehouseId},destination_warehouse_id.eq.${warehouseId}`
+        );
       }
 
       if (movementType) {
