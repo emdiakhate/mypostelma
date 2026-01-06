@@ -5,7 +5,7 @@
  * Vue par produit et par entrepôt avec actions rapides.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,15 +43,10 @@ export default function StockAlertesPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
 
   // Hooks
-  const { levels, loading: loadingLevels, loadLevels } = useStockLevels();
-  const { warehouses, loading: loadingWarehouses, loadWarehouses } = useWarehouses({
+  const { levels, loading: loadingLevels } = useStockLevels();
+  const { warehouses, loading: loadingWarehouses } = useWarehouses({
     is_active: true,
   });
-
-  useEffect(() => {
-    loadLevels();
-    loadWarehouses();
-  }, []);
 
   // Filtrer les niveaux de stock
   const filteredLevels = levels.filter((level) => {

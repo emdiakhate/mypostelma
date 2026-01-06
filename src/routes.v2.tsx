@@ -88,7 +88,7 @@ import CataloguePageNew from './pages/vente/catalogue';
 import DevisPageNew from './pages/vente/devis/index';
 import CommandesPageNew from './pages/vente/commandes/index';
 import ServiceClientPageNew from './pages/vente/service-client';
-import StockPageNew from './pages/vente/stock';
+
 
 // Nouvelles pages Compta (Phase 6 - Création Module Compta)
 import DevisComptaPageNew from './pages/compta/devis';
@@ -418,17 +418,6 @@ export const RoutesV2 = () => {
         }
       />
 
-      {/* Stock */}
-      <Route
-        path="/vente/stock"
-        element={
-          isFeatureEnabled('ENABLE_VENTE_MODULE') ? (
-            <StockPageNew />
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
-        }
-      />
 
       {/* ================================================================
           MODULE COMPTA (nouveau)

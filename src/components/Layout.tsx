@@ -51,7 +51,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path.includes('/vente/devis')) return 'Vente - Devis';
     if (path.includes('/vente/commandes')) return 'Vente - Commandes';
     if (path.includes('/vente/service-client')) return 'Vente - Service Client';
-    if (path.includes('/vente/stock')) return 'Vente - Stock';
+    
     if (path.includes('/compta/devis')) return 'Compta - Devis';
     if (path.includes('/compta/factures')) return 'Compta - Factures';
     if (path.includes('/compta/contrats')) return 'Compta - Contrats';

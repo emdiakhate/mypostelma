@@ -1827,6 +1827,298 @@ export type Database = {
           },
         ]
       }
+      stock_digital_assets: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          code: string
+          created_at: string | null
+          download_url: string | null
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          metadata: Json | null
+          product_id: string
+          serial_number: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          code: string
+          created_at?: string | null
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          license_key?: string | null
+          metadata?: Json | null
+          product_id: string
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          code?: string
+          created_at?: string | null
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          license_key?: string | null
+          metadata?: Json | null
+          product_id?: string
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_digital_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "stock_levels"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_digital_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "stock_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          created_at: string | null
+          destination_warehouse_id: string | null
+          id: string
+          movement_date: string | null
+          movement_type: string
+          notes: string | null
+          performed_by: string | null
+          product_id: string
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          total_cost: number | null
+          unit_cost: number | null
+          user_id: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          destination_warehouse_id?: string | null
+          id?: string
+          movement_date?: string | null
+          movement_type: string
+          notes?: string | null
+          performed_by?: string | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          user_id: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string | null
+          destination_warehouse_id?: string | null
+          id?: string
+          movement_date?: string | null
+          movement_type?: string
+          notes?: string | null
+          performed_by?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          user_id?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_destination_warehouse_id_fkey"
+            columns: ["destination_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_levels"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_destination_warehouse_id_fkey"
+            columns: ["destination_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "stock_levels"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_levels"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_products: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          cost_price: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_stockable: boolean | null
+          max_stock_quantity: number | null
+          metadata: Json | null
+          min_stock_quantity: number | null
+          name: string
+          price: number | null
+          sku: string | null
+          status: string | null
+          tax_rate: number | null
+          type: string
+          unit: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_stockable?: boolean | null
+          max_stock_quantity?: number | null
+          metadata?: Json | null
+          min_stock_quantity?: number | null
+          name: string
+          price?: number | null
+          sku?: string | null
+          status?: string | null
+          tax_rate?: number | null
+          type?: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_stockable?: boolean | null
+          max_stock_quantity?: number | null
+          metadata?: Json | null
+          min_stock_quantity?: number | null
+          name?: string
+          price?: number | null
+          sku?: string | null
+          status?: string | null
+          tax_rate?: number | null
+          type?: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stock_warehouses: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          manager_name: string | null
+          metadata: Json | null
+          name: string
+          phone: string | null
+          postal_code: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          manager_name?: string | null
+          metadata?: Json | null
+          name: string
+          phone?: string | null
+          postal_code?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          manager_name?: string | null
+          metadata?: Json | null
+          name?: string
+          phone?: string | null
+          postal_code?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           beta_user: boolean | null
@@ -3114,6 +3406,24 @@ export type Database = {
           user_id: string | null
           website_url: string | null
           youtube_url: string | null
+        }
+        Relationships: []
+      }
+      stock_levels: {
+        Row: {
+          average_cost: number | null
+          current_quantity: number | null
+          is_stockable: boolean | null
+          max_stock_quantity: number | null
+          min_stock_quantity: number | null
+          product_id: string | null
+          product_name: string | null
+          product_type: string | null
+          sku: string | null
+          user_id: string | null
+          warehouse_id: string | null
+          warehouse_name: string | null
+          warehouse_type: string | null
         }
         Relationships: []
       }

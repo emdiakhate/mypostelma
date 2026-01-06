@@ -135,6 +135,12 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Éviter les boucles de fetch dues à l'identité de l'objet `filters`
+  const search = filters?.search;
+  const type = filters?.type;
+  const city = filters?.city;
+  const isActive = filters?.is_active;
+
   const loadWarehouses = useCallback(async () => {
     try {
       setLoading(true);
@@ -143,20 +149,20 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
         .select('*')
         .order('name', { ascending: true });
 
-      if (filters?.search) {
-        query = query.or(`name.ilike.%${filters.search}%,city.ilike.%${filters.search}%`);
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
       }
 
-      if (filters?.type) {
-        query = query.eq('type', filters.type);
+      if (type) {
+        query = query.eq('type', type);
       }
 
-      if (filters?.city) {
-        query = query.eq('city', filters.city);
+      if (city) {
+        query = query.ilike('city', `%${city}%`);
       }
 
-      if (filters?.is_active !== undefined) {
-        query = query.eq('is_active', filters.is_active);
+      if (isActive !== undefined) {
+        query = query.eq('is_active', isActive);
       }
 
       const { data, error } = await query;
@@ -174,12 +180,11 @@ export const useWarehouses = (filters?: WarehouseFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [search, type, city, isActive, toast]);
 
   useEffect(() => {
     loadWarehouses();
   }, [loadWarehouses]);
-
   const createWarehouse = async (warehouseInput: CreateWarehouseInput) => {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -261,6 +266,14 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Éviter les boucles de fetch dues à l'identité de l'objet `filters`
+  const productId = filters?.product_id;
+  const warehouseId = filters?.warehouse_id;
+  const movementType = filters?.movement_type;
+  const referenceType = filters?.reference_type;
+  const dateFromIso = filters?.date_from ? filters.date_from.toISOString() : undefined;
+  const dateToIso = filters?.date_to ? filters.date_to.toISOString() : undefined;
+
   const loadMovements = useCallback(async () => {
     try {
       setLoading(true);
@@ -274,30 +287,28 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
         `)
         .order('created_at', { ascending: false });
 
-      if (filters?.product_id) {
-        query = query.eq('product_id', filters.product_id);
+      if (productId) {
+        query = query.eq('product_id', productId);
       }
 
-      if (filters?.warehouse_id) {
-        query = query.or(
-          `warehouse_from_id.eq.${filters.warehouse_id},warehouse_to_id.eq.${filters.warehouse_id}`
-        );
+      if (warehouseId) {
+        query = query.or(`warehouse_from_id.eq.${warehouseId},warehouse_to_id.eq.${warehouseId}`);
       }
 
-      if (filters?.movement_type) {
-        query = query.eq('movement_type', filters.movement_type);
+      if (movementType) {
+        query = query.eq('movement_type', movementType);
       }
 
-      if (filters?.reference_type) {
-        query = query.eq('reference_type', filters.reference_type);
+      if (referenceType) {
+        query = query.eq('reference_type', referenceType);
       }
 
-      if (filters?.date_from) {
-        query = query.gte('created_at', filters.date_from.toISOString());
+      if (dateFromIso) {
+        query = query.gte('created_at', dateFromIso);
       }
 
-      if (filters?.date_to) {
-        query = query.lte('created_at', filters.date_to.toISOString());
+      if (dateToIso) {
+        query = query.lte('created_at', dateToIso);
       }
 
       const { data, error } = await query;
@@ -315,12 +326,11 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [productId, warehouseId, movementType, referenceType, dateFromIso, dateToIso, toast]);
 
   useEffect(() => {
     loadMovements();
   }, [loadMovements]);
-
   const createMovement = async (movementInput: CreateStockMovementInput) => {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -378,6 +388,11 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Éviter les boucles de fetch dues à l'identité de l'objet `filters`
+  const productId = filters?.product_id;
+  const status = filters?.status;
+  const assignedToCustomer = filters?.assigned_to_customer;
+
   const loadAssets = useCallback(async () => {
     try {
       setLoading(true);
@@ -386,16 +401,16 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
         .select('*, vente_products(*)')
         .order('created_at', { ascending: false });
 
-      if (filters?.product_id) {
-        query = query.eq('product_id', filters.product_id);
+      if (productId) {
+        query = query.eq('product_id', productId);
       }
 
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
+      if (status) {
+        query = query.eq('status', status);
       }
 
-      if (filters?.assigned_to_customer) {
-        query = query.eq('assigned_to_customer', filters.assigned_to_customer);
+      if (assignedToCustomer) {
+        query = query.ilike('assigned_to_customer', `%${assignedToCustomer}%`);
       }
 
       const { data, error } = await query;
@@ -413,12 +428,11 @@ export const useDigitalAssets = (filters?: DigitalAssetFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [productId, status, assignedToCustomer, toast]);
 
   useEffect(() => {
     loadAssets();
   }, [loadAssets]);
-
   const createAsset = async (assetInput: CreateDigitalAssetInput) => {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -498,6 +512,13 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Éviter les boucles de fetch dues à l'identité de l'objet `filters`
+  const productId = filters?.product_id;
+  const warehouseId = filters?.warehouse_id;
+  const minQuantity = filters?.min_quantity;
+  const maxQuantity = filters?.max_quantity;
+  const productType = filters?.product_type;
+
   const loadLevels = useCallback(async () => {
     try {
       setLoading(true);
@@ -506,24 +527,24 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
         .select('*')
         .order('product_name', { ascending: true });
 
-      if (filters?.product_id) {
-        query = query.eq('product_id', filters.product_id);
+      if (productId) {
+        query = query.eq('product_id', productId);
       }
 
-      if (filters?.warehouse_id) {
-        query = query.eq('warehouse_id', filters.warehouse_id);
+      if (warehouseId) {
+        query = query.eq('warehouse_id', warehouseId);
       }
 
-      if (filters?.product_type) {
-        query = query.eq('product_type', filters.product_type);
+      if (minQuantity !== undefined) {
+        query = query.gte('current_quantity', minQuantity);
       }
 
-      if (filters?.min_quantity !== undefined) {
-        query = query.gte('current_quantity', filters.min_quantity);
+      if (maxQuantity !== undefined) {
+        query = query.lte('current_quantity', maxQuantity);
       }
 
-      if (filters?.max_quantity !== undefined) {
-        query = query.lte('current_quantity', filters.max_quantity);
+      if (productType) {
+        query = query.eq('product_type', productType);
       }
 
       const { data, error } = await query;
@@ -541,24 +562,32 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [productId, warehouseId, minQuantity, maxQuantity, productType, toast]);
 
   useEffect(() => {
     loadLevels();
   }, [loadLevels]);
-
-  // RPC Functions
+  // Fonction helper pour obtenir le stock d'un produit dans un entrepôt
   const getProductStock = async (productId: string, warehouseId?: string): Promise<number> => {
     try {
-      const { data, error } = await supabase.rpc('get_stock_quantity', {
-        p_product_id: productId,
-        p_warehouse_id: warehouseId || null,
-      });
+      // Use the stock_levels view instead of RPC
+      let query = supabase
+        .from('stock_levels')
+        .select('current_quantity')
+        .eq('product_id', productId);
+
+      if (warehouseId) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
-      return Number(data) || 0;
-    } catch (error: any) {
+      // Sum all quantities if no specific warehouse
+      const totalQuantity = (data || []).reduce((sum, item) => sum + (item.current_quantity || 0), 0);
+      return totalQuantity;
+    } catch (error) {
       console.error('Error getting product stock:', error);
       return 0;
     }
@@ -570,17 +599,10 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
     quantity: number
   ): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('check_stock_available', {
-        p_product_id: productId,
-        p_warehouse_id: warehouseId,
-        p_quantity: quantity,
-      });
-
-      if (error) throw error;
-
-      return Boolean(data);
-    } catch (error: any) {
-      console.error('Error checking stock available:', error);
+      const currentStock = await getProductStock(productId, warehouseId);
+      return currentStock >= quantity;
+    } catch (error) {
+      console.error('Error checking stock:', error);
       return false;
     }
   };
