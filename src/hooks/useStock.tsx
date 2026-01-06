@@ -89,9 +89,6 @@ const mapDbStockMovement = (item: any): StockMovement => ({
   created_at: new Date(item.created_at),
   created_by: item.created_by,
   created_by_name: item.created_by_name,
-  product: item.stock_products ? mapDbStockProduct(item.stock_products) : undefined,
-  warehouse_from: item.warehouse_from ? mapDbWarehouse(item.warehouse_from) : undefined,
-  warehouse_to: item.warehouse_to ? mapDbWarehouse(item.warehouse_to) : undefined,
 });
 
 const mapDbDigitalAsset = (item: any): DigitalAsset => ({
@@ -444,12 +441,7 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       setLoading(true);
       let query = supabase
         .from('stock_movements' as any)
-        .select(`
-          *,
-          stock_products(*),
-          warehouse_from:stock_warehouses!warehouse_from_id(*),
-          warehouse_to:stock_warehouses!warehouse_to_id(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (filters?.product_id) {
