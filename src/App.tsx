@@ -75,6 +75,13 @@ import CommandesPageNew from "./pages/vente/commandes/index";
 import ServiceClientPageNew from "./pages/vente/service-client";
 import StockPageNew from "./pages/vente/stock";
 
+// Stock Module Pages
+import StockProduitsPage from "./pages/stock/produits";
+import StockEntrepotsPage from "./pages/stock/entrepots";
+import StockMouvementsPage from "./pages/stock/mouvements";
+import StockTransfertsPage from "./pages/stock/transferts";
+import StockAlertesPage from "./pages/stock/alertes";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -133,6 +140,15 @@ function MainLayout() {
         <Route path="/vente/commandes" element={<CommandesPageNew />} />
         <Route path="/vente/service-client" element={<ServiceClientPageNew />} />
         <Route path="/vente/stock" element={<StockPageNew />} />
+
+        {/* ================================================================
+            MODULE STOCK
+            ================================================================ */}
+        <Route path="/stock/produits" element={<StockProduitsPage />} />
+        <Route path="/stock/entrepots" element={<StockEntrepotsPage />} />
+        <Route path="/stock/mouvements" element={<StockMouvementsPage />} />
+        <Route path="/stock/transferts" element={<StockTransfertsPage />} />
+        <Route path="/stock/alertes" element={<StockAlertesPage />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)

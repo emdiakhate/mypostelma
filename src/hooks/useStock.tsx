@@ -790,14 +790,23 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
   // Fonction helper pour obtenir le stock d'un produit dans un entrepôt
   const getProductStock = async (productId: string, warehouseId?: string): Promise<number> => {
     try {
-      const { data, error } = await supabase.rpc('get_stock_quantity', {
-        p_product_id: productId,
-        p_warehouse_id: warehouseId || null,
-      });
+      // Use the stock_levels view instead of RPC
+      let query = supabase
+        .from('stock_levels')
+        .select('current_quantity')
+        .eq('product_id', productId);
+
+      if (warehouseId) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
-      return Number(data || 0);
+      // Sum all quantities if no specific warehouse
+      const totalQuantity = (data || []).reduce((sum, item) => sum + (item.current_quantity || 0), 0);
+      return totalQuantity;
     } catch (error) {
       console.error('Error getting product stock:', error);
       return 0;
@@ -811,15 +820,8 @@ export const useStockLevels = (filters?: StockLevelFilters) => {
     quantity: number
   ): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('check_stock_available', {
-        p_product_id: productId,
-        p_warehouse_id: warehouseId,
-        p_quantity: quantity,
-      });
-
-      if (error) throw error;
-
-      return Boolean(data);
+      const currentStock = await getProductStock(productId, warehouseId);
+      return currentStock >= quantity;
     } catch (error) {
       console.error('Error checking stock:', error);
       return false;

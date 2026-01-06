@@ -89,7 +89,6 @@ export default function StockEntrepotsPage() {
   const {
     warehouses,
     loading,
-    error,
     createWarehouse,
     updateWarehouse,
     deleteWarehouse,
