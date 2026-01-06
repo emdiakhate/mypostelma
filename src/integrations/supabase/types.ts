@@ -2537,11 +2537,14 @@ export type Database = {
           created_at: string | null
           description: string
           id: string
+          is_stockable: boolean | null
+          min_stock_quantity: number | null
           name: string
           price: number
           sku: string | null
           status: string
           stock: number | null
+          track_inventory: boolean | null
           type: string
           unit: string
           updated_at: string | null
@@ -2553,11 +2556,14 @@ export type Database = {
           created_at?: string | null
           description: string
           id?: string
+          is_stockable?: boolean | null
+          min_stock_quantity?: number | null
           name: string
           price: number
           sku?: string | null
           status?: string
           stock?: number | null
+          track_inventory?: boolean | null
           type: string
           unit: string
           updated_at?: string | null
@@ -2569,11 +2575,14 @@ export type Database = {
           created_at?: string | null
           description?: string
           id?: string
+          is_stockable?: boolean | null
+          min_stock_quantity?: number | null
           name?: string
           price?: number
           sku?: string | null
           status?: string
           stock?: number | null
+          track_inventory?: boolean | null
           type?: string
           unit?: string
           updated_at?: string | null
