@@ -1,7 +1,7 @@
 /**
  * Supabase Edge Function - Process OCR
  *
- * Appelle OpenAI Vision API pour extraire les données d'une facture/devis
+ * Appelle OpenRouter (Google Gemini 2.5 Flash) pour extraire les données d'une facture/devis
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -47,10 +47,10 @@ serve(async (req) => {
       throw new Error('Scan introuvable');
     }
 
-    // Appeler OpenAI Vision API
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OPENAI_API_KEY non configurée');
+    // Appeler OpenRouter avec Gemini 2.5 Flash
+    const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openrouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY non configurée');
     }
 
     const prompt = `
@@ -87,14 +87,16 @@ Si vous ne pouvez pas extraire une information, mettez null.
 Soyez précis avec les nombres (pas de formatage, juste le nombre).
 `;
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openrouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${openrouterApiKey}`,
+        'HTTP-Referer': Deno.env.get('SUPABASE_URL') || 'https://mypostelma.com',
+        'X-Title': 'MyPostelma Compta OCR',
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // Modèle avec vision
+        model: 'google/gemini-2.5-flash', // Modèle Gemini avec vision
         messages: [
           {
             role: 'user',
@@ -117,13 +119,13 @@ Soyez précis avec les nombres (pas de formatage, juste le nombre).
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.json();
-      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
+    if (!openrouterResponse.ok) {
+      const errorData = await openrouterResponse.json();
+      throw new Error(`OpenRouter API error: ${JSON.stringify(errorData)}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    const extractedText = openaiData.choices[0]?.message?.content || '';
+    const openrouterData = await openrouterResponse.json();
+    const extractedText = openrouterData.choices[0]?.message?.content || '';
 
     // Parser le JSON extrait
     let extractedData;

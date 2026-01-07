@@ -179,24 +179,13 @@ export default function PreviewDocument({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg overflow-hidden bg-white">
+        <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
           <iframe
             ref={iframeRef}
             title="Aperçu du document"
-            className="w-full h-[800px] border-0"
+            className="w-full min-h-[1000px] border-0"
             sandbox="allow-same-origin"
           />
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1">
-            <Eye className="mr-2 h-4 w-4" />
-            Plein écran
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1">
-            <Download className="mr-2 h-4 w-4" />
-            Télécharger PDF
-          </Button>
         </div>
       </CardContent>
     </Card>
