@@ -731,6 +731,7 @@ export type Database = {
           error_message: string | null
           extracted_data: Json | null
           file_name: string
+          file_path: string | null
           file_size: number | null
           file_type: string
           file_url: string
@@ -748,6 +749,7 @@ export type Database = {
           error_message?: string | null
           extracted_data?: Json | null
           file_name: string
+          file_path?: string | null
           file_size?: number | null
           file_type: string
           file_url: string
@@ -765,6 +767,7 @@ export type Database = {
           error_message?: string | null
           extracted_data?: Json | null
           file_name?: string
+          file_path?: string | null
           file_size?: number | null
           file_type?: string
           file_url?: string
