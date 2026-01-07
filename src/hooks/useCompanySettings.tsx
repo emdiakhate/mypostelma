@@ -72,11 +72,11 @@ export const useCompanySettings = () => {
         setSettings(mapDbSettings(data));
       } else {
         // Créer des settings par défaut si aucun n'existe
+        // NB: la table `company_settings` ne contient pas de colonnes de template.
+        // On conserve les templates par défaut côté front (mapDbSettings).
         const defaultSettings = {
           user_id: userData.user.id,
           company_name: 'Mon Entreprise',
-          default_invoice_template: 'classic',
-          default_quote_template: 'classic',
         };
 
         const { data: newSettings, error: createError } = await supabase
@@ -110,18 +110,16 @@ export const useCompanySettings = () => {
     try {
       if (!settings) throw new Error('Settings not loaded');
 
-      const { error } = await supabase
-        .from('company_settings')
-        .update({
-          company_name: updates.company_name,
-          company_address: updates.company_address || null,
-          company_phone: updates.company_phone || null,
-          company_email: updates.company_email || null,
-          logo_url: updates.logo_url || null,
-          default_invoice_template: updates.default_invoice_template,
-          default_quote_template: updates.default_quote_template,
-        })
-        .eq('id', settings.id);
+        const { error } = await supabase
+          .from('company_settings')
+          .update({
+            company_name: updates.company_name,
+            address: updates.company_address || null,
+            phone: updates.company_phone || null,
+            email: updates.company_email || null,
+            logo_url: updates.logo_url || null,
+          })
+          .eq('id', settings.id);
 
       if (error) throw error;
 
