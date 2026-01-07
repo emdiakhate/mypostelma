@@ -344,7 +344,7 @@ export default function ComptaDashboardPage() {
               </div>
             </Link>
 
-            <Link to="/crm/clients" className="group">
+            <Link to="/app/crm/clients" className="group">
               <div className="p-4 border rounded-lg hover:bg-muted/50 hover:border-primary transition-all cursor-pointer">
                 <div className="h-8 w-8 mb-2 flex items-center justify-center text-2xl">👥</div>
                 <h3 className="font-semibold mb-1">Gérer mes clients</h3>

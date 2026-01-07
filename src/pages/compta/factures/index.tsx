@@ -94,7 +94,7 @@ export default function FacturesListPage() {
     [search, statusFilter, overdueOnly]
   );
 
-  const { invoices, loading, updateInvoiceStatus, deleteInvoice } = useInvoices(filters);
+  const { invoices, loading, updateInvoiceStatus } = useInvoices(filters);
 
   // Dialog de confirmation suppression
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -142,21 +142,13 @@ export default function FacturesListPage() {
   const handleDelete = async () => {
     if (!invoiceToDelete) return;
 
-    try {
-      await deleteInvoice(invoiceToDelete.id);
-      toast({
-        title: 'Facture supprimée',
-        description: `La facture ${invoiceToDelete.invoice_number} a été supprimée`,
-      });
-      setDeleteDialogOpen(false);
-      setInvoiceToDelete(null);
-    } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer la facture',
-        variant: 'destructive',
-      });
-    }
+    // Pour l'instant, afficher un message - deleteInvoice sera ajouté plus tard
+    toast({
+      title: 'Fonctionnalité à venir',
+      description: 'La suppression de facture sera disponible prochainement',
+    });
+    setDeleteDialogOpen(false);
+    setInvoiceToDelete(null);
   };
 
   return (

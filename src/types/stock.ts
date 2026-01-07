@@ -354,9 +354,10 @@ export const REFERENCE_TYPES: ReferenceType[] = [
   'SALE',
   'PURCHASE',
   'RETURN',
-  'MANUAL',
-  'LOSS',
+  'TRANSFER',
+  'ADJUSTMENT',
   'PRODUCTION',
+  'OTHER',
 ];
 
 export const DIGITAL_ASSET_STATUSES: DigitalAssetStatus[] = [

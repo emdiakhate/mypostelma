@@ -11,7 +11,25 @@
  */
 
 import { Product } from './vente';
-import { Lead } from './crm';
+
+// Type Lead simplifié pour éviter les erreurs d'import circulaire
+export interface Lead {
+  id: string;
+  user_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  status: string;
+  source: string;
+  score?: number;
+  notes?: string;
+  created_at: Date;
+  updated_at: Date;
+  is_customer?: boolean;
+  customer_since?: Date;
+}
 
 // ============================================================================
 // DEVIS (QUOTES)

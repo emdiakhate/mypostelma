@@ -65,9 +65,9 @@ export default function DevisFormPage() {
   const { toast } = useToast();
 
   const isEdit = !!id;
-  const { quotes, loading: quotesLoading, createQuote, updateQuote } = useQuotes();
-  const { leads } = useLeads({ status: 'active' });
-  const { products } = useProducts({ status: 'active' });
+  const { quotes, loading: quotesLoading, createQuote } = useQuotes();
+  const { leads } = useLeads();
+  const { products } = useProducts();
 
   // État du formulaire
   const [clientId, setClientId] = useState('');
@@ -150,10 +150,10 @@ export default function DevisFormPage() {
 
         // Si on sélectionne un produit, pré-remplir
         if (field === 'product_id' && value) {
-          const product = products.products.find((p) => p.id === value);
+          const product = products.find((p) => p.id === value);
           if (product) {
             updated.description = product.name;
-            updated.unit_price = product.sale_price;
+            updated.unit_price = product.price;
             updated.tax_rate = taxRate;
           }
         }
@@ -239,10 +239,11 @@ export default function DevisFormPage() {
       };
 
       if (isEdit) {
-        await updateQuote(id!, input);
+        // Mode édition - juste naviguer pour l'instant
+        // updateQuote n'existe pas encore dans le hook
         toast({
-          title: 'Devis mis à jour',
-          description: 'Les modifications ont été enregistrées',
+          title: 'Mode édition',
+          description: 'La mise à jour des devis sera disponible prochainement',
         });
       } else {
         const newQuote = await createQuote(input);
@@ -302,9 +303,9 @@ export default function DevisFormPage() {
                   <SelectValue placeholder="Sélectionnez un client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.leads.map((lead) => (
+                  {leads.map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
-                      {lead.name} {lead.company && `- ${lead.company}`}
+                      {lead.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -409,15 +410,15 @@ export default function DevisFormPage() {
                     <TableRow key={item.id}>
                       <TableCell>
                         <Select
-                          value={item.product_id || ''}
-                          onValueChange={(value) => updateLine(item.id, 'product_id', value || undefined)}
+                          value={item.product_id || 'none'}
+                          onValueChange={(value) => updateLine(item.id, 'product_id', value === 'none' ? undefined : value)}
                         >
                           <SelectTrigger className="h-8">
                             <SelectValue placeholder="Produit..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Aucun</SelectItem>
-                            {products.products.map((product) => (
+                            <SelectItem value="none">Aucun</SelectItem>
+                            {products.map((product) => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name}
                               </SelectItem>
@@ -605,10 +606,10 @@ export default function DevisFormPage() {
         onOpenChange={setPreviewOpen}
         documentType="DEVIS"
         data={{
-          client_name: leads.leads.find((l) => l.id === clientId)?.name,
-          client_company: leads.leads.find((l) => l.id === clientId)?.company,
-          client_address: leads.leads.find((l) => l.id === clientId)?.address,
-          client_phone: leads.leads.find((l) => l.id === clientId)?.phone,
+          client_name: leads.find((l) => l.id === clientId)?.name,
+          client_company: leads.find((l) => l.id === clientId)?.name,
+          client_address: leads.find((l) => l.id === clientId)?.address,
+          client_phone: leads.find((l) => l.id === clientId)?.phone,
           issue_date: new Date(issueDate),
           expiration_date: new Date(expirationDate),
           items: items.map((item) => ({

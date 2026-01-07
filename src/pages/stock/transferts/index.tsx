@@ -338,7 +338,7 @@ export default function StockTransfertsPage() {
                         <SelectValue placeholder="Destination..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses
+                        {warehousesList
                           .filter((w) => w.id !== newTransfer.warehouse_from_id)
                           .map((warehouse) => (
                             <SelectItem key={warehouse.id} value={warehouse.id}>

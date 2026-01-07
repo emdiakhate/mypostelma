@@ -230,7 +230,7 @@ export default function DashboardPage() {
               <AlertCircle className="h-3 w-3 mr-1" />
               2 factures en retard
             </div>
-            <Link to="/compta/factures" className="text-xs text-blue-600 hover:underline mt-2 inline-block">
+            <Link to="/app/compta/factures" className="text-xs text-blue-600 hover:underline mt-2 inline-block">
               Voir Compta →
             </Link>
           </CardContent>
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                 Nouveau devis
               </Button>
             </Link>
-            <Link to="/compta/factures">
+            <Link to="/app/compta/factures">
               <Button variant="outline" className="w-full justify-start">
                 <Euro className="mr-2 h-4 w-4" />
                 Créer facture

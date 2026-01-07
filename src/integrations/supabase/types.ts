@@ -67,6 +67,81 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          bank_bic: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          city: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          default_notes: string | null
+          default_payment_terms: string | null
+          email: string | null
+          id: string
+          invoice_prefix: string | null
+          logo_url: string | null
+          phone: string | null
+          postal_code: string | null
+          quote_prefix: string | null
+          siret: string | null
+          tva_number: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          default_notes?: string | null
+          default_payment_terms?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          quote_prefix?: string | null
+          siret?: string | null
+          tva_number?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          default_notes?: string | null
+          default_payment_terms?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          quote_prefix?: string | null
+          siret?: string | null
+          tva_number?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       comparative_analysis: {
         Row: {
           analysis_date: string
@@ -484,6 +559,427 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: []
+      }
+      compta_invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          invoice_id: string
+          line_order: number
+          product_id: string | null
+          quantity: number
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          invoice_id: string
+          line_order?: number
+          product_id?: string | null
+          quantity?: number
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          invoice_id?: string
+          line_order?: number
+          product_id?: string | null
+          quantity?: number
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "compta_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compta_invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compta_invoices: {
+        Row: {
+          amount_paid: number
+          balance_due: number
+          client_id: string | null
+          created_at: string
+          created_from_ocr: boolean | null
+          currency: string
+          discount_amount: number | null
+          due_date: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          ocr_scan_id: string | null
+          paid_at: string | null
+          quote_id: string | null
+          status: string
+          stock_impact_applied: boolean | null
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          terms: string | null
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          balance_due?: number
+          client_id?: string | null
+          created_at?: string
+          created_from_ocr?: boolean | null
+          currency?: string
+          discount_amount?: number | null
+          due_date: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          ocr_scan_id?: string | null
+          paid_at?: string | null
+          quote_id?: string | null
+          status?: string
+          stock_impact_applied?: boolean | null
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          balance_due?: number
+          client_id?: string | null
+          created_at?: string
+          created_from_ocr?: boolean | null
+          currency?: string
+          discount_amount?: number | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          ocr_scan_id?: string | null
+          paid_at?: string | null
+          quote_id?: string | null
+          status?: string
+          stock_impact_applied?: boolean | null
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compta_invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "compta_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compta_ocr_scans: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          created_invoice_id: string | null
+          created_quote_id: string | null
+          error_message: string | null
+          extracted_data: Json | null
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          processed_at: string | null
+          raw_text: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          created_invoice_id?: string | null
+          created_quote_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          file_name: string
+          file_size?: number | null
+          file_type: string
+          file_url: string
+          id?: string
+          processed_at?: string | null
+          raw_text?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          created_invoice_id?: string | null
+          created_quote_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          processed_at?: string | null
+          raw_text?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_ocr_scans_created_invoice_id_fkey"
+            columns: ["created_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "compta_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compta_ocr_scans_created_quote_id_fkey"
+            columns: ["created_quote_id"]
+            isOneToOne: false
+            referencedRelation: "compta_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compta_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "compta_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compta_quote_items: {
+        Row: {
+          created_at: string
+          description: string
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          line_order: number
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          line_order?: number
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          line_order?: number
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_quote_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compta_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "compta_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compta_quotes: {
+        Row: {
+          client_id: string | null
+          converted_to_invoice_id: string | null
+          created_at: string
+          created_from_ocr: boolean | null
+          currency: string
+          discount_amount: number | null
+          expiration_date: string
+          id: string
+          issue_date: string
+          notes: string | null
+          ocr_scan_id: string | null
+          quote_number: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          terms: string | null
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          converted_to_invoice_id?: string | null
+          created_at?: string
+          created_from_ocr?: boolean | null
+          currency?: string
+          discount_amount?: number | null
+          expiration_date: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          ocr_scan_id?: string | null
+          quote_number: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          converted_to_invoice_id?: string | null
+          created_at?: string
+          created_from_ocr?: boolean | null
+          currency?: string
+          discount_amount?: number | null
+          expiration_date?: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          ocr_scan_id?: string | null
+          quote_number?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compta_quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       connected_accounts: {
         Row: {
@@ -2537,11 +3033,14 @@ export type Database = {
           created_at: string | null
           description: string
           id: string
+          is_stockable: boolean | null
+          min_stock_quantity: number | null
           name: string
           price: number
           sku: string | null
           status: string
           stock: number | null
+          track_inventory: boolean | null
           type: string
           unit: string
           updated_at: string | null
@@ -2553,11 +3052,14 @@ export type Database = {
           created_at?: string | null
           description: string
           id?: string
+          is_stockable?: boolean | null
+          min_stock_quantity?: number | null
           name: string
           price: number
           sku?: string | null
           status?: string
           stock?: number | null
+          track_inventory?: boolean | null
           type: string
           unit: string
           updated_at?: string | null
@@ -2569,11 +3071,14 @@ export type Database = {
           created_at?: string | null
           description?: string
           id?: string
+          is_stockable?: boolean | null
+          min_stock_quantity?: number | null
           name?: string
           price?: number
           sku?: string | null
           status?: string
           stock?: number | null
+          track_inventory?: boolean | null
           type?: string
           unit?: string
           updated_at?: string | null
@@ -3395,6 +3900,10 @@ export type Database = {
           p_warehouse_id: string
         }
         Returns: boolean
+      }
+      get_next_sequence_number: {
+        Args: { p_sequence_type: string; p_user_id: string }
+        Returns: string
       }
       get_stock_quantity: {
         Args: { p_product_id: string; p_warehouse_id?: string }
