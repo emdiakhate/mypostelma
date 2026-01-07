@@ -158,7 +158,7 @@ export default function DevisListPage() {
             Gérez vos devis et propositions commerciales
           </p>
         </div>
-        <Link to="/compta/devis/new">
+        <Link to="/app/compta/devis/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau devis
@@ -241,7 +241,7 @@ export default function DevisListPage() {
                   ? 'Aucun devis ne correspond à vos critères'
                   : 'Commencez par créer votre premier devis'}
               </p>
-              <Link to="/compta/devis/new">
+              <Link to="/app/compta/devis/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Créer un devis

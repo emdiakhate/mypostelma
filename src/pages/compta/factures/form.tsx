@@ -296,7 +296,7 @@ export default function FactureFormPage() {
         // TODO: Si sendDirectly, marquer comme 'sent'
       }
 
-      navigate('/compta/factures');
+      navigate('/app/compta/factures');
     } catch (error) {
       toast({
         title: 'Erreur',
@@ -313,7 +313,7 @@ export default function FactureFormPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/compta/factures')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/app/compta/factures')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -636,7 +636,7 @@ export default function FactureFormPage() {
 
       {/* Actions */}
       <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={() => navigate('/compta/factures')} disabled={saving}>
+        <Button variant="outline" onClick={() => navigate('/app/compta/factures')} disabled={saving}>
           Annuler
         </Button>
         <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
