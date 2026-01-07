@@ -604,10 +604,10 @@ export default function DevisFormPage() {
         onOpenChange={setPreviewOpen}
         documentType="DEVIS"
         data={{
-          client_name: leads.leads.find((l) => l.id === clientId)?.name,
-          client_company: leads.leads.find((l) => l.id === clientId)?.company,
-          client_address: leads.leads.find((l) => l.id === clientId)?.address,
-          client_phone: leads.leads.find((l) => l.id === clientId)?.phone,
+          client_name: leads.find((l) => l.id === clientId)?.name,
+          client_company: leads.find((l) => l.id === clientId)?.name,
+          client_address: leads.find((l) => l.id === clientId)?.address,
+          client_phone: leads.find((l) => l.id === clientId)?.phone,
           issue_date: new Date(issueDate),
           expiration_date: new Date(expirationDate),
           items: items.map((item) => ({

@@ -686,10 +686,10 @@ export default function FactureFormPage() {
         onOpenChange={setPreviewOpen}
         documentType="FACTURE"
         data={{
-          client_name: leads.leads.find((l) => l.id === clientId)?.name,
-          client_company: leads.leads.find((l) => l.id === clientId)?.company,
-          client_address: leads.leads.find((l) => l.id === clientId)?.address,
-          client_phone: leads.leads.find((l) => l.id === clientId)?.phone,
+          client_name: leads.find((l) => l.id === clientId)?.name,
+          client_company: leads.find((l) => l.id === clientId)?.name,
+          client_address: leads.find((l) => l.id === clientId)?.address,
+          client_phone: leads.find((l) => l.id === clientId)?.phone,
           issue_date: new Date(issueDate),
           due_date: new Date(dueDate),
           items: items.map((item) => ({
