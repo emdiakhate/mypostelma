@@ -252,7 +252,7 @@ export default function DevisFormPage() {
         // TODO: Si sendDirectly, marquer comme 'sent'
       }
 
-      navigate('/compta/devis');
+      navigate('/app/compta/devis');
     } catch (error) {
       toast({
         title: 'Erreur',
@@ -269,7 +269,7 @@ export default function DevisFormPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/compta/devis')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/app/compta/devis')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -554,7 +554,7 @@ export default function DevisFormPage() {
 
       {/* Actions */}
       <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={() => navigate('/compta/devis')} disabled={saving}>
+        <Button variant="outline" onClick={() => navigate('/app/compta/devis')} disabled={saving}>
           Annuler
         </Button>
         <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
