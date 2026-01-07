@@ -917,7 +917,11 @@ export const useOcrScans = () => {
       // Recharger les scans
       await loadScans();
 
-      return data.extracted_data;
+      // Retourner les données complètes avec confidence_score et document_type
+      return {
+        ...data.extracted_data,
+        confidence_score: data.confidence_score,
+      };
     } catch (error: any) {
       console.error('Error processing OCR scan:', error);
 
