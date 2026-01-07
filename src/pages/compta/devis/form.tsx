@@ -34,7 +34,9 @@ import {
   Trash2,
   ArrowLeft,
   Loader2,
+  Eye,
 } from 'lucide-react';
+import PreviewModal from '@/components/compta/PreviewModal';
 import { useQuotes } from '@/hooks/useCompta';
 import { useLeads } from '@/hooks/useLeads';
 import { useProducts } from '@/hooks/useVente';
@@ -79,6 +81,7 @@ export default function DevisFormPage() {
   const [terms, setTerms] = useState('');
   const [items, setItems] = useState<QuoteLineItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Charger le devis en mode édition
   useEffect(() => {
@@ -553,11 +556,20 @@ export default function DevisFormPage() {
       </Card>
 
       {/* Actions */}
-      <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={() => navigate('/app/compta/devis')} disabled={saving}>
-          Annuler
+      <div className="flex gap-3 justify-between">
+        <Button
+          variant="outline"
+          onClick={() => setPreviewOpen(true)}
+          disabled={items.length === 0 || !clientId}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          Aperçu
         </Button>
-        <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/app/compta/devis')} disabled={saving}>
+            Annuler
+          </Button>
+          <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -583,7 +595,38 @@ export default function DevisFormPage() {
             </>
           )}
         </Button>
+        </div>
       </div>
+
+      {/* Modal d'aperçu */}
+      <PreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        documentType="DEVIS"
+        data={{
+          client_name: leads.leads.find((l) => l.id === clientId)?.name,
+          client_company: leads.leads.find((l) => l.id === clientId)?.company,
+          client_address: leads.leads.find((l) => l.id === clientId)?.address,
+          client_phone: leads.leads.find((l) => l.id === clientId)?.phone,
+          issue_date: new Date(issueDate),
+          expiration_date: new Date(expirationDate),
+          items: items.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_percent: item.discount_percent,
+            total: item.total,
+          })),
+          subtotal: totals.subtotal,
+          discount_amount: totals.totalDiscount,
+          tax_rate: taxRate,
+          tax_amount: totals.totalTax,
+          total: totals.grandTotal,
+          currency,
+          notes,
+          terms,
+        }}
+      />
     </div>
   );
 }

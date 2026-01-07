@@ -37,7 +37,9 @@ import {
   Loader2,
   FileText,
   Info,
+  Eye,
 } from 'lucide-react';
+import PreviewModal from '@/components/compta/PreviewModal';
 import { useInvoices, useQuotes } from '@/hooks/useCompta';
 import { useLeads } from '@/hooks/useLeads';
 import { useProducts } from '@/hooks/useVente';
@@ -85,6 +87,7 @@ export default function FactureFormPage() {
   const [terms, setTerms] = useState('');
   const [items, setItems] = useState<InvoiceLineItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Charger depuis un devis
   useEffect(() => {
@@ -635,11 +638,20 @@ export default function FactureFormPage() {
       </Alert>
 
       {/* Actions */}
-      <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={() => navigate('/app/compta/factures')} disabled={saving}>
-          Annuler
+      <div className="flex gap-3 justify-between">
+        <Button
+          variant="outline"
+          onClick={() => setPreviewOpen(true)}
+          disabled={items.length === 0 || !clientId}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          Aperçu
         </Button>
-        <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/app/compta/factures')} disabled={saving}>
+            Annuler
+          </Button>
+          <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -665,7 +677,38 @@ export default function FactureFormPage() {
             </>
           )}
         </Button>
+        </div>
       </div>
+
+      {/* Modal d'aperçu */}
+      <PreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        documentType="FACTURE"
+        data={{
+          client_name: leads.leads.find((l) => l.id === clientId)?.name,
+          client_company: leads.leads.find((l) => l.id === clientId)?.company,
+          client_address: leads.leads.find((l) => l.id === clientId)?.address,
+          client_phone: leads.leads.find((l) => l.id === clientId)?.phone,
+          issue_date: new Date(issueDate),
+          due_date: new Date(dueDate),
+          items: items.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_percent: item.discount_percent,
+            total: item.total,
+          })),
+          subtotal: totals.subtotal,
+          discount_amount: totals.totalDiscount,
+          tax_rate: taxRate,
+          tax_amount: totals.totalTax,
+          total: totals.grandTotal,
+          currency,
+          notes,
+          terms,
+        }}
+      />
     </div>
   );
 }
