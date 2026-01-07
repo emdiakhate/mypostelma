@@ -170,8 +170,9 @@ export const useCompanySettings = () => {
         return null;
       }
 
-      // Upload vers Supabase Storage
-      const fileName = `${userData.user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+      // Upload vers Supabase Storage - structure: userId/filename pour RLS
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userData.user.id}/${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
         .upload(fileName, file, {
