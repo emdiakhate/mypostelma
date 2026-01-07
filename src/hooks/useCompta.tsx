@@ -842,11 +842,66 @@ export const useOcrScans = () => {
     }
   };
 
+  const processOcrScan = async (scanId: string): Promise<any | null> => {
+    try {
+      // Mettre à jour le statut à 'processing'
+      await supabase
+        .from('compta_ocr_scans')
+        .update({ status: 'processing' })
+        .eq('id', scanId);
+
+      // Appeler la fonction Edge pour traitement OCR
+      // Cette fonction Edge va appeler OpenAI Vision API
+      const { data, error } = await supabase.functions.invoke('process-ocr', {
+        body: { scan_id: scanId },
+      });
+
+      if (error) throw error;
+
+      // Mettre à jour le scan avec les résultats
+      await supabase
+        .from('compta_ocr_scans')
+        .update({
+          status: 'completed',
+          extracted_data: data.extracted_data,
+          raw_text: data.raw_text,
+          confidence_score: data.confidence_score,
+          processed_at: new Date().toISOString(),
+        })
+        .eq('id', scanId);
+
+      // Recharger les scans
+      await loadScans();
+
+      return data.extracted_data;
+    } catch (error: any) {
+      console.error('Error processing OCR scan:', error);
+
+      // Marquer comme failed
+      await supabase
+        .from('compta_ocr_scans')
+        .update({
+          status: 'failed',
+          error_message: error.message,
+        })
+        .eq('id', scanId);
+
+      toast({
+        variant: 'destructive',
+        title: 'Erreur OCR',
+        description: 'Impossible de traiter le document.',
+      });
+
+      return null;
+    }
+  };
+
   return {
     scans,
     loading,
     loadScans,
     createOcrScan,
+    processOcrScan,
   };
 };
 

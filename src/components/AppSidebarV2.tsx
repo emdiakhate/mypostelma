@@ -52,6 +52,7 @@ import {
   Warehouse,
   ArrowRightLeft,
   AlertCircle,
+  Camera,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -297,6 +298,13 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         badge: 'Nouveau',
         children: [
           {
+            id: 'compta-dashboard',
+            label: 'Dashboard',
+            icon: LayoutDashboard,
+            path: '/app/compta/dashboard',
+            disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
+          },
+          {
             id: 'compta-devis',
             label: 'Devis',
             icon: FileText,
@@ -311,17 +319,11 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
           },
           {
-            id: 'compta-contrats',
-            label: 'Contrats',
-            icon: FileSignature,
-            path: '/app/compta/contrats',
-            disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
-          },
-          {
-            id: 'compta-paiements',
-            label: 'Paiements',
-            icon: DollarSign,
-            path: '/app/compta/paiements',
+            id: 'compta-scanner',
+            label: 'Scanner OCR',
+            icon: Camera,
+            path: '/app/compta/scanner',
+            badge: 'IA',
             disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
           },
         ],
