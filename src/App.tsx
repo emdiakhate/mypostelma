@@ -88,6 +88,7 @@ import DevisFormPage from "./pages/compta/devis/form";
 import FacturesListPage from "./pages/compta/factures/index";
 import FactureFormPage from "./pages/compta/factures/form";
 import ScannerPage from "./pages/compta/scanner/index";
+import ComptaSettingsPage from "./pages/compta/settings/index";
 
 const queryClient = new QueryClient();
 
@@ -167,6 +168,7 @@ function MainLayout() {
         <Route path="/compta/factures/new" element={<FactureFormPage />} />
         <Route path="/compta/factures/:id/edit" element={<FactureFormPage />} />
         <Route path="/compta/scanner" element={<ScannerPage />} />
+        <Route path="/compta/settings" element={<ComptaSettingsPage />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)

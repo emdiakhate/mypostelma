@@ -106,11 +106,11 @@ export default function FacturesListPage() {
 
   // Actions
   const handleView = (invoiceId: string) => {
-    navigate(`/compta/factures/${invoiceId}`);
+    navigate(`/app/compta/factures/${invoiceId}`);
   };
 
   const handleEdit = (invoiceId: string) => {
-    navigate(`/compta/factures/${invoiceId}/edit`);
+    navigate(`/app/compta/factures/${invoiceId}/edit`);
   };
 
   const handleAddPayment = (invoice: Invoice) => {

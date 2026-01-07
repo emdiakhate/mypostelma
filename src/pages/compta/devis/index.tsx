@@ -93,15 +93,15 @@ export default function DevisListPage() {
 
   // Actions
   const handleView = (quoteId: string) => {
-    navigate(`/compta/devis/${quoteId}`);
+    navigate(`/app/compta/devis/${quoteId}`);
   };
 
   const handleEdit = (quoteId: string) => {
-    navigate(`/compta/devis/${quoteId}/edit`);
+    navigate(`/app/compta/devis/${quoteId}/edit`);
   };
 
   const handleConvertToInvoice = (quoteId: string) => {
-    navigate(`/compta/factures/new?from_quote=${quoteId}`);
+    navigate(`/app/compta/factures/new?from_quote=${quoteId}`);
   };
 
   const handleUpdateStatus = async (quoteId: string, status: QuoteStatus) => {

@@ -326,6 +326,13 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             badge: 'IA',
             disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
           },
+          {
+            id: 'compta-settings',
+            label: 'Paramètres',
+            icon: Settings,
+            path: '/app/compta/settings',
+            disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
+          },
         ],
       },
       {
