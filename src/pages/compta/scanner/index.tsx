@@ -139,9 +139,9 @@ export default function ScannerPage() {
 
         // Rediriger vers le formulaire pré-rempli
         if (extractedData.document_type === 'quote') {
-          navigate(`/compta/devis/new?from_scan=${scan.id}`);
+          navigate(`/app/compta/devis/new?from_scan=${scan.id}`);
         } else {
-          navigate(`/compta/factures/new?from_scan=${scan.id}`);
+          navigate(`/app/compta/factures/new?from_scan=${scan.id}`);
         }
       } else {
         toast({
