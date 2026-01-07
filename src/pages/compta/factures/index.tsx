@@ -106,11 +106,11 @@ export default function FacturesListPage() {
 
   // Actions
   const handleView = (invoiceId: string) => {
-    navigate(`/compta/factures/${invoiceId}`);
+    navigate(`/app/compta/factures/${invoiceId}`);
   };
 
   const handleEdit = (invoiceId: string) => {
-    navigate(`/compta/factures/${invoiceId}/edit`);
+    navigate(`/app/compta/factures/${invoiceId}/edit`);
   };
 
   const handleAddPayment = (invoice: Invoice) => {
@@ -172,7 +172,7 @@ export default function FacturesListPage() {
             Gérez vos factures et suivez les paiements
           </p>
         </div>
-        <Link to="/compta/factures/new">
+        <Link to="/app/compta/factures/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle facture
@@ -271,7 +271,7 @@ export default function FacturesListPage() {
                   ? 'Aucune facture ne correspond à vos critères'
                   : 'Commencez par créer votre première facture'}
               </p>
-              <Link to="/compta/factures/new">
+              <Link to="/app/compta/factures/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Créer une facture

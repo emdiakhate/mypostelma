@@ -93,15 +93,15 @@ export default function DevisListPage() {
 
   // Actions
   const handleView = (quoteId: string) => {
-    navigate(`/compta/devis/${quoteId}`);
+    navigate(`/app/compta/devis/${quoteId}`);
   };
 
   const handleEdit = (quoteId: string) => {
-    navigate(`/compta/devis/${quoteId}/edit`);
+    navigate(`/app/compta/devis/${quoteId}/edit`);
   };
 
   const handleConvertToInvoice = (quoteId: string) => {
-    navigate(`/compta/factures/new?from_quote=${quoteId}`);
+    navigate(`/app/compta/factures/new?from_quote=${quoteId}`);
   };
 
   const handleUpdateStatus = async (quoteId: string, status: QuoteStatus) => {
@@ -158,7 +158,7 @@ export default function DevisListPage() {
             Gérez vos devis et propositions commerciales
           </p>
         </div>
-        <Link to="/compta/devis/new">
+        <Link to="/app/compta/devis/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau devis
@@ -241,7 +241,7 @@ export default function DevisListPage() {
                   ? 'Aucun devis ne correspond à vos critères'
                   : 'Commencez par créer votre premier devis'}
               </p>
-              <Link to="/compta/devis/new">
+              <Link to="/app/compta/devis/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Créer un devis
