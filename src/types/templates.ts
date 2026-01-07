@@ -83,34 +83,52 @@ export interface CompanySettings {
 export const renderTemplate = (template: Template, data: InvoiceTemplateData): string => {
   let html = template.html;
 
-  // Remplacer toutes les variables {{variable}}
+  // 1. Gérer les conditionnels {{#if variable}}...{{/if}}
+  html = html.replace(/{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g, (match, varName, content) => {
+    const value = (data as any)[varName];
+    return value ? content : '';
+  });
+
+  // 2. Remplacer les items (tableau)
+  if (data.items && data.items.length > 0) {
+    const itemsHtml = data.items
+      .map(
+        (item) => `
+      <tr>
+        <td>${item.description}</td>
+        <td>${item.quantity}</td>
+        <td>${formatCurrency(item.unit_price, data.currency)}</td>
+        <td>${formatCurrency(item.total, data.currency)}</td>
+      </tr>
+    `
+      )
+      .join('');
+    html = html.replace('{{items}}', itemsHtml);
+  }
+
+  // 3. Remplacer toutes les variables simples {{variable}}
   Object.entries(data).forEach(([key, value]) => {
-    if (key === 'items') {
-      // Traitement spécial pour les items
-      const itemsHtml = (value as InvoiceTemplateData['items'])
-        .map(
-          (item) => `
-        <tr>
-          <td>${item.description}</td>
-          <td>${item.quantity}</td>
-          <td>${formatCurrency(item.unit_price, data.currency)}</td>
-          <td>${formatCurrency(item.total, data.currency)}</td>
-        </tr>
-      `
-        )
-        .join('');
-      html = html.replace('{{items}}', itemsHtml);
-    } else if (typeof value === 'string' || typeof value === 'number') {
-      // Remplacer les variables simples
+    if (key !== 'items' && (typeof value === 'string' || typeof value === 'number')) {
       const regex = new RegExp(`{{${key}}}`, 'g');
       html = html.replace(regex, String(value || ''));
     }
   });
 
-  // Nettoyer les variables non remplacées
+  // 4. Formater les montants avec devise
+  html = html.replace(/{{subtotal}}/g, formatCurrency(data.subtotal, data.currency));
+  html = html.replace(/{{tax_amount}}/g, formatCurrency(data.tax_amount, data.currency));
+  html = html.replace(/{{total}}/g, formatCurrency(data.total, data.currency));
+  if (data.discount_amount) {
+    html = html.replace(/{{discount_amount}}/g, formatCurrency(data.discount_amount, data.currency));
+  }
+  if (data.balance_due) {
+    html = html.replace(/{{balance_due}}/g, formatCurrency(data.balance_due, data.currency));
+  }
+
+  // 5. Nettoyer les variables non remplacées
   html = html.replace(/{{[^}]+}}/g, '');
 
-  // Injecter le CSS
+  // 6. Injecter le CSS
   const fullHtml = `
 <!DOCTYPE html>
 <html>
