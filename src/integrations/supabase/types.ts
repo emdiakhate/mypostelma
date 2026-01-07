@@ -67,6 +67,81 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          bank_bic: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          city: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          default_notes: string | null
+          default_payment_terms: string | null
+          email: string | null
+          id: string
+          invoice_prefix: string | null
+          logo_url: string | null
+          phone: string | null
+          postal_code: string | null
+          quote_prefix: string | null
+          siret: string | null
+          tva_number: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          default_notes?: string | null
+          default_payment_terms?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          quote_prefix?: string | null
+          siret?: string | null
+          tva_number?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          city?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          default_notes?: string | null
+          default_payment_terms?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          quote_prefix?: string | null
+          siret?: string | null
+          tva_number?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       comparative_analysis: {
         Row: {
           analysis_date: string
