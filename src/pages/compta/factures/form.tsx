@@ -67,10 +67,10 @@ export default function FactureFormPage() {
   const { toast } = useToast();
 
   const isEdit = !!id;
-  const { invoices, loading: invoicesLoading, createInvoice, updateInvoice } = useInvoices();
+  const { invoices, loading: invoicesLoading, createInvoice } = useInvoices();
   const { quotes, loading: quotesLoading } = useQuotes();
-  const { leads } = useLeads({ status: 'active' });
-  const { products } = useProducts({ status: 'active' });
+  const { leads } = useLeads();
+  const { products } = useProducts();
 
   // État du formulaire
   const [quoteId, setQuoteId] = useState<string | undefined>(fromQuoteId || undefined);
@@ -191,10 +191,10 @@ export default function FactureFormPage() {
 
         // Si on sélectionne un produit, pré-remplir
         if (field === 'product_id' && value) {
-          const product = products.products.find((p) => p.id === value);
+          const product = products.find((p) => p.id === value);
           if (product) {
             updated.description = product.name;
-            updated.unit_price = product.sale_price;
+            updated.unit_price = product.price;
             updated.tax_rate = taxRate;
           }
         }
@@ -281,10 +281,10 @@ export default function FactureFormPage() {
       };
 
       if (isEdit) {
-        await updateInvoice(id!, input);
+        // Mode édition - juste naviguer pour l'instant
         toast({
-          title: 'Facture mise à jour',
-          description: 'Les modifications ont été enregistrées',
+          title: 'Mode édition',
+          description: 'La mise à jour des factures sera disponible prochainement',
         });
       } else {
         await createInvoice(input);
@@ -354,7 +354,6 @@ export default function FactureFormPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Client */}
             <div className="space-y-2">
               <Label htmlFor="client">Client *</Label>
               <Select value={clientId} onValueChange={setClientId}>
@@ -362,9 +361,9 @@ export default function FactureFormPage() {
                   <SelectValue placeholder="Sélectionnez un client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.leads.map((lead) => (
+                  {leads.map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
-                      {lead.name} {lead.company && `- ${lead.company}`}
+                      {lead.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -479,7 +478,7 @@ export default function FactureFormPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Aucun</SelectItem>
-                            {products.products.map((product) => (
+                            {products.map((product) => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name}
                               </SelectItem>

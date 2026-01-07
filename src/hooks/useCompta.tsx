@@ -6,6 +6,9 @@
  * 2. useInvoices - Gestion factures
  * 3. usePayments - Gestion paiements
  * 4. useOcrScans - Gestion scans OCR
+ * 
+ * NOTE: Ce hook utilise des requêtes brutes car les tables compta_* 
+ * ne sont pas encore dans les types Supabase générés.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,8 +26,26 @@ import type {
   OcrScan,
   CreateOcrScanInput,
 } from '@/types/compta';
-import type { Lead } from '@/types/crm';
 import type { Product } from '@/types/vente';
+
+// Type Lead simplifié pour la comptabilité (évite l'import problématique)
+interface ComptaLead {
+  id: string;
+  user_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  status: string;
+  source: string;
+  score?: number;
+  notes?: string;
+  created_at: Date;
+  updated_at: Date;
+  is_customer?: boolean;
+  customer_since?: Date;
+}
 
 // ============================================================================
 // MAPPERS (DB → Types TypeScript)
@@ -156,7 +177,7 @@ const mapDbOcrScan = (item: any): OcrScan => ({
   processed_at: item.processed_at ? new Date(item.processed_at) : undefined,
 });
 
-const mapDbLead = (item: any): Lead => ({
+const mapDbLead = (item: any): ComptaLead => ({
   id: item.id,
   user_id: item.user_id,
   name: item.name,
@@ -170,7 +191,6 @@ const mapDbLead = (item: any): Lead => ({
   notes: item.notes,
   created_at: new Date(item.created_at),
   updated_at: new Date(item.updated_at),
-  // Champs compta
   is_customer: item.is_customer ?? false,
   customer_since: item.customer_since ? new Date(item.customer_since) : undefined,
 });
@@ -193,6 +213,13 @@ const mapDbProduct = (item: any): Product => ({
 });
 
 // ============================================================================
+// HELPER pour requêtes non typées (tables compta_*)
+// ============================================================================
+
+// Utilise le client Supabase avec un cast pour éviter les erreurs de typage
+const getSupabaseClient = () => supabase as any;
+
+// ============================================================================
 // 1. HOOK DEVIS (QUOTES)
 // ============================================================================
 
@@ -211,7 +238,9 @@ export const useQuotes = (filters?: QuoteFilters) => {
   const loadQuotes = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      const client = getSupabaseClient();
+      
+      let query = client
         .from('compta_quotes')
         .select(`
           *,
@@ -266,8 +295,10 @@ export const useQuotes = (filters?: QuoteFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
-      // Générer le numéro de devis
-      const { data: quoteNumber, error: seqError } = await supabase.rpc('get_next_sequence_number', {
+      const client = getSupabaseClient();
+
+      // Générer le numéro de devis via RPC
+      const { data: quoteNumber, error: seqError } = await client.rpc('get_next_sequence_number', {
         p_user_id: userData.user.id,
         p_sequence_type: 'quote',
       });
@@ -303,7 +334,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
       const globalTotal = items.reduce((sum, item) => sum + item.total, 0);
 
       // Créer le devis
-      const { data: quote, error: quoteError } = await supabase
+      const { data: quote, error: quoteError } = await client
         .from('compta_quotes')
         .insert([
           {
@@ -328,7 +359,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
       if (quoteError) throw quoteError;
 
       // Créer les lignes
-      const { error: itemsError } = await supabase.from('compta_quote_items').insert(
+      const { error: itemsError } = await client.from('compta_quote_items').insert(
         items.map((item) => ({
           quote_id: quote.id,
           product_id: item.product_id,
@@ -348,7 +379,7 @@ export const useQuotes = (filters?: QuoteFilters) => {
       if (itemsError) throw itemsError;
 
       // Recharger le devis avec les lignes
-      const { data: fullQuote } = await supabase
+      const { data: fullQuote } = await client
         .from('compta_quotes')
         .select(`*, leads(*), compta_quote_items(*, vente_products(*))`)
         .eq('id', quote.id)
@@ -376,7 +407,8 @@ export const useQuotes = (filters?: QuoteFilters) => {
 
   const updateQuoteStatus = async (quoteId: string, newStatus: string): Promise<void> => {
     try {
-      const { error } = await supabase
+      const client = getSupabaseClient();
+      const { error } = await client
         .from('compta_quotes')
         .update({ status: newStatus })
         .eq('id', quoteId);
@@ -403,7 +435,8 @@ export const useQuotes = (filters?: QuoteFilters) => {
 
   const deleteQuote = async (quoteId: string): Promise<void> => {
     try {
-      const { error } = await supabase.from('compta_quotes').delete().eq('id', quoteId);
+      const client = getSupabaseClient();
+      const { error } = await client.from('compta_quotes').delete().eq('id', quoteId);
 
       if (error) throw error;
 
@@ -452,7 +485,9 @@ export const useInvoices = (filters?: InvoiceFilters) => {
   const loadInvoices = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      const client = getSupabaseClient();
+      
+      let query = client
         .from('compta_invoices')
         .select(`
           *,
@@ -513,8 +548,10 @@ export const useInvoices = (filters?: InvoiceFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
+      const client = getSupabaseClient();
+
       // Générer le numéro
-      const { data: invoiceNumber, error: seqError } = await supabase.rpc(
+      const { data: invoiceNumber, error: seqError } = await client.rpc(
         'get_next_sequence_number',
         {
           p_user_id: userData.user.id,
@@ -553,7 +590,7 @@ export const useInvoices = (filters?: InvoiceFilters) => {
       const globalTotal = items.reduce((sum, item) => sum + item.total, 0);
 
       // Créer la facture
-      const { data: invoice, error: invoiceError } = await supabase
+      const { data: invoice, error: invoiceError } = await client
         .from('compta_invoices')
         .insert([
           {
@@ -581,7 +618,7 @@ export const useInvoices = (filters?: InvoiceFilters) => {
       if (invoiceError) throw invoiceError;
 
       // Créer les lignes
-      const { error: itemsError } = await supabase.from('compta_invoice_items').insert(
+      const { error: itemsError } = await client.from('compta_invoice_items').insert(
         items.map((item) => ({
           invoice_id: invoice.id,
           product_id: item.product_id,
@@ -602,7 +639,7 @@ export const useInvoices = (filters?: InvoiceFilters) => {
 
       // Si créée depuis un devis, marquer le devis comme converti
       if (invoiceInput.quote_id) {
-        await supabase
+        await client
           .from('compta_quotes')
           .update({
             converted_to_invoice_id: invoice.id,
@@ -612,7 +649,7 @@ export const useInvoices = (filters?: InvoiceFilters) => {
       }
 
       // Recharger
-      const { data: fullInvoice } = await supabase
+      const { data: fullInvoice } = await client
         .from('compta_invoices')
         .select(`*, leads(*), compta_invoice_items(*, vente_products(*)), compta_payments(*)`)
         .eq('id', invoice.id)
@@ -640,7 +677,8 @@ export const useInvoices = (filters?: InvoiceFilters) => {
 
   const updateInvoiceStatus = async (invoiceId: string, newStatus: string): Promise<void> => {
     try {
-      const { error } = await supabase
+      const client = getSupabaseClient();
+      const { error } = await client
         .from('compta_invoices')
         .update({ status: newStatus })
         .eq('id', invoiceId);
@@ -686,7 +724,9 @@ export const usePayments = (invoiceId?: string) => {
   const loadPayments = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      const client = getSupabaseClient();
+      
+      let query = client
         .from('compta_payments')
         .select('*, compta_invoices(*)')
         .order('payment_date', { ascending: false });
@@ -721,7 +761,8 @@ export const usePayments = (invoiceId?: string) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
-      const { data: payment, error } = await supabase
+      const client = getSupabaseClient();
+      const { data: payment, error } = await client
         .from('compta_payments')
         .insert([
           {
@@ -780,7 +821,8 @@ export const useOcrScans = () => {
   const loadScans = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const client = getSupabaseClient();
+      const { data, error } = await client
         .from('compta_ocr_scans')
         .select('*')
         .order('created_at', { ascending: false })
@@ -810,7 +852,8 @@ export const useOcrScans = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Non authentifié');
 
-      const { data: scan, error } = await supabase
+      const client = getSupabaseClient();
+      const { data: scan, error } = await client
         .from('compta_ocr_scans')
         .insert([
           {
@@ -844,14 +887,15 @@ export const useOcrScans = () => {
 
   const processOcrScan = async (scanId: string): Promise<any | null> => {
     try {
+      const client = getSupabaseClient();
+      
       // Mettre à jour le statut à 'processing'
-      await supabase
+      await client
         .from('compta_ocr_scans')
         .update({ status: 'processing' })
         .eq('id', scanId);
 
       // Appeler la fonction Edge pour traitement OCR
-      // Cette fonction Edge va appeler OpenAI Vision API
       const { data, error } = await supabase.functions.invoke('process-ocr', {
         body: { scan_id: scanId },
       });
@@ -859,7 +903,7 @@ export const useOcrScans = () => {
       if (error) throw error;
 
       // Mettre à jour le scan avec les résultats
-      await supabase
+      await client
         .from('compta_ocr_scans')
         .update({
           status: 'completed',
@@ -877,8 +921,9 @@ export const useOcrScans = () => {
     } catch (error: any) {
       console.error('Error processing OCR scan:', error);
 
+      const client = getSupabaseClient();
       // Marquer comme failed
-      await supabase
+      await client
         .from('compta_ocr_scans')
         .update({
           status: 'failed',
