@@ -10,7 +10,7 @@
  * Triggered: Weekly cron job (Mondays at 6am) or manual trigger
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const APIFY_TOKEN = Deno.env.get('APIFY_TOKEN') || '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
