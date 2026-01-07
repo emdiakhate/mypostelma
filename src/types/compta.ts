@@ -303,6 +303,7 @@ export interface OcrScan {
 
   // Fichier
   file_url: string;
+  file_path: string; // Chemin relatif dans le bucket storage
   file_name: string;
   file_type: string;
   file_size?: number;
@@ -362,6 +363,7 @@ export interface OcrExtractedData {
 
 export interface CreateOcrScanInput {
   file_url: string;
+  file_path: string;
   file_name: string;
   file_type: string;
   file_size?: number;

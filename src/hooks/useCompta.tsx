@@ -163,6 +163,7 @@ const mapDbOcrScan = (item: any): OcrScan => ({
   id: item.id,
   user_id: item.user_id,
   file_url: item.file_url,
+  file_path: item.file_path,
   file_name: item.file_name,
   file_type: item.file_type,
   file_size: item.file_size,
@@ -859,6 +860,7 @@ export const useOcrScans = () => {
           {
             user_id: userData.user.id,
             file_url: scanInput.file_url,
+            file_path: scanInput.file_path,
             file_name: scanInput.file_name,
             file_type: scanInput.file_type,
             file_size: scanInput.file_size,

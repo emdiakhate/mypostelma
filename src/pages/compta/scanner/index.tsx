@@ -117,6 +117,7 @@ export default function ScannerPage() {
       // 3. Créer le scan dans la DB
       const scan = await createOcrScan({
         file_url: fileUrl,
+        file_path: fileName, // Chemin relatif dans le bucket
         file_name: selectedFile.name,
         file_type: selectedFile.type,
         file_size: selectedFile.size,
