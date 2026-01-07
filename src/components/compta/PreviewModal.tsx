@@ -59,8 +59,8 @@ export default function PreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="max-w-7xl h-[95vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <DialogTitle>Aperçu du {documentType.toLowerCase()}</DialogTitle>
@@ -89,12 +89,12 @@ export default function PreviewModal({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 bg-gray-50">
           <PreviewDocument
             documentType={documentType}
             data={data}
             templateId={templateId}
-            className="border-0 shadow-none"
+            className="border-0 shadow-lg mx-auto max-w-4xl bg-white"
           />
         </div>
       </DialogContent>

@@ -558,12 +558,14 @@ export default function DevisFormPage() {
       {/* Actions */}
       <div className="flex gap-3 justify-between">
         <Button
-          variant="outline"
+          variant="default"
+          size="lg"
           onClick={() => setPreviewOpen(true)}
           disabled={items.length === 0 || !clientId}
+          className="bg-green-600 hover:bg-green-700"
         >
-          <Eye className="mr-2 h-4 w-4" />
-          Aperçu
+          <Eye className="mr-2 h-5 w-5" />
+          Aperçu du document
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => navigate('/app/compta/devis')} disabled={saving}>

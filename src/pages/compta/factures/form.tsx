@@ -640,12 +640,14 @@ export default function FactureFormPage() {
       {/* Actions */}
       <div className="flex gap-3 justify-between">
         <Button
-          variant="outline"
+          variant="default"
+          size="lg"
           onClick={() => setPreviewOpen(true)}
           disabled={items.length === 0 || !clientId}
+          className="bg-blue-600 hover:bg-blue-700"
         >
-          <Eye className="mr-2 h-4 w-4" />
-          Aperçu
+          <Eye className="mr-2 h-5 w-5" />
+          Aperçu du document
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => navigate('/app/compta/factures')} disabled={saving}>

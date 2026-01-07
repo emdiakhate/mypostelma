@@ -4,7 +4,7 @@
  * Gestion du logo, coordonnées entreprise et templates par défaut
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ import {
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { TEMPLATES } from '@/data/invoiceTemplates';
 import type { TemplateId } from '@/types/templates';
+import TemplatePreview from '@/components/compta/TemplatePreview';
 
 export default function ComptaSettingsPage() {
   const { settings, loading, updateSettings, uploadLogo, deleteLogo } = useCompanySettings();
@@ -49,7 +50,7 @@ export default function ComptaSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   // Mettre à jour les états quand settings se charge
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       setCompanyName(settings.company_name);
       setCompanyAddress(settings.company_address || '');
@@ -58,7 +59,7 @@ export default function ComptaSettingsPage() {
       setDefaultInvoiceTemplate(settings.default_invoice_template);
       setDefaultQuoteTemplate(settings.default_quote_template);
     }
-  });
+  }, [settings]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -261,29 +262,38 @@ export default function ComptaSettingsPage() {
               {TEMPLATES.map((template) => (
                 <div
                   key={template.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  className={`border rounded-lg p-4 transition-all ${
                     defaultInvoiceTemplate === template.id
                       ? 'border-blue-600 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
-                  onClick={() => setDefaultInvoiceTemplate(template.id)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold">{template.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {template.description}
-                      </p>
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => setDefaultInvoiceTemplate(template.id)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {template.description}
+                        </p>
+                      </div>
+                      {defaultInvoiceTemplate === template.id && (
+                        <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      )}
                     </div>
-                    {defaultInvoiceTemplate === template.id && (
-                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    {template.isDefault && (
+                      <Badge variant="outline" className="text-xs mb-2">
+                        Recommandé
+                      </Badge>
                     )}
                   </div>
-                  {template.isDefault && (
-                    <Badge variant="outline" className="text-xs">
-                      Recommandé
-                    </Badge>
-                  )}
+                  <TemplatePreview
+                    template={template}
+                    companyName={companyName}
+                    logoUrl={settings?.logo_url}
+                  />
                 </div>
               ))}
             </div>
@@ -296,29 +306,38 @@ export default function ComptaSettingsPage() {
               {TEMPLATES.map((template) => (
                 <div
                   key={template.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  className={`border rounded-lg p-4 transition-all ${
                     defaultQuoteTemplate === template.id
                       ? 'border-green-600 bg-green-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
-                  onClick={() => setDefaultQuoteTemplate(template.id)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold">{template.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {template.description}
-                      </p>
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => setDefaultQuoteTemplate(template.id)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {template.description}
+                        </p>
+                      </div>
+                      {defaultQuoteTemplate === template.id && (
+                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      )}
                     </div>
-                    {defaultQuoteTemplate === template.id && (
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    {template.isDefault && (
+                      <Badge variant="outline" className="text-xs mb-2">
+                        Recommandé
+                      </Badge>
                     )}
                   </div>
-                  {template.isDefault && (
-                    <Badge variant="outline" className="text-xs">
-                      Recommandé
-                    </Badge>
-                  )}
+                  <TemplatePreview
+                    template={template}
+                    companyName={companyName}
+                    logoUrl={settings?.logo_url}
+                  />
                 </div>
               ))}
             </div>

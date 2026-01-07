@@ -1,7 +1,7 @@
 /**
  * Supabase Edge Function - Process OCR
  *
- * Appelle OpenAI Vision API pour extraire les données d'une facture/devis
+ * Appelle OpenRouter (Google Gemini 2.5 Flash) pour extraire les données d'une facture/devis
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -53,11 +53,10 @@ serve(async (req) => {
       throw new Error('Scan introuvable');
     }
 
-    console.log('Scan found:', scan.file_path);
-
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OPENAI_API_KEY non configurée. Veuillez ajouter votre clé API OpenAI dans les secrets.');
+    // Appeler OpenRouter avec Gemini 2.5 Flash
+    const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openrouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY non configurée');
     }
 
     // Télécharger l'image depuis le storage
@@ -102,14 +101,16 @@ UNIQUEMENT le JSON, sans texte.`;
 
     console.log('Calling OpenAI API...');
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openrouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${openrouterApiKey}`,
+        'HTTP-Referer': Deno.env.get('SUPABASE_URL') || 'https://mypostelma.com',
+        'X-Title': 'MyPostelma Compta OCR',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'google/gemini-2.5-flash', // Modèle Gemini avec vision
         messages: [
           {
             role: 'user',
@@ -124,14 +125,13 @@ UNIQUEMENT le JSON, sans texte.`;
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`Erreur OpenAI: ${errorData.error?.message || 'Erreur inconnue'}`);
+    if (!openrouterResponse.ok) {
+      const errorData = await openrouterResponse.json();
+      throw new Error(`OpenRouter API error: ${JSON.stringify(errorData)}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    const extractedText = openaiData.choices[0]?.message?.content || '';
+    const openrouterData = await openrouterResponse.json();
+    const extractedText = openrouterData.choices[0]?.message?.content || '';
 
     console.log('OpenAI response received');
 
