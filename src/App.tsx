@@ -81,6 +81,14 @@ import StockMouvementsPage from "./pages/stock/mouvements";
 import StockTransfertsPage from "./pages/stock/transferts";
 import StockAlertesPage from "./pages/stock/alertes";
 
+// Compta Module Pages
+import ComptaDashboardPage from "./pages/compta/dashboard/index";
+import DevisListPage from "./pages/compta/devis/index";
+import DevisFormPage from "./pages/compta/devis/form";
+import FacturesListPage from "./pages/compta/factures/index";
+import FactureFormPage from "./pages/compta/factures/form";
+import ScannerPage from "./pages/compta/scanner/index";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -147,6 +155,18 @@ function MainLayout() {
         <Route path="/stock/mouvements" element={<StockMouvementsPage />} />
         <Route path="/stock/transferts" element={<StockTransfertsPage />} />
         <Route path="/stock/alertes" element={<StockAlertesPage />} />
+
+        {/* ================================================================
+            MODULE COMPTA (Devis & Factures)
+            ================================================================ */}
+        <Route path="/compta/dashboard" element={<ComptaDashboardPage />} />
+        <Route path="/compta/devis" element={<DevisListPage />} />
+        <Route path="/compta/devis/new" element={<DevisFormPage />} />
+        <Route path="/compta/devis/:id/edit" element={<DevisFormPage />} />
+        <Route path="/compta/factures" element={<FacturesListPage />} />
+        <Route path="/compta/factures/new" element={<FactureFormPage />} />
+        <Route path="/compta/factures/:id/edit" element={<FactureFormPage />} />
+        <Route path="/compta/scanner" element={<ScannerPage />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)
