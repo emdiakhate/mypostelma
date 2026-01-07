@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useOcrScans } from '@/hooks/useCompta';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -44,7 +44,7 @@ export default function ScannerPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { scans, loading: scansLoading, createScan, processOcrScan } = useOcrScans();
+  const { scans, loading: scansLoading, createOcrScan, processOcrScan } = useOcrScans();
 
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -115,7 +115,7 @@ export default function ScannerPage() {
       const fileUrl = urlData.publicUrl;
 
       // 3. Créer le scan dans la DB
-      const scan = await createScan({
+      const scan = await createOcrScan({
         file_url: fileUrl,
         file_name: selectedFile.name,
         file_type: selectedFile.type,
