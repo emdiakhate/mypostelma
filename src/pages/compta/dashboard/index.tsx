@@ -92,13 +92,13 @@ export default function ComptaDashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/compta/devis">
+          <Link to="/app/compta/devis">
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />
               Nouveau devis
             </Button>
           </Link>
-          <Link to="/compta/factures">
+          <Link to="/app/compta/factures">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Nouvelle facture
@@ -183,7 +183,7 @@ export default function ComptaDashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Dernières factures</CardTitle>
-              <Link to="/compta/factures">
+              <Link to="/app/compta/factures">
                 <Button variant="ghost" size="sm">
                   Voir tout
                 </Button>
@@ -200,7 +200,7 @@ export default function ComptaDashboardPage() {
               <div className="text-center py-8">
                 <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Aucune facture pour le moment</p>
-                <Link to="/compta/factures">
+                <Link to="/app/compta/factures">
                   <Button size="sm" className="mt-3">
                     Créer ma première facture
                   </Button>
@@ -248,7 +248,7 @@ export default function ComptaDashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Devis en attente</CardTitle>
-              <Link to="/compta/devis">
+              <Link to="/app/compta/devis">
                 <Button variant="ghost" size="sm">
                   Voir tout
                 </Button>
@@ -265,7 +265,7 @@ export default function ComptaDashboardPage() {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Aucun devis en attente</p>
-                <Link to="/compta/devis">
+                <Link to="/app/compta/devis">
                   <Button size="sm" className="mt-3">
                     Créer un devis
                   </Button>
@@ -314,7 +314,7 @@ export default function ComptaDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Link to="/compta/devis" className="group">
+            <Link to="/app/compta/devis" className="group">
               <div className="p-4 border rounded-lg hover:bg-muted/50 hover:border-primary transition-all cursor-pointer">
                 <FileText className="h-8 w-8 mb-2 text-primary" />
                 <h3 className="font-semibold mb-1">Créer un devis</h3>
@@ -324,7 +324,7 @@ export default function ComptaDashboardPage() {
               </div>
             </Link>
 
-            <Link to="/compta/factures" className="group">
+            <Link to="/app/compta/factures" className="group">
               <div className="p-4 border rounded-lg hover:bg-muted/50 hover:border-primary transition-all cursor-pointer">
                 <Receipt className="h-8 w-8 mb-2 text-primary" />
                 <h3 className="font-semibold mb-1">Créer une facture</h3>
@@ -334,7 +334,7 @@ export default function ComptaDashboardPage() {
               </div>
             </Link>
 
-            <Link to="/compta/scanner" className="group">
+            <Link to="/app/compta/scanner" className="group">
               <div className="p-4 border rounded-lg hover:bg-muted/50 hover:border-primary transition-all cursor-pointer">
                 <div className="h-8 w-8 mb-2 flex items-center justify-center text-2xl">📸</div>
                 <h3 className="font-semibold mb-1">Scanner un document</h3>
@@ -344,7 +344,7 @@ export default function ComptaDashboardPage() {
               </div>
             </Link>
 
-            <Link to="/crm/clients" className="group">
+            <Link to="/app/crm/clients" className="group">
               <div className="p-4 border rounded-lg hover:bg-muted/50 hover:border-primary transition-all cursor-pointer">
                 <div className="h-8 w-8 mb-2 flex items-center justify-center text-2xl">👥</div>
                 <h3 className="font-semibold mb-1">Gérer mes clients</h3>
