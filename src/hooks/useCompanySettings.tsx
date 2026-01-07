@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { CompanySettings } from '@/types/templates';
 import type { TemplateId } from '@/types/templates';
@@ -12,13 +12,24 @@ import type { TemplateId } from '@/types/templates';
 interface DbCompanySettings {
   id: string;
   user_id: string;
-  company_name: string;
-  company_address: string | null;
-  company_phone: string | null;
-  company_email: string | null;
+  company_name: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  siret: string | null;
+  tva_number: string | null;
   logo_url: string | null;
-  default_invoice_template: string;
-  default_quote_template: string;
+  bank_name: string | null;
+  bank_iban: string | null;
+  bank_bic: string | null;
+  default_payment_terms: string | null;
+  default_notes: string | null;
+  invoice_prefix: string | null;
+  quote_prefix: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,13 +37,13 @@ interface DbCompanySettings {
 const mapDbSettings = (db: DbCompanySettings): CompanySettings => ({
   id: db.id,
   user_id: db.user_id,
-  company_name: db.company_name,
-  company_address: db.company_address || undefined,
-  company_phone: db.company_phone || undefined,
-  company_email: db.company_email || undefined,
+  company_name: db.company_name || 'Mon Entreprise',
+  company_address: db.address || undefined,
+  company_phone: db.phone || undefined,
+  company_email: db.email || undefined,
   logo_url: db.logo_url || undefined,
-  default_invoice_template: db.default_invoice_template as TemplateId,
-  default_quote_template: db.default_quote_template as TemplateId,
+  default_invoice_template: 'classic' as TemplateId,
+  default_quote_template: 'classic' as TemplateId,
   created_at: new Date(db.created_at),
   updated_at: new Date(db.updated_at),
 });
