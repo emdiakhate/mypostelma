@@ -407,14 +407,14 @@ export default function DevisFormPage() {
                     <TableRow key={item.id}>
                       <TableCell>
                         <Select
-                          value={item.product_id || ''}
-                          onValueChange={(value) => updateLine(item.id, 'product_id', value || undefined)}
+                          value={item.product_id || 'none'}
+                          onValueChange={(value) => updateLine(item.id, 'product_id', value === 'none' ? undefined : value)}
                         >
                           <SelectTrigger className="h-8">
                             <SelectValue placeholder="Produit..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Aucun</SelectItem>
+                            <SelectItem value="none">Aucun</SelectItem>
                             {products.map((product) => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name}
