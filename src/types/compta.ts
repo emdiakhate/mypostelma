@@ -353,7 +353,12 @@ export interface OcrExtractedData {
 
   // Client (si détecté)
   client_name?: string;
+  client_company?: string;
   client_address?: string;
+  client_phone?: string;
+
+  // Score de confiance
+  confidence_score?: number;
 
   // Métadonnées
   confidence_items?: {

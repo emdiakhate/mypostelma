@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, X, Printer } from 'lucide-react';
-import { renderTemplate, TEMPLATES } from '@/types/templates';
+import { renderTemplate } from '@/types/templates';
+import { TEMPLATES } from '@/data/invoiceTemplates';
 import type { TemplateId, InvoiceTemplateData } from '@/types/templates';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { format } from 'date-fns';

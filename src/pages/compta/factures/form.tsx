@@ -133,9 +133,9 @@ export default function FactureFormPage() {
 
   // Charger depuis les données OCR
   useEffect(() => {
-    if (ocrData && leads?.leads) {
+    if (ocrData && leads) {
       // Trouver ou créer un client basé sur le nom
-      const existingClient = leads.leads.find((l) =>
+      const existingClient = leads.find((l) =>
         l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
       );
 
@@ -163,18 +163,20 @@ export default function FactureFormPage() {
       if (ocrData.items && ocrData.items.length > 0) {
         setItems(
           ocrData.items.map((item, index) => {
-            const lineAmounts = calculateLineAmounts({
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              discount_percent: 0,
-              tax_rate: ocrData.tax_rate || 18,
-            });
+            const qty = item.quantity ?? 1;
+            const price = item.unit_price ?? 0;
+            const lineAmounts = calculateLineAmounts(
+              qty,
+              price,
+              ocrData.tax_rate || 18,
+              0
+            );
 
             return {
               id: `ocr-${index}`,
               description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
+              quantity: qty,
+              unit_price: price,
               discount_percent: 0,
               tax_rate: ocrData.tax_rate || 18,
               product_id: undefined,
@@ -189,10 +191,10 @@ export default function FactureFormPage() {
 
       toast({
         title: 'Données OCR chargées',
-        description: `Facture scannée avec ${ocrData.confidence_score}% de confiance. Vérifiez les informations.`,
+        description: `Facture scannée avec ${ocrData.confidence_score || 0}% de confiance. Vérifiez les informations.`,
       });
     }
-  }, [ocrData, leads.leads, toast]);
+  }, [ocrData, leads, toast]);
 
   // Charger la facture en mode édition
   useEffect(() => {
