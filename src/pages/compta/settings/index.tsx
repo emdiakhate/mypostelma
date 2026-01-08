@@ -29,7 +29,7 @@ import {
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { TEMPLATES } from '@/data/invoiceTemplates';
 import type { TemplateId } from '@/types/templates';
-import TemplatePreview from '@/components/compta/TemplatePreview';
+import TemplateGridSelector from '@/components/compta/TemplateGridSelector';
 
 export default function ComptaSettingsPage() {
   const { settings, loading, updateSettings, uploadLogo, deleteLogo } = useCompanySettings();
@@ -254,93 +254,29 @@ export default function ComptaSettingsPage() {
             Choisissez les templates par défaut pour vos factures et devis
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           {/* Template Factures */}
           <div>
-            <Label className="mb-3 block">Template par défaut pour les factures</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {TEMPLATES.map((template) => (
-                <div
-                  key={template.id}
-                  className={`border rounded-lg p-4 transition-all ${
-                    defaultInvoiceTemplate === template.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div
-                    className="cursor-pointer"
-                    onClick={() => setDefaultInvoiceTemplate(template.id)}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold">{template.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {template.description}
-                        </p>
-                      </div>
-                      {defaultInvoiceTemplate === template.id && (
-                        <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                      )}
-                    </div>
-                    {template.isDefault && (
-                      <Badge variant="outline" className="text-xs mb-2">
-                        Recommandé
-                      </Badge>
-                    )}
-                  </div>
-                  <TemplatePreview
-                    template={template}
-                    companyName={companyName}
-                    logoUrl={settings?.logo_url}
-                  />
-                </div>
-              ))}
-            </div>
+            <Label className="mb-4 block text-lg font-semibold">Template par défaut pour les factures</Label>
+            <TemplateGridSelector
+              templates={TEMPLATES}
+              selectedId={defaultInvoiceTemplate}
+              onChange={(id) => setDefaultInvoiceTemplate(id as TemplateId)}
+              companyName={companyName}
+              logoUrl={settings?.logo_url}
+            />
           </div>
 
           {/* Template Devis */}
           <div>
-            <Label className="mb-3 block">Template par défaut pour les devis</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {TEMPLATES.map((template) => (
-                <div
-                  key={template.id}
-                  className={`border rounded-lg p-4 transition-all ${
-                    defaultQuoteTemplate === template.id
-                      ? 'border-green-600 bg-green-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div
-                    className="cursor-pointer"
-                    onClick={() => setDefaultQuoteTemplate(template.id)}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold">{template.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {template.description}
-                        </p>
-                      </div>
-                      {defaultQuoteTemplate === template.id && (
-                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      )}
-                    </div>
-                    {template.isDefault && (
-                      <Badge variant="outline" className="text-xs mb-2">
-                        Recommandé
-                      </Badge>
-                    )}
-                  </div>
-                  <TemplatePreview
-                    template={template}
-                    companyName={companyName}
-                    logoUrl={settings?.logo_url}
-                  />
-                </div>
-              ))}
-            </div>
+            <Label className="mb-4 block text-lg font-semibold">Template par défaut pour les devis</Label>
+            <TemplateGridSelector
+              templates={TEMPLATES}
+              selectedId={defaultQuoteTemplate}
+              onChange={(id) => setDefaultQuoteTemplate(id as TemplateId)}
+              companyName={companyName}
+              logoUrl={settings?.logo_url}
+            />
           </div>
         </CardContent>
       </Card>

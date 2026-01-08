@@ -9,7 +9,32 @@ import { useToast } from '@/hooks/use-toast';
 import type { CompanySettings } from '@/types/templates';
 import type { TemplateId } from '@/types/templates';
 
-const mapDbSettings = (db: any): CompanySettings => ({
+interface DbCompanySettings {
+  id: string;
+  user_id: string;
+  company_name: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  siret: string | null;
+  tva_number: string | null;
+  logo_url: string | null;
+  bank_name: string | null;
+  bank_iban: string | null;
+  bank_bic: string | null;
+  default_payment_terms: string | null;
+  default_notes: string | null;
+  invoice_prefix: string | null;
+  quote_prefix: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const mapDbSettings = (db: DbCompanySettings): CompanySettings => ({
   id: db.id,
   user_id: db.user_id,
   company_name: db.company_name || 'Mon Entreprise',
@@ -17,8 +42,8 @@ const mapDbSettings = (db: any): CompanySettings => ({
   company_phone: db.phone || undefined,
   company_email: db.email || undefined,
   logo_url: db.logo_url || undefined,
-  default_invoice_template: (db.default_invoice_template as TemplateId) || 'classic',
-  default_quote_template: (db.default_quote_template as TemplateId) || 'classic',
+  default_invoice_template: 'classic' as TemplateId,
+  default_quote_template: 'classic' as TemplateId,
   created_at: new Date(db.created_at),
   updated_at: new Date(db.updated_at),
 });
@@ -47,11 +72,11 @@ export const useCompanySettings = () => {
         setSettings(mapDbSettings(data));
       } else {
         // Créer des settings par défaut si aucun n'existe
+        // NB: la table `company_settings` ne contient pas de colonnes de template.
+        // On conserve les templates par défaut côté front (mapDbSettings).
         const defaultSettings = {
           user_id: userData.user.id,
           company_name: 'Mon Entreprise',
-          default_invoice_template: 'classic',
-          default_quote_template: 'classic',
         };
 
         const { data: newSettings, error: createError } = await supabase
@@ -85,18 +110,16 @@ export const useCompanySettings = () => {
     try {
       if (!settings) throw new Error('Settings not loaded');
 
-      const { error } = await supabase
-        .from('company_settings')
-        .update({
-          company_name: updates.company_name,
-          address: updates.company_address || null,
-          phone: updates.company_phone || null,
-          email: updates.company_email || null,
-          logo_url: updates.logo_url || null,
-          default_invoice_template: updates.default_invoice_template || null,
-          default_quote_template: updates.default_quote_template || null,
-        })
-        .eq('id', settings.id);
+        const { error } = await supabase
+          .from('company_settings')
+          .update({
+            company_name: updates.company_name,
+            address: updates.company_address || null,
+            phone: updates.company_phone || null,
+            email: updates.company_email || null,
+            logo_url: updates.logo_url || null,
+          })
+          .eq('id', settings.id);
 
       if (error) throw error;
 

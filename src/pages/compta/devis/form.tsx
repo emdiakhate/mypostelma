@@ -124,7 +124,7 @@ export default function DevisFormPage() {
 
   // Charger depuis les données OCR
   useEffect(() => {
-    if (ocrData) {
+    if (ocrData && leads?.leads) {
       // Trouver ou créer un client basé sur le nom
       const existingClient = leads.leads.find((l) =>
         l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
