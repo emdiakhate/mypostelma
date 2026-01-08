@@ -77,8 +77,10 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          default_invoice_template: string | null
           default_notes: string | null
           default_payment_terms: string | null
+          default_quote_template: string | null
           email: string | null
           id: string
           invoice_prefix: string | null
@@ -101,8 +103,10 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_invoice_template?: string | null
           default_notes?: string | null
           default_payment_terms?: string | null
+          default_quote_template?: string | null
           email?: string | null
           id?: string
           invoice_prefix?: string | null
@@ -125,8 +129,10 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_invoice_template?: string | null
           default_notes?: string | null
           default_payment_terms?: string | null
+          default_quote_template?: string | null
           email?: string | null
           id?: string
           invoice_prefix?: string | null
