@@ -38,6 +38,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import OcrReviewModal, { type OcrReviewData } from '@/components/compta/OcrReviewModal';
+import type { OcrExtractedData } from '@/types/compta';
 
 export default function ScannerPage() {
   const navigate = useNavigate();
@@ -51,6 +53,12 @@ export default function ScannerPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentScan, setCurrentScan] = useState<any>(null);
+
+  // États pour le modal de révision
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewData, setReviewData] = useState<OcrExtractedData | null>(null);
+  const [reviewConfidence, setReviewConfidence] = useState(0);
+  const [reviewScanId, setReviewScanId] = useState('');
 
   // Sélectionner un fichier
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,27 +135,26 @@ export default function ScannerPage() {
       setUploading(false);
       setProcessing(true);
 
-      // 4. Appeler OpenAI Vision API pour extraction
-      const extractedData = await processOcrScan(scan.id);
+      // 4. Appeler l'API OCR pour extraction
+      const result = await processOcrScan(scan.id);
 
       setProcessing(false);
 
-      if (extractedData && extractedData.confidence_score && extractedData.confidence_score > 50) {
-        toast({
-          title: 'Scan réussi !',
-          description: `Données extraites avec ${extractedData.confidence_score}% de confiance`,
-        });
+      if (result) {
+        // Ouvrir le modal de révision avec les données extraites
+        setReviewData(result);
+        setReviewConfidence(result.confidence_score || 0);
+        setReviewScanId(scan.id);
+        setReviewModalOpen(true);
 
-        // Rediriger vers le formulaire pré-rempli
-        if (extractedData.document_type === 'quote') {
-          navigate(`/app/compta/devis/new?from_scan=${scan.id}`);
-        } else {
-          navigate(`/app/compta/factures/new?from_scan=${scan.id}`);
-        }
+        toast({
+          title: 'Scan terminé !',
+          description: `Données extraites avec ${result.confidence_score || 0}% de confiance. Vérifiez les informations.`,
+        });
       } else {
         toast({
-          title: 'Extraction partielle',
-          description: 'Certaines données n\'ont pas pu être extraites. Veuillez vérifier.',
+          title: 'Extraction échouée',
+          description: 'Impossible d\'extraire les données. Veuillez réessayer.',
           variant: 'destructive',
         });
       }
@@ -165,6 +172,28 @@ export default function ScannerPage() {
   // Ouvrir le sélecteur de fichiers
   const openFilePicker = () => {
     fileInputRef.current?.click();
+  };
+
+  // Créer un devis depuis les données OCR révisées
+  const handleCreateQuote = (editedData: OcrReviewData) => {
+    setReviewModalOpen(false);
+    navigate('/app/compta/devis/new', {
+      state: {
+        ocrData: editedData,
+        scanId: editedData.scan_id,
+      },
+    });
+  };
+
+  // Créer une facture depuis les données OCR révisées
+  const handleCreateInvoice = (editedData: OcrReviewData) => {
+    setReviewModalOpen(false);
+    navigate('/app/compta/factures/new', {
+      state: {
+        ocrData: editedData,
+        scanId: editedData.scan_id,
+      },
+    });
   };
 
   return (
@@ -416,6 +445,18 @@ export default function ScannerPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de révision des données OCR */}
+      <OcrReviewModal
+        open={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        extractedData={reviewData}
+        scanId={reviewScanId}
+        confidenceScore={reviewConfidence}
+        fileUrl={currentScan?.file_url}
+        onCreateQuote={handleCreateQuote}
+        onCreateInvoice={handleCreateInvoice}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,9 +60,14 @@ interface QuoteLineItem extends CreateQuoteItemInput {
 
 export default function DevisFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Données OCR depuis scanner
+  const ocrData = location.state?.ocrData;
+  const scanId = location.state?.scanId;
 
   const isEdit = !!id;
   const { quotes, loading: quotesLoading, createQuote } = useQuotes();
@@ -116,6 +121,69 @@ export default function DevisFormPage() {
       }
     }
   }, [isEdit, id, quotes, quotesLoading]);
+
+  // Charger depuis les données OCR
+  useEffect(() => {
+    if (ocrData) {
+      // Trouver ou créer un client basé sur le nom
+      const existingClient = leads.leads.find((l) =>
+        l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
+      );
+
+      if (existingClient) {
+        setClientId(existingClient.id);
+      }
+
+      // Pré-remplir les dates
+      if (ocrData.issue_date) {
+        setIssueDate(ocrData.issue_date);
+      }
+      if (ocrData.expiration_date) {
+        setExpirationDate(ocrData.expiration_date);
+      }
+
+      // Pré-remplir devise et TVA
+      if (ocrData.currency) {
+        setCurrency(ocrData.currency);
+      }
+      if (ocrData.tax_rate) {
+        setTaxRate(ocrData.tax_rate);
+      }
+
+      // Pré-remplir les lignes
+      if (ocrData.items && ocrData.items.length > 0) {
+        setItems(
+          ocrData.items.map((item, index) => {
+            const lineAmounts = calculateLineAmounts({
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount_percent: 0,
+              tax_rate: ocrData.tax_rate || 18,
+            });
+
+            return {
+              id: `ocr-${index}`,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount_percent: 0,
+              tax_rate: ocrData.tax_rate || 18,
+              product_id: undefined,
+              subtotal: lineAmounts.subtotal,
+              discountAmount: lineAmounts.discountAmount,
+              taxAmount: lineAmounts.taxAmount,
+              total: lineAmounts.total,
+            };
+          })
+        );
+      }
+
+      toast({
+        title: 'Données OCR chargées',
+        description: `Devis scanné avec ${ocrData.confidence_score}% de confiance. Vérifiez les informations.`,
+      });
+    }
+  }, [ocrData, leads.leads, toast]);
 
   // Ajouter une ligne
   const addLine = () => {
