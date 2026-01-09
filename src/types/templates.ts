@@ -71,6 +71,7 @@ export interface CompanySettings {
   company_phone?: string;
   company_email?: string;
   logo_url?: string;
+  signature_url?: string;
   default_invoice_template: TemplateId;
   default_quote_template: TemplateId;
   created_at: Date;
