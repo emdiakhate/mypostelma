@@ -681,7 +681,7 @@ export const usePurchaseOrders = (filters?: PurchaseOrderFilters) => {
         (item: any) => item.quantity_received > 0
       );
 
-      const newStatus: PurchaseOrderStatus = allReceived
+      const newStatus = allReceived
         ? 'received'
         : partiallyReceived
         ? 'partially_received'
@@ -693,7 +693,7 @@ export const usePurchaseOrders = (filters?: PurchaseOrderFilters) => {
         updates.actual_delivery_date = new Date().toISOString().split('T')[0];
       }
 
-      await updatePurchaseOrderStatus(orderId, newStatus);
+      await updatePurchaseOrderStatus(orderId, newStatus as PurchaseOrderStatus);
 
       // Reload to get fresh data
       await loadPurchaseOrders();

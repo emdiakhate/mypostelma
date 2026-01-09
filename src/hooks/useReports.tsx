@@ -107,25 +107,25 @@ async function generateSalesReport(
 ): Promise<any[]> {
   let query = supabase
     .from('vente_orders')
-    .select('id, order_number, order_date, total, status, client:client_id(name)')
+    .select('id, number, created_at, total_ttc, status, client_name')
     .eq('user_id', userId)
-    .order('order_date', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (dateFrom) {
-    query = query.gte('order_date', dateFrom);
+    query = query.gte('created_at', dateFrom);
   }
   if (dateTo) {
-    query = query.lte('order_date', dateTo);
+    query = query.lte('created_at', dateTo);
   }
 
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data || []).map((order) => ({
-    numero: order.order_number,
-    date: order.order_date,
-    client: order.client?.name || 'N/A',
-    montant_total: Number(order.total),
+  return ((data || []) as any[]).map((order) => ({
+    numero: order.number,
+    date: order.created_at,
+    client: order.client_name || 'N/A',
+    montant_total: Number(order.total_ttc || 0),
     statut: order.status,
   }));
 }
@@ -166,10 +166,12 @@ async function generateClientsReport(
   dateFrom?: string,
   dateTo?: string
 ): Promise<any[]> {
+  // Use leads table with status 'client' instead of crm_clients
   let query = supabase
-    .from('crm_clients')
-    .select('id, name, email, phone, company, city, created_at')
+    .from('leads')
+    .select('id, name, email, phone, city, created_at')
     .eq('user_id', userId)
+    .eq('status', 'client')
     .order('created_at', { ascending: false });
 
   if (dateFrom) {
@@ -179,25 +181,27 @@ async function generateClientsReport(
     query = query.lte('created_at', dateTo);
   }
 
-  const { data, error } = await query;
+  const { data: clientsData, error } = await query;
   if (error) throw error;
 
-  // Calculer le CA par client
+  const clients = (clientsData || []) as any[];
+
+  // Calculer le CA par client (using client_name match)
   const clientsWithRevenue = await Promise.all(
-    (data || []).map(async (client) => {
+    clients.map(async (client) => {
       const { data: orders } = await supabase
         .from('vente_orders')
-        .select('total')
+        .select('total_ttc')
         .eq('user_id', userId)
-        .eq('client_id', client.id);
+        .eq('client_name', client.name);
 
-      const totalRevenue = (orders || []).reduce((sum, o) => sum + Number(o.total), 0);
+      const totalRevenue = ((orders || []) as any[]).reduce((sum, o) => sum + Number(o.total_ttc || 0), 0);
 
       return {
         nom: client.name,
         email: client.email || 'N/A',
         telephone: client.phone || 'N/A',
-        entreprise: client.company || 'N/A',
+        entreprise: 'N/A',
         ville: client.city || 'N/A',
         date_creation: client.created_at,
         chiffre_affaires: totalRevenue,
@@ -217,7 +221,7 @@ async function generateStockReport(userId: string): Promise<any[]> {
 
   if (error) throw error;
 
-  return (data || []).map((product) => ({
+  return ((products || []) as any[]).map((product) => ({
     nom: product.name,
     sku: product.sku || 'N/A',
     categorie: product.category || 'Autre',

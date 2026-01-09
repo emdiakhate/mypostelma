@@ -315,8 +315,8 @@ export const useInventories = (filters?: InventoryFilters) => {
 
   const completeInventory = async (inventoryId: string) => {
     try {
-      // Appeler la fonction PostgreSQL
-      const { error } = await supabase.rpc('complete_inventory', {
+      // Appeler la fonction PostgreSQL (cast as any car les types ne sont pas encore mis à jour)
+      const { error } = await (supabase.rpc as any)('complete_inventory', {
         p_inventory_id: inventoryId,
       });
 
