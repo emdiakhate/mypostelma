@@ -217,10 +217,10 @@ export default function FactureFormPage() {
 
       toast({
         title: 'Données OCR chargées',
-        description: `Facture scannée avec ${ocrData.confidence_score}% de confiance. Vérifiez les informations.`,
+        description: `Facture scannée avec ${ocrData.confidence_score || 0}% de confiance. Vérifiez les informations.`,
       });
     }
-  }, [ocrData, leads.leads, toast]);
+  }, [ocrData, leads, toast]);
 
   // Charger la facture en mode édition
   useEffect(() => {

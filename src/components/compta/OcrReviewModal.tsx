@@ -132,7 +132,15 @@ export default function OcrReviewModal({
 
       setCurrency(extractedData.currency || 'XOF');
       setTaxRate(extractedData.tax_rate || 18);
-      setItems(extractedData.items || []);
+      
+      // Mapper les items avec des valeurs par défaut pour les champs obligatoires
+      const mappedItems = (extractedData.items || []).map((item) => ({
+        description: item.description,
+        quantity: item.quantity ?? 1,
+        unit_price: item.unit_price ?? 0,
+        total: item.total ?? ((item.quantity ?? 1) * (item.unit_price ?? 0)),
+      }));
+      setItems(mappedItems);
     }
   }, [extractedData]);
 
@@ -376,7 +384,6 @@ export default function OcrReviewModal({
                       value={item.description}
                       onChange={(e) => handleUpdateItem(index, 'description', e.target.value)}
                       placeholder="Description"
-                      size="sm"
                     />
                   </div>
                   <div className="col-span-2">
@@ -385,7 +392,6 @@ export default function OcrReviewModal({
                       type="number"
                       value={item.quantity}
                       onChange={(e) => handleUpdateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      size="sm"
                     />
                   </div>
                   <div className="col-span-2">
@@ -394,12 +400,11 @@ export default function OcrReviewModal({
                       type="number"
                       value={item.unit_price}
                       onChange={(e) => handleUpdateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      size="sm"
                     />
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs">Total</Label>
-                    <Input value={item.total.toLocaleString()} readOnly size="sm" className="bg-gray-50" />
+                    <Input value={item.total.toLocaleString()} readOnly className="bg-gray-50" />
                   </div>
                   <div className="col-span-1">
                     <Button

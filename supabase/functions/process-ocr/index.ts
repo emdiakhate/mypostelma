@@ -53,17 +53,30 @@ serve(async (req) => {
       throw new Error('Scan introuvable');
     }
 
+    console.log('Scan data:', { file_url: scan.file_url, file_type: scan.file_type });
+
     // Appeler OpenRouter avec Gemini 2.5 Flash
     const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
     if (!openrouterApiKey) {
       throw new Error('OPENROUTER_API_KEY non configurée');
     }
 
+    // Extraire le chemin du fichier depuis file_url
+    // Format: https://xxx.supabase.co/storage/v1/object/public/documents/path/to/file
+    const fileUrl = scan.file_url as string;
+    const pathMatch = fileUrl.match(/\/storage\/v1\/object\/public\/documents\/(.+)$/);
+    if (!pathMatch || !pathMatch[1]) {
+      console.error('Invalid file_url format:', fileUrl);
+      throw new Error('Format de file_url invalide');
+    }
+    const filePath = decodeURIComponent(pathMatch[1]);
+    console.log('Extracted file path:', filePath);
+
     // Télécharger l'image depuis le storage
     const { data: fileData, error: downloadError } = await supabaseClient
       .storage
       .from('documents')
-      .download(scan.file_path);
+      .download(filePath);
 
     if (downloadError || !fileData) {
       console.error('Download error:', downloadError);
