@@ -88,6 +88,7 @@ export type Database = {
           phone: string | null
           postal_code: string | null
           quote_prefix: string | null
+          signature_url: string | null
           siret: string | null
           tva_number: string | null
           updated_at: string
@@ -114,6 +115,7 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           quote_prefix?: string | null
+          signature_url?: string | null
           siret?: string | null
           tva_number?: string | null
           updated_at?: string
@@ -140,6 +142,7 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           quote_prefix?: string | null
+          signature_url?: string | null
           siret?: string | null
           tva_number?: string | null
           updated_at?: string
