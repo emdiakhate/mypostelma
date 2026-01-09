@@ -77,10 +77,14 @@ export default function PreviewDocument({
     // Préparer les données pour le template
     const templateData: InvoiceTemplateData = {
       logo_url: settings.logo_url,
+      signature_url: settings.signature_url,
       company_name: settings.company_name,
       company_address: settings.company_address,
       company_phone: settings.company_phone,
       company_email: settings.company_email,
+      bank_name: settings.bank_name || '',
+      bank_iban: settings.bank_iban || '',
+      bank_bic: settings.bank_bic || '',
 
       document_type: documentType,
       document_number: documentType === 'FACTURE' ? 'FAC-2026-XXXX' : 'DEV-2026-XXXX',

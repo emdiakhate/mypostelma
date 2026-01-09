@@ -8,10 +8,16 @@ export type TemplateId = 'classic' | 'minimal' | 'modern' | 'wave-blue' | 'strip
 export interface InvoiceTemplateData {
   // Entreprise
   logo_url?: string;
+  signature_url?: string;
   company_name: string;
   company_address?: string;
   company_phone?: string;
   company_email?: string;
+  
+  // Coordonnées bancaires
+  bank_name?: string;
+  bank_iban?: string;
+  bank_bic?: string;
 
   // Document
   document_type: 'FACTURE' | 'DEVIS';
@@ -72,6 +78,9 @@ export interface CompanySettings {
   company_email?: string;
   logo_url?: string;
   signature_url?: string;
+  bank_name?: string;
+  bank_iban?: string;
+  bank_bic?: string;
   default_invoice_template: TemplateId;
   default_quote_template: TemplateId;
   created_at: Date;

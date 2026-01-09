@@ -88,21 +88,16 @@ export default function PreviewModal({
       default_quote_template: 'classic',
     };
 
-    const templateData: InvoiceTemplateData & {
-      signature_url?: string;
-      bank_name?: string;
-      bank_iban?: string;
-      bank_bic?: string;
-    } = {
+    const templateData: InvoiceTemplateData = {
       logo_url: companySettings.logo_url,
+      signature_url: companySettings.signature_url,
       company_name: companySettings.company_name || 'Votre entreprise',
       company_address: companySettings.company_address,
       company_phone: companySettings.company_phone,
       company_email: companySettings.company_email,
-      signature_url: companySettings.signature_url,
-      bank_name: (settings as any)?.bank_name || '',
-      bank_iban: (settings as any)?.bank_iban || '',
-      bank_bic: (settings as any)?.bank_bic || '',
+      bank_name: settings?.bank_name || '',
+      bank_iban: settings?.bank_iban || '',
+      bank_bic: settings?.bank_bic || '',
 
       document_type: documentType,
       document_number: documentNumber || 'BROUILLON',
@@ -160,7 +155,7 @@ export default function PreviewModal({
         : companySettings.default_quote_template);
 
     const template = TEMPLATES.find((t) => t.id === selectedTemplateId) || TEMPLATES[0];
-    const html = renderTemplate(template, templateData as InvoiceTemplateData);
+    const html = renderTemplate(template, templateData);
 
     const iframe = iframeRef.current;
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
