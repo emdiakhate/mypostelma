@@ -28,12 +28,12 @@ export async function generateInvoicePDF(
   const options: PDFOptions = {
     margin: 10,
     filename: `Facture_${invoice.invoice_number}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
   };
 
-  await html2pdf().set(options).from(html).save();
+  await html2pdf().set(options as any).from(html).save();
 }
 
 /**
@@ -48,12 +48,12 @@ export async function generateQuotePDF(
   const options: PDFOptions = {
     margin: 10,
     filename: `Devis_${quote.quote_number}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
   };
 
-  await html2pdf().set(options).from(html).save();
+  await html2pdf().set(options as any).from(html).save();
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -247,7 +247,7 @@ function generateInvoiceHTML(invoice: Invoice, settings: CompanySettings | null)
     <div class="info-block">
       <h3>Client</h3>
       <p><strong>${invoice.client?.name || 'Client inconnu'}</strong></p>
-      ${invoice.client?.address ? `<p>${invoice.client.address}</p>` : ''}
+      ${(invoice.client as any)?.address ? `<p>${(invoice.client as any).address}</p>` : ''}
       ${invoice.client?.phone ? `<p>Tél: ${invoice.client.phone}</p>` : ''}
       ${invoice.client?.email ? `<p>Email: ${invoice.client.email}</p>` : ''}
     </div>
@@ -499,7 +499,7 @@ function generateQuoteHTML(quote: Quote, settings: CompanySettings | null): stri
     <div class="info-block">
       <h3>Client</h3>
       <p><strong>${quote.client?.name || 'Client inconnu'}</strong></p>
-      ${quote.client?.address ? `<p>${quote.client.address}</p>` : ''}
+      ${(quote.client as any)?.address ? `<p>${(quote.client as any).address}</p>` : ''}
       ${quote.client?.phone ? `<p>Tél: ${quote.client.phone}</p>` : ''}
       ${quote.client?.email ? `<p>Email: ${quote.client.email}</p>` : ''}
     </div>

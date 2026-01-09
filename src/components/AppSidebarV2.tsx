@@ -54,7 +54,6 @@ import {
   AlertCircle,
   Camera,
   Truck,
-  Package,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 

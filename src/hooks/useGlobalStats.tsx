@@ -66,41 +66,44 @@ export const useGlobalStats = (filters?: GlobalStatsFilters) => {
       // ============================================================
       const { data: orders, error: ordersError } = await supabase
         .from('vente_orders')
-        .select('total, created_at, status')
+        .select('id, total_ttc, created_at, status')
         .eq('user_id', userData.user.id)
         .gte('created_at', previousStartDate.toISOString());
 
       if (ordersError) throw ordersError;
 
-      const currentPeriodOrders = orders.filter(
+      const typedOrders = (orders || []) as any[];
+      const currentPeriodOrders = typedOrders.filter(
         (o) => new Date(o.created_at) >= startDate
       );
-      const previousPeriodOrders = orders.filter(
+      const previousPeriodOrders = typedOrders.filter(
         (o) =>
           new Date(o.created_at) >= previousStartDate &&
           new Date(o.created_at) < startDate
       );
 
-      const totalRevenue = currentPeriodOrders.reduce((sum, o) => sum + Number(o.total), 0);
+      const totalRevenue = currentPeriodOrders.reduce((sum, o) => sum + Number(o.total_ttc || 0), 0);
       const previousRevenue = previousPeriodOrders.reduce(
-        (sum, o) => sum + Number(o.total),
+        (sum, o) => sum + Number(o.total_ttc || 0),
         0
       );
       const revenueChange =
         previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
       // ============================================================
-      // 2. CLIENTS
+      // 2. CLIENTS (using leads with status 'client')
       // ============================================================
       const { data: clients, error: clientsError } = await supabase
-        .from('crm_clients')
+        .from('leads')
         .select('id, created_at')
-        .eq('user_id', userData.user.id);
+        .eq('user_id', userData.user.id)
+        .eq('status', 'client');
 
       if (clientsError) throw clientsError;
 
-      const totalClients = clients.length;
-      const newClients = clients.filter((c) => new Date(c.created_at) >= startDate).length;
+      const typedClients = (clients || []) as any[];
+      const totalClients = typedClients.length;
+      const newClients = typedClients.filter((c) => new Date(c.created_at) >= startDate).length;
 
       // ============================================================
       // 3. COMMANDES & CONVERSION
@@ -192,15 +195,15 @@ export const useGlobalStats = (filters?: GlobalStatsFilters) => {
       // ============================================================
       // 7. REVENUE PAR CATEGORIE
       // ============================================================
-      const { data: orderItems, error: itemsError } = await supabase
-        .from('vente_order_items')
-        .select('product_id, quantity, unit_price, vente_products(category)')
-        .in(
-          'order_id',
-          currentPeriodOrders.map((o) => o.id)
-        );
-
-      if (itemsError) throw itemsError;
+      const orderIds = currentPeriodOrders.map((o) => o.id);
+      let orderItems: any[] = [];
+      if (orderIds.length > 0) {
+        const { data, error: itemsError } = await supabase
+          .from('vente_order_items')
+          .select('product_id, quantity, unit_price, vente_products(category)')
+          .in('order_id', orderIds);
+        if (itemsError) throw itemsError;
+      }
 
       const revenueByCategory: Record<string, number> = {};
       orderItems?.forEach((item: any) => {
