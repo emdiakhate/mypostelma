@@ -80,6 +80,8 @@ import StockEntrepotsPage from "./pages/stock/entrepots";
 import StockMouvementsPage from "./pages/stock/mouvements";
 import StockTransfertsPage from "./pages/stock/transferts";
 import StockAlertesPage from "./pages/stock/alertes";
+import FournisseursPage from "./pages/stock/fournisseurs/index";
+import CommandesAchatPage from "./pages/stock/commandes-achat/index";
 
 // Compta Module Pages
 import ComptaDashboardPage from "./pages/compta/dashboard/index";
@@ -156,6 +158,8 @@ function MainLayout() {
         <Route path="/stock/mouvements" element={<StockMouvementsPage />} />
         <Route path="/stock/transferts" element={<StockTransfertsPage />} />
         <Route path="/stock/alertes" element={<StockAlertesPage />} />
+        <Route path="/stock/fournisseurs" element={<FournisseursPage />} />
+        <Route path="/stock/commandes-achat" element={<CommandesAchatPage />} />
 
         {/* ================================================================
             MODULE COMPTA (Devis & Factures)

@@ -53,6 +53,7 @@ import {
   ArrowRightLeft,
   AlertCircle,
   Camera,
+  Truck,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -287,6 +288,20 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             label: 'Alertes',
             icon: AlertCircle,
             path: '/app/stock/alertes',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-fournisseurs',
+            label: 'Fournisseurs',
+            icon: Truck,
+            path: '/app/stock/fournisseurs',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-commandes-achat',
+            label: 'Commandes d\'achat',
+            icon: ShoppingCart,
+            path: '/app/stock/commandes-achat',
             disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
           },
         ],
