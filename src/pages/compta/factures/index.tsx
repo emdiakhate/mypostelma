@@ -75,10 +75,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import PaymentForm from './PaymentForm';
+import { generateInvoicePDF } from '@/lib/pdfGenerator';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 export default function FacturesListPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { settings } = useCompanySettings();
 
   // Filtres
   const [search, setSearch] = useState('');
@@ -114,12 +117,27 @@ export default function FacturesListPage() {
     navigate(`/app/compta/factures/${invoiceId}/edit`);
   };
 
-  const handleDownloadPDF = (invoice: Invoice) => {
-    // TODO: Implémenter la génération et téléchargement PDF
-    toast({
-      title: 'Fonctionnalité à venir',
-      description: 'Le téléchargement PDF sera disponible prochainement',
-    });
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      toast({
+        title: 'Génération PDF',
+        description: 'Génération du PDF en cours...',
+      });
+
+      await generateInvoicePDF(invoice, settings);
+
+      toast({
+        title: 'PDF téléchargé',
+        description: 'Le PDF a été généré avec succès',
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de générer le PDF',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAddPayment = (invoice: Invoice) => {

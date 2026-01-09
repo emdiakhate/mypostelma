@@ -80,6 +80,9 @@ import StockEntrepotsPage from "./pages/stock/entrepots";
 import StockMouvementsPage from "./pages/stock/mouvements";
 import StockTransfertsPage from "./pages/stock/transferts";
 import StockAlertesPage from "./pages/stock/alertes";
+import FournisseursPage from "./pages/stock/fournisseurs/index";
+import CommandesAchatPage from "./pages/stock/commandes-achat/index";
+import InventairePage from "./pages/stock/inventaire/index";
 
 // Compta Module Pages
 import ComptaDashboardPage from "./pages/compta/dashboard/index";
@@ -89,6 +92,10 @@ import FacturesListPage from "./pages/compta/factures/index";
 import FactureFormPage from "./pages/compta/factures/form";
 import ScannerPage from "./pages/compta/scanner/index";
 import ComptaSettingsPage from "./pages/compta/settings/index";
+
+// Global Dashboard & Reports
+import GlobalDashboardPage from "./pages/dashboard-global/index";
+import RapportsPage from "./pages/rapports/index";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +111,12 @@ function MainLayout() {
             isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? <DashboardNew /> : <DashboardOld />
           }
         />
+
+        {/* ================================================================
+            DASHBOARD GLOBAL & RAPPORTS
+            ================================================================ */}
+        <Route path="/dashboard-global" element={<GlobalDashboardPage />} />
+        <Route path="/rapports" element={<RapportsPage />} />
 
         {/* ================================================================
             MODULE MARKETING
@@ -156,6 +169,9 @@ function MainLayout() {
         <Route path="/stock/mouvements" element={<StockMouvementsPage />} />
         <Route path="/stock/transferts" element={<StockTransfertsPage />} />
         <Route path="/stock/alertes" element={<StockAlertesPage />} />
+        <Route path="/stock/fournisseurs" element={<FournisseursPage />} />
+        <Route path="/stock/commandes-achat" element={<CommandesAchatPage />} />
+        <Route path="/stock/inventaire" element={<InventairePage />} />
 
         {/* ================================================================
             MODULE COMPTA (Devis & Factures)

@@ -53,6 +53,8 @@ import {
   ArrowRightLeft,
   AlertCircle,
   Camera,
+  Truck,
+  Package,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -123,6 +125,18 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         label: 'Dashboard',
         icon: LayoutDashboard,
         path: '/app/dashboard',
+      },
+      {
+        id: 'dashboard-global',
+        label: 'Dashboard Global',
+        icon: BarChart3,
+        path: '/app/dashboard-global',
+      },
+      {
+        id: 'rapports',
+        label: 'Rapports',
+        icon: FileText,
+        path: '/app/rapports',
       },
       {
         id: 'crm',
@@ -287,6 +301,27 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             label: 'Alertes',
             icon: AlertCircle,
             path: '/app/stock/alertes',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-fournisseurs',
+            label: 'Fournisseurs',
+            icon: Truck,
+            path: '/app/stock/fournisseurs',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-commandes-achat',
+            label: 'Commandes d\'achat',
+            icon: ShoppingCart,
+            path: '/app/stock/commandes-achat',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-inventaire',
+            label: 'Inventaire',
+            icon: Package,
+            path: '/app/stock/inventaire',
             disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
           },
         ],
