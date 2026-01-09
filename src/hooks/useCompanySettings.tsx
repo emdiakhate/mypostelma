@@ -17,6 +17,7 @@ const mapDbSettings = (db: any): CompanySettings => ({
   company_phone: db.phone || undefined,
   company_email: db.email || undefined,
   logo_url: db.logo_url || undefined,
+  signature_url: db.signature_url || undefined,
   default_invoice_template: (db.default_invoice_template as TemplateId) || 'classic',
   default_quote_template: (db.default_quote_template as TemplateId) || 'classic',
   created_at: new Date(db.created_at),
@@ -103,6 +104,9 @@ export const useCompanySettings = () => {
       }
       if (Object.prototype.hasOwnProperty.call(updates, 'logo_url')) {
         payload.logo_url = updates.logo_url ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'signature_url')) {
+        payload.signature_url = updates.signature_url ?? null;
       }
       if (Object.prototype.hasOwnProperty.call(updates, 'default_invoice_template')) {
         payload.default_invoice_template = updates.default_invoice_template ?? null;
@@ -225,12 +229,106 @@ export const useCompanySettings = () => {
     }
   };
 
+  const uploadSignature = async (file: File): Promise<string | null> => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Non authentifié');
+
+      // Vérifier le type de fichier
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          variant: 'destructive',
+          title: 'Format invalide',
+          description: 'Formats acceptés: PNG, JPG, WebP',
+        });
+        return null;
+      }
+
+      // Vérifier la taille (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'Fichier trop volumineux',
+          description: 'Taille maximum: 2 MB',
+        });
+        return null;
+      }
+
+      // Upload vers Supabase Storage - structure: userId/signature_timestamp.ext
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userData.user.id}/signature_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(fileName, file, {
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Obtenir l'URL publique
+      const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
+
+      const signatureUrl = urlData.publicUrl;
+
+      // Mettre à jour les settings
+      await updateSettings({ signature_url: signatureUrl });
+
+      toast({
+        title: 'Signature uploadée',
+        description: 'Votre signature a été mise à jour',
+      });
+
+      return signatureUrl;
+    } catch (error: any) {
+      console.error('Error uploading signature:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: "Impossible d'uploader la signature",
+      });
+      return null;
+    }
+  };
+
+  const deleteSignature = async (): Promise<boolean> => {
+    try {
+      if (!settings?.signature_url) return true;
+
+      // Extraire le nom du fichier depuis l'URL
+      const urlParts = settings.signature_url.split('/');
+      const fileName = urlParts.slice(-2).join('/'); // userId/signature_xxx.ext
+      if (fileName) {
+        await supabase.storage.from('logos').remove([fileName]);
+      }
+
+      await updateSettings({ signature_url: undefined });
+
+      toast({
+        title: 'Signature supprimée',
+        description: 'Votre signature a été retirée',
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting signature:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de supprimer la signature',
+      });
+      return false;
+    }
+  };
+
   return {
     settings,
     loading,
     updateSettings,
     uploadLogo,
     deleteLogo,
+    uploadSignature,
+    deleteSignature,
     reload: loadSettings,
   };
 };
