@@ -134,92 +134,76 @@ export default function FactureFormPage() {
 
   // Charger depuis les données OCR
   useEffect(() => {
-    if (ocrData && leads?.leads) {
-      const handleOcrData = async () => {
-        // Trouver un client existant basé sur le nom
-        let existingClient = leads.leads.find((l) =>
-          l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
+    if (!ocrData) return;
+
+    const handleOcrData = async () => {
+      // Trouver un client existant basé sur le nom
+      const clientName = (ocrData.client_name || '').trim();
+      if (clientName && Array.isArray(leads) && leads.length > 0) {
+        const existingClient = leads.find(
+          (l) => l.name?.toLowerCase?.() === clientName.toLowerCase()
         );
-
-        // Si le client n'existe pas, le créer automatiquement
-        if (!existingClient && ocrData.client_name) {
-          toast({
-            title: 'Création du client',
-            description: `Le client "${ocrData.client_name}" n'existe pas. Création en cours...`,
-          });
-
-          const newClient = await leads.createLead({
-            name: ocrData.client_name,
-            company: ocrData.client_company || undefined,
-            phone: ocrData.client_phone || undefined,
-            status: 'lead',
-            source: 'ocr_scan',
-            is_customer: true,
-          });
-
-          if (newClient) {
-            setClientId(newClient.id);
-            toast({
-              title: 'Client créé',
-              description: `Le client "${ocrData.client_name}" a été créé automatiquement.`,
-            });
-          }
-        } else if (existingClient) {
+        if (existingClient) {
           setClientId(existingClient.id);
+        } else {
+          toast({
+            title: 'Client non trouvé',
+            description: `Aucun client "${clientName}" trouvé. Veuillez le sélectionner manuellement.`,
+          });
         }
+      }
 
-        // Pré-remplir les dates
-        if (ocrData.issue_date) {
-          setIssueDate(ocrData.issue_date);
-        }
-        if (ocrData.due_date) {
-          setDueDate(ocrData.due_date);
-        }
+      // Pré-remplir les dates
+      if (ocrData.issue_date) {
+        setIssueDate(ocrData.issue_date);
+      }
+      if (ocrData.due_date) {
+        setDueDate(ocrData.due_date);
+      }
 
-        // Pré-remplir devise et TVA
-        if (ocrData.currency) {
-          setCurrency(ocrData.currency);
-        }
-        if (ocrData.tax_rate) {
-          setTaxRate(ocrData.tax_rate);
-        }
+      // Pré-remplir devise et TVA
+      if (ocrData.currency) {
+        setCurrency(ocrData.currency);
+      }
+      if (ocrData.tax_rate) {
+        setTaxRate(ocrData.tax_rate);
+      }
 
-        // Pré-remplir les lignes
-        if (ocrData.items && ocrData.items.length > 0) {
-          setItems(
-            ocrData.items.map((item, index) => {
-              const lineAmounts = calculateLineAmounts({
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                discount_percent: 0,
-                tax_rate: ocrData.tax_rate || 18,
-              });
+      // Pré-remplir les lignes
+      if (ocrData.items && ocrData.items.length > 0) {
+        setItems(
+          ocrData.items.map((item, index) => {
+            const lineAmounts = calculateLineAmounts(
+              item.quantity ?? 0,
+              item.unit_price ?? 0,
+              ocrData.tax_rate || 18,
+              0
+            );
 
-              return {
-                id: `ocr-${index}`,
-                description: item.description,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                discount_percent: 0,
-                tax_rate: ocrData.tax_rate || 18,
-                product_id: undefined,
-                subtotal: lineAmounts.subtotal,
-                discountAmount: lineAmounts.discountAmount,
-                taxAmount: lineAmounts.taxAmount,
-                total: lineAmounts.total,
-              };
-            })
-          );
-        }
-      };
-
-      handleOcrData();
+            return {
+              id: `ocr-${index}`,
+              description: item.description,
+              quantity: item.quantity ?? 0,
+              unit_price: item.unit_price ?? 0,
+              discount_percent: 0,
+              tax_rate: ocrData.tax_rate || 18,
+              product_id: undefined,
+              subtotal: lineAmounts.subtotal,
+              discountAmount: lineAmounts.discountAmount,
+              taxAmount: lineAmounts.taxAmount,
+              total: lineAmounts.total,
+            };
+          })
+        );
+      }
 
       toast({
         title: 'Données OCR chargées',
         description: `Facture scannée avec ${ocrData.confidence_score || 0}% de confiance. Vérifiez les informations.`,
       });
-    }
+    };
+
+    handleOcrData();
   }, [ocrData, leads, toast]);
 
   // Charger la facture en mode édition
@@ -398,7 +382,7 @@ export default function FactureFormPage() {
           await updateInvoiceStatus(newInvoice.id, 'sent');
 
           // Récupérer les infos du client pour l'envoi
-          const client = leads?.leads?.find((l) => l.id === clientId);
+          const client = leads.find((l) => l.id === clientId);
 
           if (client) {
             // Envoyer par email si email présent
