@@ -93,7 +93,8 @@ export default function DevisListPage() {
 
   // Actions
   const handleView = (quoteId: string) => {
-    navigate(`/app/compta/devis/${quoteId}`);
+    // Pour l'instant, rediriger vers l'édition car pas de page de vue détaillée
+    navigate(`/app/compta/devis/${quoteId}/edit`);
   };
 
   const handleEdit = (quoteId: string) => {
@@ -102,6 +103,14 @@ export default function DevisListPage() {
 
   const handleConvertToInvoice = (quoteId: string) => {
     navigate(`/app/compta/factures/new?from_quote=${quoteId}`);
+  };
+
+  const handleDownloadPDF = (quote: Quote) => {
+    // TODO: Implémenter la génération et téléchargement PDF
+    toast({
+      title: 'Fonctionnalité à venir',
+      description: 'Le téléchargement PDF sera disponible prochainement',
+    });
   };
 
   const handleUpdateStatus = async (quoteId: string, status: QuoteStatus) => {
@@ -307,7 +316,7 @@ export default function DevisListPage() {
                               <Edit className="mr-2 h-4 w-4" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadPDF(quote)}>
                               <Download className="mr-2 h-4 w-4" />
                               Télécharger PDF
                             </DropdownMenuItem>

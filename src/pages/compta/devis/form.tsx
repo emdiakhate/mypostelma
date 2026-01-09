@@ -49,6 +49,7 @@ import {
 } from '@/types/compta';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuoteLineItem extends CreateQuoteItemInput {
   id: string; // Temporary ID for UI
@@ -70,7 +71,7 @@ export default function DevisFormPage() {
   const scanId = location.state?.scanId;
 
   const isEdit = !!id;
-  const { quotes, loading: quotesLoading, createQuote } = useQuotes();
+  const { quotes, loading: quotesLoading, createQuote, updateQuoteStatus } = useQuotes();
   const { leads } = useLeads();
   const { products } = useProducts();
 
@@ -124,66 +125,91 @@ export default function DevisFormPage() {
 
   // Charger depuis les données OCR
   useEffect(() => {
-    if (ocrData && leads) {
-      // Trouver ou créer un client basé sur le nom
-      const existingClient = leads.find((l) =>
-        l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
-      );
-
-      if (existingClient) {
-        setClientId(existingClient.id);
-      }
-
-      // Pré-remplir les dates
-      if (ocrData.issue_date) {
-        setIssueDate(ocrData.issue_date);
-      }
-      if (ocrData.expiration_date) {
-        setExpirationDate(ocrData.expiration_date);
-      }
-
-      // Pré-remplir devise et TVA
-      if (ocrData.currency) {
-        setCurrency(ocrData.currency);
-      }
-      if (ocrData.tax_rate) {
-        setTaxRate(ocrData.tax_rate);
-      }
-
-      // Pré-remplir les lignes
-      if (ocrData.items && ocrData.items.length > 0) {
-        setItems(
-          ocrData.items.map((item, index) => {
-            const qty = item.quantity ?? 1;
-            const price = item.unit_price ?? 0;
-            const lineAmounts = calculateLineAmounts(
-              qty,
-              price,
-              ocrData.tax_rate || 18,
-              0
-            );
-
-            return {
-              id: `ocr-${index}`,
-              description: item.description,
-              quantity: qty,
-              unit_price: price,
-              discount_percent: 0,
-              tax_rate: ocrData.tax_rate || 18,
-              product_id: undefined,
-              subtotal: lineAmounts.subtotal,
-              discountAmount: lineAmounts.discountAmount,
-              taxAmount: lineAmounts.taxAmount,
-              total: lineAmounts.total,
-            };
-          })
+    if (ocrData && leads?.leads) {
+      const handleOcrData = async () => {
+        // Trouver un client existant basé sur le nom
+        let existingClient = leads.leads.find((l) =>
+          l.name.toLowerCase() === ocrData.client_name?.toLowerCase()
         );
-      }
 
-      toast({
-        title: 'Données OCR chargées',
-        description: `Devis scanné avec ${ocrData.confidence_score || 0}% de confiance. Vérifiez les informations.`,
-      });
+        // Si le client n'existe pas, le créer automatiquement
+        if (!existingClient && ocrData.client_name) {
+          toast({
+            title: 'Création du client',
+            description: `Le client "${ocrData.client_name}" n'existe pas. Création en cours...`,
+          });
+
+          const newClient = await leads.createLead({
+            name: ocrData.client_name,
+            company: ocrData.client_company || undefined,
+            phone: ocrData.client_phone || undefined,
+            status: 'lead',
+            source: 'ocr_scan',
+            is_customer: true,
+          });
+
+          if (newClient) {
+            setClientId(newClient.id);
+            toast({
+              title: 'Client créé',
+              description: `Le client "${ocrData.client_name}" a été créé automatiquement.`,
+            });
+          }
+        } else if (existingClient) {
+          setClientId(existingClient.id);
+        }
+
+        // Pré-remplir les dates
+        if (ocrData.issue_date) {
+          setIssueDate(ocrData.issue_date);
+        }
+        if (ocrData.expiration_date) {
+          setExpirationDate(ocrData.expiration_date);
+        }
+
+        // Pré-remplir devise et TVA
+        if (ocrData.currency) {
+          setCurrency(ocrData.currency);
+        }
+        if (ocrData.tax_rate) {
+          setTaxRate(ocrData.tax_rate);
+        }
+
+        // Pré-remplir les lignes
+        if (ocrData.items && ocrData.items.length > 0) {
+          setItems(
+            ocrData.items.map((item, index) => {
+              const lineAmounts = calculateLineAmounts({
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                discount_percent: 0,
+                tax_rate: ocrData.tax_rate || 18,
+              });
+
+              return {
+                id: `ocr-${index}`,
+                description: item.description,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                discount_percent: 0,
+                tax_rate: ocrData.tax_rate || 18,
+                product_id: undefined,
+                subtotal: lineAmounts.subtotal,
+                discountAmount: lineAmounts.discountAmount,
+                taxAmount: lineAmounts.taxAmount,
+                total: lineAmounts.total,
+              };
+            })
+          );
+        }
+
+        toast({
+          title: 'Données OCR chargées',
+          description: `Devis scanné avec ${ocrData.confidence_score}% de confiance. Vérifiez les informations.`,
+        });
+      };
+
+      handleOcrData();
     }
   }, [ocrData, leads, toast]);
 
@@ -317,12 +343,87 @@ export default function DevisFormPage() {
         });
       } else {
         const newQuote = await createQuote(input);
-        toast({
-          title: 'Devis créé',
-          description: `Le devis a été créé avec succès`,
-        });
 
-        // TODO: Si sendDirectly, marquer comme 'sent'
+        if (!newQuote) {
+          throw new Error('Impossible de créer le devis');
+        }
+
+        // Si "Envoyer" est cliqué, marquer comme envoyé et envoyer par email/WhatsApp
+        if (sendDirectly) {
+          // Mettre à jour le statut
+          await updateQuoteStatus(newQuote.id, 'sent');
+
+          // Récupérer les infos du client pour l'envoi
+          const client = leads?.leads?.find((l) => l.id === clientId);
+
+          if (client) {
+            // Envoyer par email si email présent
+            if (client.email) {
+              try {
+                const { data, error } = await supabase.functions.invoke('send-document-email', {
+                  body: {
+                    document_type: 'quote',
+                    document_id: newQuote.id,
+                    recipient_email: client.email,
+                    recipient_name: client.name,
+                  },
+                });
+
+                if (error) throw error;
+
+                toast({
+                  title: 'Email envoyé',
+                  description: `Devis envoyé à ${client.email}`,
+                });
+              } catch (emailError) {
+                console.error('Error sending email:', emailError);
+                toast({
+                  title: 'Erreur email',
+                  description: "L'email n'a pas pu être envoyé",
+                  variant: 'destructive',
+                });
+              }
+            }
+
+            // Envoyer par WhatsApp si téléphone présent
+            if (client.phone) {
+              try {
+                const { data, error } = await supabase.functions.invoke('send-document-whatsapp', {
+                  body: {
+                    document_type: 'quote',
+                    document_id: newQuote.id,
+                    recipient_phone: client.phone,
+                    recipient_name: client.name,
+                  },
+                });
+
+                if (error) throw error;
+
+                toast({
+                  title: 'WhatsApp envoyé',
+                  description: `Devis envoyé au ${client.phone}`,
+                });
+              } catch (whatsappError) {
+                console.error('Error sending WhatsApp:', whatsappError);
+                toast({
+                  title: 'Erreur WhatsApp',
+                  description: "Le message WhatsApp n'a pas pu être envoyé",
+                  variant: 'destructive',
+                });
+              }
+            }
+          }
+
+          toast({
+            title: 'Devis envoyé',
+            description: 'Le devis a été créé et marqué comme envoyé',
+          });
+        } else {
+          toast({
+            title: 'Devis créé',
+            description: `Le devis a été créé avec succès`,
+          });
+        }
       }
 
       navigate('/app/compta/devis');
