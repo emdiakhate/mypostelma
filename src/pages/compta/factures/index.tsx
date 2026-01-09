@@ -106,11 +106,20 @@ export default function FacturesListPage() {
 
   // Actions
   const handleView = (invoiceId: string) => {
-    navigate(`/app/compta/factures/${invoiceId}`);
+    // Pour l'instant, rediriger vers l'édition car pas de page de vue détaillée
+    navigate(`/app/compta/factures/${invoiceId}/edit`);
   };
 
   const handleEdit = (invoiceId: string) => {
     navigate(`/app/compta/factures/${invoiceId}/edit`);
+  };
+
+  const handleDownloadPDF = (invoice: Invoice) => {
+    // TODO: Implémenter la génération et téléchargement PDF
+    toast({
+      title: 'Fonctionnalité à venir',
+      description: 'Le téléchargement PDF sera disponible prochainement',
+    });
   };
 
   const handleAddPayment = (invoice: Invoice) => {
@@ -348,7 +357,7 @@ export default function FacturesListPage() {
                                 <Edit className="mr-2 h-4 w-4" />
                                 Modifier
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Télécharger PDF
                               </DropdownMenuItem>
