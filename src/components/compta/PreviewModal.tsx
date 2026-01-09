@@ -20,6 +20,7 @@ interface PreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documentType: 'FACTURE' | 'DEVIS';
+  documentNumber?: string;
   data: {
     client_name?: string;
     client_company?: string;
@@ -54,30 +55,57 @@ export default function PreviewModal({
   open,
   onOpenChange,
   documentType,
+  documentNumber = '',
   data,
   templateId,
   onDownloadPDF,
 }: PreviewModalProps) {
-  const { settings } = useCompanySettings();
+  const { settings, loading: settingsLoading } = useCompanySettings();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handlePrint = () => {
-    window.print();
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.print();
+    }
   };
 
   // Préparer les données pour le template
   useEffect(() => {
-    if (!iframeRef.current || !settings) return;
+    if (!iframeRef.current || !open) return;
 
-    const templateData: InvoiceTemplateData = {
-      logo_url: settings.logo_url,
-      company_name: settings.company_name,
-      company_address: settings.company_address,
-      company_phone: settings.company_phone,
-      company_email: settings.company_email,
+    // Utiliser des valeurs par défaut si settings n'est pas encore chargé
+    const companySettings = settings || {
+      company_name: 'Votre entreprise',
+      company_address: '',
+      company_phone: '',
+      company_email: '',
+      logo_url: undefined,
+      signature_url: undefined,
+      bank_name: '',
+      bank_iban: '',
+      bank_bic: '',
+      default_invoice_template: 'classic',
+      default_quote_template: 'classic',
+    };
+
+    const templateData: InvoiceTemplateData & {
+      signature_url?: string;
+      bank_name?: string;
+      bank_iban?: string;
+      bank_bic?: string;
+    } = {
+      logo_url: companySettings.logo_url,
+      company_name: companySettings.company_name || 'Votre entreprise',
+      company_address: companySettings.company_address,
+      company_phone: companySettings.company_phone,
+      company_email: companySettings.company_email,
+      signature_url: companySettings.signature_url,
+      bank_name: (settings as any)?.bank_name || '',
+      bank_iban: (settings as any)?.bank_iban || '',
+      bank_bic: (settings as any)?.bank_bic || '',
 
       document_type: documentType,
-      document_number: '',
+      document_number: documentNumber || 'BROUILLON',
       invoice_date:
         typeof data.issue_date === 'string'
           ? data.issue_date
@@ -95,39 +123,44 @@ export default function PreviewModal({
             : format(data.expiration_date, 'dd/MM/yyyy', { locale: fr })
           : undefined,
 
-      client_name: data.client_name || '',
+      client_name: data.client_name || 'Client',
       client_company: data.client_company,
       client_address: data.client_address,
       client_phone: data.client_phone,
 
-      items: data.items.map((item) => ({
-        description: item.description,
+      items: data.items.length > 0 ? data.items.map((item) => ({
+        description: item.description || 'Article',
         quantity: item.quantity,
         unit_price: item.unit_price,
         total: item.total,
-      })),
+      })) : [{
+        description: 'Exemple d\'article',
+        quantity: 1,
+        unit_price: 100,
+        total: 100,
+      }],
 
-      subtotal: data.subtotal,
-      tax_rate: data.tax_rate,
-      tax_amount: data.tax_amount,
-      total: data.total,
-      currency: data.currency,
+      subtotal: data.subtotal || 0,
+      tax_rate: data.tax_rate || 0,
+      tax_amount: data.tax_amount || 0,
+      total: data.total || 0,
+      currency: data.currency || 'EUR',
 
       amount_paid: data.amount_paid,
       balance_due: data.balance_due,
 
       notes: data.notes,
-      terms: data.terms,
+      terms: data.terms || 'Le paiement est dû dans 15 jours',
     };
 
     const selectedTemplateId =
       templateId ||
       (documentType === 'FACTURE'
-        ? settings.default_invoice_template
-        : settings.default_quote_template);
+        ? companySettings.default_invoice_template
+        : companySettings.default_quote_template);
 
     const template = TEMPLATES.find((t) => t.id === selectedTemplateId) || TEMPLATES[0];
-    const html = renderTemplate(template, templateData);
+    const html = renderTemplate(template, templateData as InvoiceTemplateData);
 
     const iframe = iframeRef.current;
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -136,7 +169,7 @@ export default function PreviewModal({
       iframeDoc.write(html);
       iframeDoc.close();
     }
-  }, [data, documentType, settings, templateId]);
+  }, [data, documentType, documentNumber, settings, templateId, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
