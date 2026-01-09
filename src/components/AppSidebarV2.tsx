@@ -54,6 +54,7 @@ import {
   AlertCircle,
   Camera,
   Truck,
+  Package,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -302,6 +303,13 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             label: 'Commandes d\'achat',
             icon: ShoppingCart,
             path: '/app/stock/commandes-achat',
+            disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
+          },
+          {
+            id: 'stock-inventaire',
+            label: 'Inventaire',
+            icon: Package,
+            path: '/app/stock/inventaire',
             disabled: !isFeatureEnabled('ENABLE_STOCK_MODULE'),
           },
         ],
