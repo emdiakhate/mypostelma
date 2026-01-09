@@ -85,18 +85,33 @@ export const useCompanySettings = () => {
     try {
       if (!settings) throw new Error('Settings not loaded');
 
-      const { error } = await supabase
-        .from('company_settings')
-        .update({
-          company_name: updates.company_name,
-          address: updates.company_address || null,
-          phone: updates.company_phone || null,
-          email: updates.company_email || null,
-          logo_url: updates.logo_url || null,
-          default_invoice_template: updates.default_invoice_template || null,
-          default_quote_template: updates.default_quote_template || null,
-        })
-        .eq('id', settings.id);
+      // Ne mettre à jour que les champs explicitement fournis.
+      // IMPORTANT: si un champ est présent avec la valeur `undefined`, on interprète ça comme "vider".
+      const payload: Record<string, any> = {};
+
+      if (Object.prototype.hasOwnProperty.call(updates, 'company_name')) {
+        payload.company_name = updates.company_name;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'company_address')) {
+        payload.address = updates.company_address ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'company_phone')) {
+        payload.phone = updates.company_phone ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'company_email')) {
+        payload.email = updates.company_email ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'logo_url')) {
+        payload.logo_url = updates.logo_url ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'default_invoice_template')) {
+        payload.default_invoice_template = updates.default_invoice_template ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'default_quote_template')) {
+        payload.default_quote_template = updates.default_quote_template ?? null;
+      }
+
+      const { error } = await supabase.from('company_settings').update(payload).eq('id', settings.id);
 
       if (error) throw error;
 
