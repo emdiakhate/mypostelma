@@ -127,6 +127,18 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         path: '/app/dashboard',
       },
       {
+        id: 'dashboard-global',
+        label: 'Dashboard Global',
+        icon: BarChart3,
+        path: '/app/dashboard-global',
+      },
+      {
+        id: 'rapports',
+        label: 'Rapports',
+        icon: FileText,
+        path: '/app/rapports',
+      },
+      {
         id: 'crm',
         label: 'CRM',
         icon: Users,

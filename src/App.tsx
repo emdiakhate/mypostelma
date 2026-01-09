@@ -93,6 +93,10 @@ import FactureFormPage from "./pages/compta/factures/form";
 import ScannerPage from "./pages/compta/scanner/index";
 import ComptaSettingsPage from "./pages/compta/settings/index";
 
+// Global Dashboard & Reports
+import GlobalDashboardPage from "./pages/dashboard-global/index";
+import RapportsPage from "./pages/rapports/index";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -107,6 +111,12 @@ function MainLayout() {
             isFeatureEnabled('ENABLE_NEW_DASHBOARD') ? <DashboardNew /> : <DashboardOld />
           }
         />
+
+        {/* ================================================================
+            DASHBOARD GLOBAL & RAPPORTS
+            ================================================================ */}
+        <Route path="/dashboard-global" element={<GlobalDashboardPage />} />
+        <Route path="/rapports" element={<RapportsPage />} />
 
         {/* ================================================================
             MODULE MARKETING
