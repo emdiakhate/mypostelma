@@ -3,7 +3,7 @@
  */
 
 export type TemplateType = 'invoice' | 'quote';
-export type TemplateId = 'classic' | 'minimal' | 'modern';
+export type TemplateId = 'classic' | 'minimal' | 'modern' | 'wave-blue' | 'stripe-minimal';
 
 export interface InvoiceTemplateData {
   // Entreprise
