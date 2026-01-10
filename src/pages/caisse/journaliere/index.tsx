@@ -30,13 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useBoutiques } from '@/hooks/useBoutiques';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import { useCaisseJournaliere } from '@/hooks/useCaisseJournaliere';
 import type { CaisseOuvertureFormData, CaisseClotureFormData, MouvementCaisseFormData, MoyenPaiement, MouvementCaisseType } from '@/types/caisse';
 
 const CaisseJournalierePage = () => {
   const navigate = useNavigate();
-  const { boutiques } = useBoutiques();
+  const { warehouses } = useWarehouses('STORE'); // Filter for STORE type (boutiques)
   const { caisseActive, mouvements, ouvrirCaisse, cloturerCaisse, ajouterMouvement, getStatistiquesCaisse } = useCaisseJournaliere();
 
   const [ouvertureOpen, setOuvertureOpen] = useState(false);
@@ -44,7 +44,7 @@ const CaisseJournalierePage = () => {
   const [mouvementOpen, setMouvementOpen] = useState(false);
 
   const [ouvertureForm, setOuvertureForm] = useState<CaisseOuvertureFormData>({
-    boutique_id: '',
+    warehouse_id: '',
     solde_ouverture: 0,
     notes_ouverture: '',
   });
@@ -70,7 +70,7 @@ const CaisseJournalierePage = () => {
     if (result) {
       setOuvertureOpen(false);
       setOuvertureForm({
-        boutique_id: '',
+        warehouse_id: '',
         solde_ouverture: 0,
         notes_ouverture: '',
       });
@@ -150,11 +150,11 @@ const CaisseJournalierePage = () => {
               </DialogHeader>
               <form onSubmit={handleOuverture} className="space-y-4">
                 <div>
-                  <Label htmlFor="boutique">Boutique *</Label>
+                  <Label htmlFor="warehouse">Boutique *</Label>
                   <Select
-                    value={ouvertureForm.boutique_id}
+                    value={ouvertureForm.warehouse_id}
                     onValueChange={(value) =>
-                      setOuvertureForm({ ...ouvertureForm, boutique_id: value })
+                      setOuvertureForm({ ...ouvertureForm, warehouse_id: value })
                     }
                     required
                   >
@@ -162,9 +162,9 @@ const CaisseJournalierePage = () => {
                       <SelectValue placeholder="Sélectionner une boutique" />
                     </SelectTrigger>
                     <SelectContent>
-                      {boutiques.filter(b => b.statut === 'active').map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.nom}
+                      {warehouses.filter(w => w.is_active).map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

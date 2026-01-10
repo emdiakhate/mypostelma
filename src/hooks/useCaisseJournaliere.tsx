@@ -28,13 +28,13 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
         .select(
           `
           *,
-          boutique:boutiques(id, nom, ville)
+          warehouse:stock_warehouses(id, name, city)
         `
         )
         .order('date', { ascending: false });
 
-      if (filters?.boutique_id) {
-        query = query.eq('boutique_id', filters.boutique_id);
+      if (filters?.warehouse_id) {
+        query = query.eq('warehouse_id', filters.warehouse_id);
       }
       if (filters?.statut) {
         query = query.eq('statut', filters.statut);
@@ -127,7 +127,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
       const { data: existing } = await supabase
         .from('caisses_journalieres')
         .select('id')
-        .eq('boutique_id', formData.boutique_id)
+        .eq('warehouse_id', formData.warehouse_id)
         .eq('date', today)
         .single();
 
@@ -144,7 +144,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
         .from('caisses_journalieres')
         .insert([
           {
-            boutique_id: formData.boutique_id,
+            warehouse_id: formData.warehouse_id,
             date: today,
             user_id: userData.user.id,
             solde_ouverture: formData.solde_ouverture,

@@ -16,7 +16,7 @@ export interface VenteSaleFormData {
   client_email: string;
   client_phone?: string;
   client_address?: string;
-  boutique_id: string; // IMPORTANT: Boutique où se fait la vente
+  warehouse_id: string; // IMPORTANT: Warehouse (boutique) où se fait la vente
   moyen_paiement: 'cash' | 'mobile_money' | 'carte' | 'cheque' | 'virement';
   items: VenteSaleItem[];
   tva_rate?: number;
@@ -64,14 +64,14 @@ export const useSales = () => {
         const { data: caisse, error: caisseCheckError } = await supabase
           .from('caisses_journalieres')
           .select('id, statut')
-          .eq('boutique_id', formData.boutique_id)
+          .eq('warehouse_id', formData.warehouse_id)
           .eq('date', today)
           .eq('statut', 'ouverte')
           .single();
 
         if (caisseCheckError || !caisse) {
           throw new Error(
-            'Aucune caisse ouverte pour cette boutique aujourd\'hui. Veuillez ouvrir la caisse d\'abord.'
+            'Aucune caisse ouverte pour ce warehouse aujourd\'hui. Veuillez ouvrir la caisse d\'abord.'
           );
         }
 
@@ -81,13 +81,13 @@ export const useSales = () => {
 
         for (const item of formData.items) {
           const { data: stockData } = await supabase
-            .from('stock_actuel')
-            .select('quantite_disponible')
-            .eq('boutique_id', formData.boutique_id)
-            .eq('produit_id', item.product_id)
+            .from('stock_levels')
+            .select('current_quantity')
+            .eq('warehouse_id', formData.warehouse_id)
+            .eq('product_id', item.product_id)
             .single();
 
-          const quantiteDisponible = stockData?.quantite_disponible || 0;
+          const quantiteDisponible = stockData?.current_quantity || 0;
 
           if (quantiteDisponible < item.quantity) {
             throw new Error(
@@ -134,7 +134,7 @@ export const useSales = () => {
               tva_rate,
               confirmed_at: new Date().toISOString(),
               notes: formData.notes,
-              boutique_id: formData.boutique_id,
+              warehouse_id: formData.warehouse_id,
               caisse_id: caisse.id,
               moyen_paiement: formData.moyen_paiement,
             },
@@ -170,15 +170,15 @@ export const useSales = () => {
         // ============================================================
 
         const stockMovements = formData.items.map((item) => ({
-          boutique_id: formData.boutique_id,
-          produit_id: item.product_id,
-          quantite: -item.quantity, // NÉGATIF = SORTIE
-          type: 'sortie',
-          reference_type: 'vente',
+          warehouse_from_id: formData.warehouse_id,
+          warehouse_to_id: null, // NULL = sortie du système
+          product_id: item.product_id,
+          quantity: item.quantity,
+          movement_type: 'OUT',
+          reference_type: 'SALE',
           reference_id: order.id,
           user_id,
           notes: `Vente ${orderNumber} - ${item.product_name}`,
-          statut: 'completed',
         }));
 
         const { error: stockError } = await supabase

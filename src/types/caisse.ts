@@ -1,28 +1,12 @@
 /**
  * Types TypeScript pour le système de gestion de caisse
+ *
+ * Note: Ce module utilise stock_warehouses (module Stock) pour les boutiques/entrepôts
  */
 
 // =====================================================
 // ENUMS
 // =====================================================
-
-export type BoutiqueStatut = 'active' | 'inactive' | 'closed';
-
-export type StockMovementType =
-  | 'entree'
-  | 'sortie'
-  | 'ajustement'
-  | 'transfert_out'
-  | 'transfert_in';
-
-export type StockMovementReferenceType =
-  | 'vente'
-  | 'achat'
-  | 'ajustement'
-  | 'transfert'
-  | 'inventaire';
-
-export type StockMovementStatut = 'pending' | 'completed' | 'cancelled';
 
 export type CaisseStatut = 'ouverte' | 'fermee';
 
@@ -43,71 +27,38 @@ export type MouvementCaisseReferenceType =
   | 'retrait';
 
 // =====================================================
-// INTERFACES
+// INTERFACES - Types spécifiques au module Caisse
 // =====================================================
 
-export interface Boutique {
+/**
+ * Warehouse (Boutique/Entrepôt)
+ * Correspond à stock_warehouses du module Stock
+ * Type 'STORE' = boutique physique
+ */
+export interface Warehouse {
   id: string;
   user_id: string;
-  nom: string;
-  adresse?: string;
-  ville?: string;
-  telephone?: string;
+  name: string;
+  type: 'STORE' | 'WAREHOUSE' | 'MOBILE' | 'OTHER';
+  address?: string;
+  city?: string;
+  country?: string;
+  gps_lat?: number;
+  gps_lng?: number;
+  manager_name?: string;
+  phone?: string;
   email?: string;
-  responsable_nom?: string;
-  responsable_telephone?: string;
-  latitude?: number;
-  longitude?: number;
-  statut: BoutiqueStatut;
+  is_active: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface StockMovement {
-  id: string;
-  boutique_id: string;
-  produit_id: string;
-  quantite: number;
-  type: StockMovementType;
-  reference_type?: StockMovementReferenceType;
-  reference_id?: string;
-  user_id: string;
-  notes?: string;
-  statut: StockMovementStatut;
-  created_at: Date;
-
-  // Relations (populated via joins)
-  boutique?: Boutique;
-  produit?: {
-    id: string;
-    name: string;
-    sku?: string;
-  };
-  user?: {
-    id: string;
-    email?: string;
-  };
-}
-
-export interface StockActuel {
-  boutique_id: string;
-  produit_id: string;
-  quantite_disponible: number;
-  derniere_mise_a_jour: Date;
-
-  // Relations
-  boutique?: Boutique;
-  produit?: {
-    id: string;
-    name: string;
-    sku?: string;
-    price?: number;
-  };
-}
-
+/**
+ * Caisse Journalière
+ */
 export interface CaisseJournaliere {
   id: string;
-  boutique_id: string;
+  warehouse_id: string; // Référence stock_warehouses
   date: Date;
   user_id: string;
 
@@ -134,7 +85,7 @@ export interface CaisseJournaliere {
   updated_at: Date;
 
   // Relations
-  boutique?: Boutique;
+  warehouse?: Warehouse;
   mouvements?: MouvementCaisse[];
 
   // Statistiques calculées (non stockées en DB)
@@ -146,6 +97,9 @@ export interface CaisseJournaliere {
   nombre_ventes?: number;
 }
 
+/**
+ * Mouvement de Caisse
+ */
 export interface MouvementCaisse {
   id: string;
   caisse_id: string;
@@ -170,31 +124,8 @@ export interface MouvementCaisse {
 // TYPES POUR FORMULAIRES
 // =====================================================
 
-export interface BoutiqueFormData {
-  nom: string;
-  adresse?: string;
-  ville?: string;
-  telephone?: string;
-  email?: string;
-  responsable_nom?: string;
-  responsable_telephone?: string;
-  latitude?: number;
-  longitude?: number;
-  statut?: BoutiqueStatut;
-}
-
-export interface StockMovementFormData {
-  boutique_id: string;
-  produit_id: string;
-  quantite: number;
-  type: StockMovementType;
-  reference_type?: StockMovementReferenceType;
-  reference_id?: string;
-  notes?: string;
-}
-
 export interface CaisseOuvertureFormData {
-  boutique_id: string;
+  warehouse_id: string; // ID de la boutique (stock_warehouses)
   solde_ouverture: number;
   notes_ouverture?: string;
 }
@@ -232,8 +163,8 @@ export interface StatistiquesCaisse {
 }
 
 export interface StatistiquesBoutique {
-  boutique_id: string;
-  boutique_nom: string;
+  warehouse_id: string;
+  warehouse_nom: string;
   ventes_jour: number;
   nombre_ventes: number;
   stock_total_value: number;
@@ -242,31 +173,12 @@ export interface StatistiquesBoutique {
   caisse_solde: number;
 }
 
-export interface StockAlert {
-  boutique_id: string;
-  boutique_nom: string;
-  produit_id: string;
-  produit_nom: string;
-  quantite_actuelle: number;
-  seuil_alerte: number;
-  severite: 'critique' | 'bas' | 'moyen';
-}
-
 // =====================================================
 // TYPES POUR FILTRES
 // =====================================================
 
-export interface StockMovementFilters {
-  boutique_id?: string;
-  produit_id?: string;
-  type?: StockMovementType;
-  date_debut?: Date;
-  date_fin?: Date;
-  statut?: StockMovementStatut;
-}
-
 export interface CaisseFilters {
-  boutique_id?: string;
+  warehouse_id?: string;
   date_debut?: Date;
   date_fin?: Date;
   statut?: CaisseStatut;
