@@ -78,9 +78,6 @@ export interface CompanySettings {
   company_email?: string;
   logo_url?: string;
   signature_url?: string;
-  bank_name?: string;
-  bank_iban?: string;
-  bank_bic?: string;
   default_invoice_template: TemplateId;
   default_quote_template: TemplateId;
   created_at: Date;

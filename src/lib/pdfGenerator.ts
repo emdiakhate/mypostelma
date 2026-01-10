@@ -204,6 +204,19 @@ function generateInvoiceHTML(invoice: Invoice, settings: CompanySettings | null)
       line-height: 1.6;
       color: #4b5563;
     }
+    .signature-section {
+      margin-top: 40px;
+      text-align: right;
+    }
+    .signature-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .signature {
+      max-height: 80px;
+      max-width: 200px;
+    }
     .footer {
       margin-top: 60px;
       text-align: center;
@@ -281,6 +294,17 @@ function generateInvoiceHTML(invoice: Invoice, settings: CompanySettings | null)
   <div class="notes">
     ${invoice.notes ? `<h4>Notes</h4><p>${invoice.notes}</p>` : ''}
     ${invoice.terms ? `<h4 style="margin-top: ${invoice.notes ? '16px' : '0'};">Conditions</h4><p>${invoice.terms}</p>` : ''}
+  </div>
+  `
+      : ''
+  }
+
+  ${
+    settings?.signature_url
+      ? `
+  <div class="signature-section">
+    <p class="signature-label">Signature:</p>
+    <img src="${settings.signature_url}" class="signature" alt="Signature" crossorigin="anonymous" />
   </div>
   `
       : ''
@@ -432,6 +456,19 @@ function generateQuoteHTML(quote: Quote, settings: CompanySettings | null): stri
       line-height: 1.6;
       color: #4b5563;
     }
+    .signature-section {
+      margin-top: 40px;
+      text-align: right;
+    }
+    .signature-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .signature {
+      max-height: 80px;
+      max-width: 200px;
+    }
     .footer {
       margin-top: 60px;
       text-align: center;
@@ -508,6 +545,17 @@ function generateQuoteHTML(quote: Quote, settings: CompanySettings | null): stri
   <div class="notes">
     ${quote.notes ? `<h4>Notes</h4><p>${quote.notes}</p>` : ''}
     ${quote.terms ? `<h4 style="margin-top: ${quote.notes ? '16px' : '0'};">Conditions</h4><p>${quote.terms}</p>` : ''}
+  </div>
+  `
+      : ''
+  }
+
+  ${
+    settings?.signature_url
+      ? `
+  <div class="signature-section">
+    <p class="signature-label">Signature:</p>
+    <img src="${settings.signature_url}" class="signature" alt="Signature" crossorigin="anonymous" />
   </div>
   `
       : ''

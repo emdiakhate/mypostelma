@@ -25,7 +25,7 @@ import {
   Image,
   CheckCircle,
   Loader2,
-  PenTool,
+  FileSignature,
 } from 'lucide-react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { TEMPLATES } from '@/data/invoiceTemplates';
@@ -116,13 +116,13 @@ export default function ComptaSettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Logo */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Logo de l'entreprise</CardTitle>
+            <CardTitle>Logo</CardTitle>
             <CardDescription>
-              Apparaîtra sur vos factures et devis
+              Apparaîtra sur vos documents
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -190,12 +190,97 @@ export default function ComptaSettingsPage() {
                   ) : (
                     <>
                       <Upload className="mr-2 h-4 w-4" />
-                      Uploader un logo
+                      Uploader
                     </>
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
-                  PNG, JPG, WebP - Max 2 MB
+                  PNG, JPG - Max 2 MB
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Signature */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Signature</CardTitle>
+            <CardDescription>
+              Apparaîtra en bas des factures
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <input
+              ref={signatureInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleSignatureSelect}
+              className="hidden"
+            />
+
+            {settings?.signature_url ? (
+              <div className="space-y-3">
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <img
+                    src={settings.signature_url}
+                    alt="Signature"
+                    className="max-h-32 mx-auto object-contain"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => signatureInputRef.current?.click()}
+                    disabled={uploadingSignature}
+                    className="flex-1"
+                  >
+                    {uploadingSignature ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Upload...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Changer
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={deleteSignature}
+                    disabled={uploadingSignature}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileSignature className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground mb-4">Aucune signature</p>
+                <Button
+                  onClick={() => signatureInputRef.current?.click()}
+                  disabled={uploadingSignature}
+                  size="sm"
+                >
+                  {uploadingSignature ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Upload...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Uploader
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Signez sur papier blanc et prenez en photo
                 </p>
               </div>
             )}

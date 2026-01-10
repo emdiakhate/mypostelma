@@ -18,9 +18,6 @@ const mapDbSettings = (db: any): CompanySettings => ({
   company_email: db.email || undefined,
   logo_url: db.logo_url || undefined,
   signature_url: db.signature_url || undefined,
-  bank_name: db.bank_name || undefined,
-  bank_iban: db.bank_iban || undefined,
-  bank_bic: db.bank_bic || undefined,
   default_invoice_template: (db.default_invoice_template as TemplateId) || 'classic',
   default_quote_template: (db.default_quote_template as TemplateId) || 'classic',
   created_at: new Date(db.created_at),
@@ -89,36 +86,19 @@ export const useCompanySettings = () => {
     try {
       if (!settings) throw new Error('Settings not loaded');
 
-      // Ne mettre à jour que les champs explicitement fournis.
-      // IMPORTANT: si un champ est présent avec la valeur `undefined`, on interprète ça comme "vider".
-      const payload: Record<string, any> = {};
-
-      if (Object.prototype.hasOwnProperty.call(updates, 'company_name')) {
-        payload.company_name = updates.company_name;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'company_address')) {
-        payload.address = updates.company_address ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'company_phone')) {
-        payload.phone = updates.company_phone ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'company_email')) {
-        payload.email = updates.company_email ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'logo_url')) {
-        payload.logo_url = updates.logo_url ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'signature_url')) {
-        payload.signature_url = updates.signature_url ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'default_invoice_template')) {
-        payload.default_invoice_template = updates.default_invoice_template ?? null;
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'default_quote_template')) {
-        payload.default_quote_template = updates.default_quote_template ?? null;
-      }
-
-      const { error } = await supabase.from('company_settings').update(payload).eq('id', settings.id);
+      const { error } = await supabase
+        .from('company_settings')
+        .update({
+          company_name: updates.company_name,
+          address: updates.company_address || null,
+          phone: updates.company_phone || null,
+          email: updates.company_email || null,
+          logo_url: updates.logo_url || null,
+          signature_url: updates.signature_url || null,
+          default_invoice_template: updates.default_invoice_template || null,
+          default_quote_template: updates.default_quote_template || null,
+        })
+        .eq('id', settings.id);
 
       if (error) throw error;
 
@@ -258,10 +238,10 @@ export const useCompanySettings = () => {
         return null;
       }
 
-      // Upload vers Supabase Storage - structure: userId/signature_timestamp.ext
+      // Upload vers Supabase Storage - utilise le même bucket "logos"
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userData.user.id}/signature_${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
+      const fileName = `${userData.user.id}/signature-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('logos')
         .upload(fileName, file, {
           upsert: true,
@@ -300,10 +280,9 @@ export const useCompanySettings = () => {
 
       // Extraire le nom du fichier depuis l'URL
       const urlParts = settings.signature_url.split('/');
-      const fileName = urlParts.slice(-2).join('/'); // userId/signature_xxx.ext
-      if (fileName) {
-        await supabase.storage.from('logos').remove([fileName]);
-      }
+      const fileName = `${urlParts[urlParts.length - 2]}/${urlParts[urlParts.length - 1]}`;
+
+      await supabase.storage.from('logos').remove([fileName]);
 
       await updateSettings({ signature_url: undefined });
 
