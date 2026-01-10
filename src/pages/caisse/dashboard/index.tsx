@@ -10,61 +10,71 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useBoutiques } from '@/hooks/useBoutiques';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import { useCaisseJournaliere } from '@/hooks/useCaisseJournaliere';
-import { useStockMovements } from '@/hooks/useStockMovements';
-import type { StatistiquesBoutique } from '@/types/caisse';
+import { useStockLevels } from '@/hooks/useStock';
+
+interface StatistiquesBoutique {
+  boutique_id: string;
+  boutique_nom: string;
+  ventes_jour: number;
+  nombre_ventes: number;
+  stock_total_value: number;
+  produits_stock_bas: number;
+  caisse_statut: string;
+  caisse_solde: number;
+}
 
 const DashboardMultiBoutiques = () => {
-  const { boutiques } = useBoutiques();
+  const { warehouses } = useWarehouses('STORE');
   const { caisses } = useCaisseJournaliere();
-  const { stockActuel } = useStockMovements();
+  const { levels: stockLevels } = useStockLevels();
   const [statsBoutiques, setStatsBoutiques] = useState<StatistiquesBoutique[]>([]);
 
   useEffect(() => {
-    // Calculer les stats pour chaque boutique
+    // Calculer les stats pour chaque warehouse (boutique)
     const today = new Date().toISOString().split('T')[0];
 
-    const stats = boutiques
-      .filter((b) => b.statut === 'active')
-      .map((boutique) => {
+    const stats = warehouses
+      .filter((w) => w.is_active)
+      .map((warehouse) => {
         // Caisse du jour
         const caisseDuJour = caisses.find(
           (c) =>
-            c.boutique_id === boutique.id &&
+            c.warehouse_id === warehouse.id &&
             c.date.toISOString().split('T')[0] === today
         );
 
-        // Stock de la boutique
-        const stockBoutique = stockActuel.filter(
-          (s) => s.boutique_id === boutique.id
+        // Stock du warehouse
+        const stockWarehouse = stockLevels.filter(
+          (s) => s.warehouse_id === warehouse.id
         );
 
-        // Valeur totale du stock
-        const stock_total_value = stockBoutique.reduce((total, s) => {
-          const price = s.produit?.price || 0;
-          return total + s.quantite_disponible * price;
+        // Valeur totale du stock (approximation avec current_quantity * average_cost)
+        const stock_total_value = stockWarehouse.reduce((total, s) => {
+          const cost = s.average_cost || 0;
+          return total + s.current_quantity * cost;
         }, 0);
 
         // Produits en stock bas (< 10)
-        const produits_stock_bas = stockBoutique.filter(
-          (s) => s.quantite_disponible < 10
+        const produits_stock_bas = stockWarehouse.filter(
+          (s) => s.current_quantity < 10
         ).length;
 
         return {
-          boutique_id: boutique.id,
-          boutique_nom: boutique.nom,
+          boutique_id: warehouse.id,
+          boutique_nom: warehouse.name,
           ventes_jour: 0, // Sera calculé via les mouvements de caisse
           nombre_ventes: 0,
           stock_total_value,
           produits_stock_bas,
           caisse_statut: caisseDuJour?.statut || 'fermee',
-          caisse_solde: caisseDuJour?.solde_theorique || 0,
+          caisse_solde: 0, // TODO: Calculate from caisse movements
         };
       });
 
     setStatsBoutiques(stats);
-  }, [boutiques, caisses, stockActuel]);
+  }, [warehouses, caisses, stockLevels]);
 
   const formatCurrency = (amount: number) => {
     return `${amount.toLocaleString('fr-FR')} FCFA`;
