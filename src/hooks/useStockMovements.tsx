@@ -17,30 +17,27 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
   const loadMovements = useCallback(async () => {
     try {
       setLoading(true);
-      // Use type assertion since the table is newly created and types not yet regenerated
+      // La table stock_movements utilise warehouse_id (pas boutique_id)
+      // et product_id (pas produit_id)
       let query = (supabase as any)
         .from('stock_movements')
         .select(
           `
           *,
-          boutique:boutiques(id, nom),
-          produit:vente_products(id, name, sku)
+          produit:vente_products!product_id(id, name, sku)
         `
         )
         .order('created_at', { ascending: false });
 
-      // Apply filters
+      // Apply filters - map boutique_id to warehouse_id for compatibility
       if (filters?.boutique_id) {
-        query = query.eq('boutique_id', filters.boutique_id);
+        query = query.eq('warehouse_id', filters.boutique_id);
       }
       if (filters?.produit_id) {
-        query = query.eq('produit_id', filters.produit_id);
+        query = query.eq('product_id', filters.produit_id);
       }
       if (filters?.type) {
-        query = query.eq('type', filters.type);
-      }
-      if (filters?.statut) {
-        query = query.eq('statut', filters.statut);
+        query = query.eq('movement_type', filters.type);
       }
       if (filters?.date_debut) {
         query = query.gte('created_at', filters.date_debut.toISOString());
@@ -53,10 +50,21 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
 
       if (error) throw error;
 
+      // Map the data to the expected format
       setMovements(
         (data || []).map((m: any) => ({
-          ...m,
+          id: m.id,
+          boutique_id: m.warehouse_id,
+          produit_id: m.product_id,
+          quantite: m.quantity,
+          type: m.movement_type,
+          reference_type: m.reference_type,
+          reference_id: m.reference_id,
+          user_id: m.user_id,
+          notes: m.notes,
+          statut: 'completed',
           created_at: new Date(m.created_at),
+          produit: m.produit,
         }))
       );
     } catch (error: any) {
@@ -74,45 +82,49 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
   const loadStockActuel = useCallback(
     async (boutiqueId?: string) => {
       try {
-        // Calculate stock from movements (stock_actuel is a materialized view that may not exist)
+        // La table stock_movements utilise warehouse_id et product_id
         let query = (supabase as any)
           .from('stock_movements')
           .select(
             `
-            boutique_id,
-            produit_id,
-            quantite,
-            boutique:boutiques(id, nom),
-            produit:vente_products(id, name, sku, price)
+            warehouse_id,
+            product_id,
+            quantity,
+            movement_type,
+            produit:vente_products!product_id(id, name, sku, price)
           `
-          )
-          .eq('statut', 'completed');
+          );
 
         if (boutiqueId) {
-          query = query.eq('boutique_id', boutiqueId);
+          query = query.eq('warehouse_id', boutiqueId);
         }
 
         const { data, error } = await query;
 
         if (error) throw error;
 
-        // Aggregate by boutique_id + produit_id
+        // Aggregate by warehouse_id + product_id
         const stockMap = new Map<string, StockActuel>();
 
         (data || []).forEach((m: any) => {
-          const key = `${m.boutique_id}-${m.produit_id}`;
+          const key = `${m.warehouse_id}-${m.product_id}`;
           const existing = stockMap.get(key);
+          
+          // Calculate quantity based on movement type
+          let qty = m.quantity || 0;
+          if (m.movement_type === 'OUT') {
+            qty = -qty;
+          }
 
           if (existing) {
-            existing.quantite_disponible += m.quantite || 0;
+            existing.quantite_disponible += qty;
             existing.derniere_mise_a_jour = new Date();
           } else {
             stockMap.set(key, {
-              boutique_id: m.boutique_id,
-              produit_id: m.produit_id,
-              quantite_disponible: m.quantite || 0,
+              boutique_id: m.warehouse_id,
+              produit_id: m.product_id,
+              quantite_disponible: qty,
               derniere_mise_a_jour: new Date(),
-              boutique: m.boutique,
               produit: m.produit,
             });
           }
@@ -150,13 +162,19 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('User not authenticated');
 
+      // Map from caisse types to stock_movements table structure
       const { data, error } = await (supabase as any)
         .from('stock_movements')
         .insert([
           {
-            ...formData,
             user_id: userData.user.id,
-            statut: 'completed',
+            product_id: formData.produit_id,
+            warehouse_id: formData.boutique_id,
+            movement_type: formData.type === 'entree' ? 'IN' : formData.type === 'sortie' ? 'OUT' : 'ADJUSTMENT',
+            quantity: formData.quantite,
+            reference_type: formData.reference_type,
+            reference_id: formData.reference_id,
+            notes: formData.notes,
           },
         ])
         .select()
@@ -165,7 +183,16 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       if (error) throw error;
 
       const newMovement: StockMovement = {
-        ...data,
+        id: data.id,
+        boutique_id: data.warehouse_id,
+        produit_id: data.product_id,
+        quantite: data.quantity,
+        type: data.movement_type === 'IN' ? 'entree' : data.movement_type === 'OUT' ? 'sortie' : 'ajustement',
+        reference_type: data.reference_type,
+        reference_id: data.reference_id,
+        user_id: data.user_id,
+        notes: data.notes,
+        statut: 'completed',
         created_at: new Date(data.created_at),
       };
 
