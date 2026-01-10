@@ -22,34 +22,41 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useBoutiques } from '@/hooks/useBoutiques';
-import type { BoutiqueFormData, BoutiqueStatut } from '@/types/caisse';
+import { useWarehouses } from '@/hooks/useWarehouses';
+
+interface WarehouseFormData {
+  name: string;
+  address?: string;
+  city?: string;
+  phone?: string;
+  email?: string;
+  manager_name?: string;
+  is_active?: boolean;
+}
 
 const BoutiquesPage = () => {
-  const { boutiques, loading, createBoutique, updateBoutique, deleteBoutique } = useBoutiques();
+  const { warehouses, loading, createWarehouse, updateWarehouse, deleteWarehouse } = useWarehouses('STORE');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<BoutiqueFormData>({
-    nom: '',
-    adresse: '',
-    ville: '',
-    telephone: '',
+  const [formData, setFormData] = useState<WarehouseFormData>({
+    name: '',
+    address: '',
+    city: '',
+    phone: '',
     email: '',
-    responsable_nom: '',
-    responsable_telephone: '',
-    statut: 'active',
+    manager_name: '',
+    is_active: true,
   });
 
   const resetForm = () => {
     setFormData({
-      nom: '',
-      adresse: '',
-      ville: '',
-      telephone: '',
+      name: '',
+      address: '',
+      city: '',
+      phone: '',
       email: '',
-      responsable_nom: '',
-      responsable_telephone: '',
-      statut: 'active',
+      manager_name: '',
+      is_active: true,
     });
     setEditingId(null);
   };
@@ -58,13 +65,16 @@ const BoutiquesPage = () => {
     e.preventDefault();
 
     if (editingId) {
-      const success = await updateBoutique(editingId, formData);
+      const success = await updateWarehouse(editingId, formData);
       if (success) {
         setDialogOpen(false);
         resetForm();
       }
     } else {
-      const result = await createBoutique(formData);
+      const result = await createWarehouse({
+        ...formData,
+        type: 'STORE', // Important: Set type as STORE for boutiques
+      });
       if (result) {
         setDialogOpen(false);
         resetForm();
@@ -72,51 +82,32 @@ const BoutiquesPage = () => {
     }
   };
 
-  const handleEdit = (boutique: any) => {
-    setEditingId(boutique.id);
+  const handleEdit = (warehouse: any) => {
+    setEditingId(warehouse.id);
     setFormData({
-      nom: boutique.nom,
-      adresse: boutique.adresse || '',
-      ville: boutique.ville || '',
-      telephone: boutique.telephone || '',
-      email: boutique.email || '',
-      responsable_nom: boutique.responsable_nom || '',
-      responsable_telephone: boutique.responsable_telephone || '',
-      statut: boutique.statut,
+      name: warehouse.name,
+      address: warehouse.address || '',
+      city: warehouse.city || '',
+      phone: warehouse.phone || '',
+      email: warehouse.email || '',
+      manager_name: warehouse.manager_name || '',
+      is_active: warehouse.is_active !== undefined ? warehouse.is_active : true,
     });
     setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette boutique ?')) {
-      await deleteBoutique(id);
+      await deleteWarehouse(id);
     }
   };
 
-  const getStatusColor = (statut: BoutiqueStatut) => {
-    switch (statut) {
-      case 'active':
-        return 'bg-green-500';
-      case 'inactive':
-        return 'bg-orange-500';
-      case 'closed':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? 'bg-green-500' : 'bg-gray-500';
   };
 
-  const getStatusLabel = (statut: BoutiqueStatut) => {
-    switch (statut) {
-      case 'active':
-        return 'Active';
-      case 'inactive':
-        return 'Inactive';
-      case 'closed':
-        return 'Fermée';
-      default:
-        return statut;
-    }
+  const getStatusLabel = (isActive: boolean) => {
+    return isActive ? 'Active' : 'Inactive';
   };
 
   if (loading) {
@@ -156,47 +147,47 @@ const BoutiquesPage = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label htmlFor="nom">Nom de la boutique *</Label>
+                  <Label htmlFor="name">Nom de la boutique *</Label>
                   <Input
-                    id="nom"
-                    value={formData.nom}
+                    id="name"
+                    value={formData.name}
                     onChange={(e) =>
-                      setFormData({ ...formData, nom: e.target.value })
+                      setFormData({ ...formData, name: e.target.value })
                     }
                     required
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <Label htmlFor="adresse">Adresse</Label>
+                  <Label htmlFor="address">Adresse</Label>
                   <Textarea
-                    id="adresse"
-                    value={formData.adresse}
+                    id="address"
+                    value={formData.address}
                     onChange={(e) =>
-                      setFormData({ ...formData, adresse: e.target.value })
+                      setFormData({ ...formData, address: e.target.value })
                     }
                     rows={2}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="ville">Ville</Label>
+                  <Label htmlFor="city">Ville</Label>
                   <Input
-                    id="ville"
-                    value={formData.ville}
+                    id="city"
+                    value={formData.city}
                     onChange={(e) =>
-                      setFormData({ ...formData, ville: e.target.value })
+                      setFormData({ ...formData, city: e.target.value })
                     }
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Label htmlFor="phone">Téléphone</Label>
                   <Input
-                    id="telephone"
-                    value={formData.telephone}
+                    id="phone"
+                    value={formData.phone}
                     onChange={(e) =>
-                      setFormData({ ...formData, telephone: e.target.value })
+                      setFormData({ ...formData, phone: e.target.value })
                     }
                   />
                 </div>
@@ -214,47 +205,30 @@ const BoutiquesPage = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="responsable_nom">Nom du responsable</Label>
+                  <Label htmlFor="manager_name">Nom du responsable</Label>
                   <Input
-                    id="responsable_nom"
-                    value={formData.responsable_nom}
+                    id="manager_name"
+                    value={formData.manager_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, responsable_nom: e.target.value })
+                      setFormData({ ...formData, manager_name: e.target.value })
                     }
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="responsable_telephone">
-                    Téléphone du responsable
-                  </Label>
-                  <Input
-                    id="responsable_telephone"
-                    value={formData.responsable_telephone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        responsable_telephone: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="statut">Statut</Label>
+                  <Label htmlFor="is_active">Statut</Label>
                   <Select
-                    value={formData.statut}
+                    value={formData.is_active ? 'true' : 'false'}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, statut: value as BoutiqueStatut })
+                      setFormData({ ...formData, is_active: value === 'true' })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="closed">Fermée</SelectItem>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,7 +255,7 @@ const BoutiquesPage = () => {
       </div>
 
       {/* Boutiques Grid */}
-      {boutiques.length === 0 ? (
+      {warehouses.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Store className="h-12 w-12 text-muted-foreground mb-4" />
@@ -296,36 +270,36 @@ const BoutiquesPage = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {boutiques.map((boutique) => (
-            <Card key={boutique.id} className="hover:shadow-lg transition-shadow">
+          {warehouses.map((warehouse) => (
+            <Card key={warehouse.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-2">
                     <Store className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">{boutique.nom}</CardTitle>
+                    <CardTitle className="text-xl">{warehouse.name}</CardTitle>
                   </div>
-                  <Badge className={getStatusColor(boutique.statut)}>
-                    {getStatusLabel(boutique.statut)}
+                  <Badge className={getStatusColor(warehouse.is_active)}>
+                    {getStatusLabel(warehouse.is_active)}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {boutique.ville && (
+                {warehouse.city && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <MapPin className="mr-2 h-4 w-4" />
-                    {boutique.ville}
+                    {warehouse.city}
                   </div>
                 )}
-                {boutique.telephone && (
+                {warehouse.phone && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Phone className="mr-2 h-4 w-4" />
-                    {boutique.telephone}
+                    {warehouse.phone}
                   </div>
                 )}
-                {boutique.responsable_nom && (
+                {warehouse.manager_name && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <User className="mr-2 h-4 w-4" />
-                    {boutique.responsable_nom}
+                    {warehouse.manager_name}
                   </div>
                 )}
 
@@ -333,14 +307,14 @@ const BoutiquesPage = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEdit(boutique)}
+                    onClick={() => handleEdit(warehouse)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(boutique.id)}
+                    onClick={() => handleDelete(warehouse.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
