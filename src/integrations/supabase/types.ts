@@ -14,60 +14,8 @@ export type Database = {
   }
   public: {
     Tables: {
-      boutiques: {
-        Row: {
-          adresse: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          latitude: number | null
-          longitude: number | null
-          nom: string
-          responsable_nom: string | null
-          responsable_telephone: string | null
-          statut: string | null
-          telephone: string | null
-          updated_at: string | null
-          user_id: string
-          ville: string | null
-        }
-        Insert: {
-          adresse?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          nom: string
-          responsable_nom?: string | null
-          responsable_telephone?: string | null
-          statut?: string | null
-          telephone?: string | null
-          updated_at?: string | null
-          user_id: string
-          ville?: string | null
-        }
-        Update: {
-          adresse?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          nom?: string
-          responsable_nom?: string | null
-          responsable_telephone?: string | null
-          statut?: string | null
-          telephone?: string | null
-          updated_at?: string | null
-          user_id?: string
-          ville?: string | null
-        }
-        Relationships: []
-      }
       caisses_journalieres: {
         Row: {
-          boutique_id: string
           cloture_par: string | null
           created_at: string | null
           date: string
@@ -80,12 +28,13 @@ export type Database = {
           ouvert_par: string | null
           solde_cloture: number | null
           solde_ouverture: number | null
+          solde_theorique: number | null
           statut: string | null
           updated_at: string | null
           user_id: string
+          warehouse_id: string | null
         }
         Insert: {
-          boutique_id: string
           cloture_par?: string | null
           created_at?: string | null
           date: string
@@ -98,12 +47,13 @@ export type Database = {
           ouvert_par?: string | null
           solde_cloture?: number | null
           solde_ouverture?: number | null
+          solde_theorique?: number | null
           statut?: string | null
           updated_at?: string | null
           user_id: string
+          warehouse_id?: string | null
         }
         Update: {
-          boutique_id?: string
           cloture_par?: string | null
           created_at?: string | null
           date?: string
@@ -116,16 +66,18 @@ export type Database = {
           ouvert_par?: string | null
           solde_cloture?: number | null
           solde_ouverture?: number | null
+          solde_theorique?: number | null
           statut?: string | null
           updated_at?: string | null
           user_id?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "caisses_journalieres_boutique_id_fkey"
-            columns: ["boutique_id"]
+            foreignKeyName: "caisses_journalieres_warehouse_id_fkey"
+            columns: ["warehouse_id"]
             isOneToOne: false
-            referencedRelation: "boutiques"
+            referencedRelation: "stock_warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -3530,7 +3482,6 @@ export type Database = {
       }
       vente_orders: {
         Row: {
-          boutique_id: string | null
           caisse_id: string | null
           client_address: string | null
           client_email: string
@@ -3554,9 +3505,9 @@ export type Database = {
           tva_rate: number
           updated_at: string | null
           user_id: string
+          warehouse_id: string | null
         }
         Insert: {
-          boutique_id?: string | null
           caisse_id?: string | null
           client_address?: string | null
           client_email: string
@@ -3580,9 +3531,9 @@ export type Database = {
           tva_rate?: number
           updated_at?: string | null
           user_id: string
+          warehouse_id?: string | null
         }
         Update: {
-          boutique_id?: string | null
           caisse_id?: string | null
           client_address?: string | null
           client_email?: string
@@ -3606,15 +3557,9 @@ export type Database = {
           tva_rate?: number
           updated_at?: string | null
           user_id?: string
+          warehouse_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "vente_orders_boutique_id_fkey"
-            columns: ["boutique_id"]
-            isOneToOne: false
-            referencedRelation: "boutiques"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "vente_orders_caisse_id_fkey"
             columns: ["caisse_id"]
@@ -3627,6 +3572,13 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "vente_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
             referencedColumns: ["id"]
           },
         ]

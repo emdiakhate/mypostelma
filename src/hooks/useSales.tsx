@@ -61,8 +61,8 @@ export const useSales = () => {
 
         const today = new Date().toISOString().split('T')[0];
 
-        const { data: caisse, error: caisseCheckError } = await supabase
-          .from('caisses_journalieres')
+        const { data: caisse, error: caisseCheckError } = await (supabase
+          .from('caisses_journalieres') as any)
           .select('id, statut')
           .eq('warehouse_id', formData.warehouse_id)
           .eq('date', today)
@@ -170,8 +170,7 @@ export const useSales = () => {
         // ============================================================
 
         const stockMovements = formData.items.map((item) => ({
-          warehouse_from_id: formData.warehouse_id,
-          warehouse_to_id: null, // NULL = sortie du système
+          warehouse_id: formData.warehouse_id,
           product_id: item.product_id,
           quantity: item.quantity,
           movement_type: 'OUT',
@@ -183,7 +182,7 @@ export const useSales = () => {
 
         const { error: stockError } = await supabase
           .from('stock_movements')
-          .insert(stockMovements);
+          .insert(stockMovements as any);
 
         if (stockError) throw stockError;
 

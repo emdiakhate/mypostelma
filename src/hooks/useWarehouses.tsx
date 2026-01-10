@@ -50,6 +50,7 @@ export const useWarehouses = (filterType?: 'STORE' | 'WAREHOUSE' | 'MOBILE' | 'O
       setWarehouses(
         (data || []).map((w) => ({
           ...w,
+          type: w.type as 'STORE' | 'WAREHOUSE' | 'MOBILE' | 'OTHER',
           created_at: new Date(w.created_at),
           updated_at: new Date(w.updated_at),
         }))
@@ -95,6 +96,7 @@ export const useWarehouses = (filterType?: 'STORE' | 'WAREHOUSE' | 'MOBILE' | 'O
 
       const newWarehouse: Warehouse = {
         ...data,
+        type: data.type as 'STORE' | 'WAREHOUSE' | 'MOBILE' | 'OTHER',
         created_at: new Date(data.created_at),
         updated_at: new Date(data.updated_at),
       };
