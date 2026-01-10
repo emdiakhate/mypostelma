@@ -23,7 +23,8 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
   const loadCaisses = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      // Use type assertion since the table is newly created and types not yet regenerated
+      let query = (supabase as any)
         .from('caisses_journalieres')
         .select(
           `
@@ -50,7 +51,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
 
       if (error) throw error;
 
-      const caissesData = (data || []).map((c) => ({
+      const caissesData: CaisseJournaliere[] = (data || []).map((c: any) => ({
         ...c,
         date: new Date(c.date),
         heure_ouverture: c.heure_ouverture ? new Date(c.heure_ouverture) : undefined,
@@ -84,7 +85,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
   const loadMouvements = useCallback(
     async (caisseId: string) => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('mouvements_caisse')
           .select('*')
           .eq('caisse_id', caisseId)
@@ -93,7 +94,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
         if (error) throw error;
 
         setMouvements(
-          (data || []).map((m) => ({
+          (data || []).map((m: any) => ({
             ...m,
             created_at: new Date(m.created_at),
           }))
@@ -124,12 +125,12 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
 
       // Vérifier qu'il n'y a pas déjà une caisse ouverte
       const today = new Date().toISOString().split('T')[0];
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('caisses_journalieres')
         .select('id')
         .eq('boutique_id', formData.boutique_id)
         .eq('date', today)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         toast({
@@ -140,7 +141,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
         return null;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('caisses_journalieres')
         .insert([
           {
@@ -197,13 +198,13 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
 
       // Calculer le solde théorique
       const { data: theorique } = await supabase.rpc(
-        'calculer_solde_theorique_caisse',
+        'calculer_solde_theorique_caisse' as any,
         { p_caisse_id: caisseId }
       );
 
       const ecart = formData.solde_cloture - (theorique || 0);
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('caisses_journalieres')
         .update({
           solde_cloture: formData.solde_cloture,
@@ -227,7 +228,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
                 notes_cloture: formData.notes_cloture,
                 heure_cloture: new Date(),
                 cloture_par: userData.user.id,
-                statut: 'fermee',
+                statut: 'fermee' as const,
               }
             : c
         )
@@ -262,7 +263,7 @@ export const useCaisseJournaliere = (filters?: CaisseFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('mouvements_caisse')
         .insert([
           {
