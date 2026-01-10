@@ -390,6 +390,12 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             path: '/app/caisse/journaliere',
           },
           {
+            id: 'caisse-nouvelle-vente',
+            label: 'Nouvelle Vente',
+            icon: ShoppingCart,
+            path: '/app/caisse/nouvelle-vente',
+          },
+          {
             id: 'caisse-boutiques',
             label: 'Boutiques',
             icon: Store,

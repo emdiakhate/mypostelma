@@ -101,6 +101,7 @@ import RapportsPage from "./pages/rapports/index";
 import CaisseDashboardPage from "./pages/caisse/dashboard/index";
 import BoutiquesPage from "./pages/caisse/boutiques/index";
 import CaisseJournalierePage from "./pages/caisse/journaliere/index";
+import NouvelleVentePage from "./pages/caisse/nouvelle-vente/index";
 
 const queryClient = new QueryClient();
 
@@ -197,6 +198,7 @@ function MainLayout() {
         <Route path="/caisse/dashboard" element={<CaisseDashboardPage />} />
         <Route path="/caisse/boutiques" element={<BoutiquesPage />} />
         <Route path="/caisse/journaliere" element={<CaisseJournalierePage />} />
+        <Route path="/caisse/nouvelle-vente" element={<NouvelleVentePage />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)

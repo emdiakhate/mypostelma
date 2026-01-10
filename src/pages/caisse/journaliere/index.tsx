@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DollarSign, TrendingUp, TrendingDown, Lock, Unlock, Plus, Minus } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Lock, Unlock, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import { useCaisseJournaliere } from '@/hooks/useCaisseJournaliere';
 import type { CaisseOuvertureFormData, CaisseClotureFormData, MouvementCaisseFormData, MoyenPaiement, MouvementCaisseType } from '@/types/caisse';
 
 const CaisseJournalierePage = () => {
+  const navigate = useNavigate();
   const { boutiques } = useBoutiques();
   const { caisseActive, mouvements, ouvrirCaisse, cloturerCaisse, ajouterMouvement, getStatistiquesCaisse } = useCaisseJournaliere();
 
@@ -212,6 +214,10 @@ const CaisseJournalierePage = () => {
           </Dialog>
         ) : (
           <div className="flex space-x-2">
+            <Button onClick={() => navigate('/app/caisse/nouvelle-vente')}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Nouvelle Vente
+            </Button>
             <Dialog open={mouvementOpen} onOpenChange={setMouvementOpen}>
               <Button variant="outline" onClick={() => setMouvementOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
