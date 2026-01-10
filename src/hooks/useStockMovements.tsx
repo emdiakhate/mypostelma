@@ -17,7 +17,8 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
   const loadMovements = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      // Use type assertion since the table is newly created and types not yet regenerated
+      let query = (supabase as any)
         .from('stock_movements')
         .select(
           `
@@ -53,7 +54,7 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       if (error) throw error;
 
       setMovements(
-        (data || []).map((m) => ({
+        (data || []).map((m: any) => ({
           ...m,
           created_at: new Date(m.created_at),
         }))
@@ -73,16 +74,19 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
   const loadStockActuel = useCallback(
     async (boutiqueId?: string) => {
       try {
-        let query = supabase
-          .from('stock_actuel')
+        // Calculate stock from movements (stock_actuel is a materialized view that may not exist)
+        let query = (supabase as any)
+          .from('stock_movements')
           .select(
             `
-          *,
-          boutique:boutiques(id, nom),
-          produit:vente_products(id, name, sku, price)
-        `
+            boutique_id,
+            produit_id,
+            quantite,
+            boutique:boutiques(id, nom),
+            produit:vente_products(id, name, sku, price)
+          `
           )
-          .order('quantite_disponible', { ascending: true });
+          .eq('statut', 'completed');
 
         if (boutiqueId) {
           query = query.eq('boutique_id', boutiqueId);
@@ -92,12 +96,37 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
 
         if (error) throw error;
 
-        setStockActuel(
-          (data || []).map((s) => ({
-            ...s,
-            derniere_mise_a_jour: new Date(s.derniere_mise_a_jour),
-          }))
+        // Aggregate by boutique_id + produit_id
+        const stockMap = new Map<string, StockActuel>();
+
+        (data || []).forEach((m: any) => {
+          const key = `${m.boutique_id}-${m.produit_id}`;
+          const existing = stockMap.get(key);
+
+          if (existing) {
+            existing.quantite_disponible += m.quantite || 0;
+            existing.derniere_mise_a_jour = new Date();
+          } else {
+            stockMap.set(key, {
+              boutique_id: m.boutique_id,
+              produit_id: m.produit_id,
+              quantite_disponible: m.quantite || 0,
+              derniere_mise_a_jour: new Date(),
+              boutique: m.boutique,
+              produit: m.produit,
+            });
+          }
+        });
+
+        // Filter out negative or zero stock
+        const stockList = Array.from(stockMap.values()).filter(
+          (s) => s.quantite_disponible > 0
         );
+
+        // Sort by quantity ascending
+        stockList.sort((a, b) => a.quantite_disponible - b.quantite_disponible);
+
+        setStockActuel(stockList);
       } catch (error: any) {
         console.error('Error loading stock actuel:', error);
         toast({
@@ -121,7 +150,7 @@ export const useStockMovements = (filters?: StockMovementFilters) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('stock_movements')
         .insert([
           {

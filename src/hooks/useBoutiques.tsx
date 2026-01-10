@@ -11,7 +11,8 @@ export const useBoutiques = () => {
   const loadBoutiques = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // Use type assertion since the table is newly created and types not yet regenerated
+      const { data, error } = await (supabase as any)
         .from('boutiques')
         .select('*')
         .order('nom', { ascending: true });
@@ -19,7 +20,7 @@ export const useBoutiques = () => {
       if (error) throw error;
 
       setBoutiques(
-        (data || []).map((b) => ({
+        (data || []).map((b: any) => ({
           ...b,
           created_at: new Date(b.created_at),
           updated_at: new Date(b.updated_at),
@@ -48,7 +49,7 @@ export const useBoutiques = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('boutiques')
         .insert([
           {
@@ -92,7 +93,7 @@ export const useBoutiques = () => {
     updates: Partial<BoutiqueFormData>
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('boutiques')
         .update(updates)
         .eq('id', id);
@@ -126,7 +127,7 @@ export const useBoutiques = () => {
 
   const deleteBoutique = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase.from('boutiques').delete().eq('id', id);
+      const { error } = await (supabase as any).from('boutiques').delete().eq('id', id);
 
       if (error) throw error;
 

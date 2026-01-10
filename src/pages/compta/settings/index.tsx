@@ -26,6 +26,7 @@ import {
   CheckCircle,
   Loader2,
   FileSignature,
+  PenTool,
 } from 'lucide-react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { TEMPLATES } from '@/data/invoiceTemplates';

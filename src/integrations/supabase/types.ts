@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      boutiques: {
+        Row: {
+          adresse: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nom: string
+          responsable_nom: string | null
+          responsable_telephone: string | null
+          statut: string | null
+          telephone: string | null
+          updated_at: string | null
+          user_id: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nom: string
+          responsable_nom?: string | null
+          responsable_telephone?: string | null
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+          user_id: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nom?: string
+          responsable_nom?: string | null
+          responsable_telephone?: string | null
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+          user_id?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      caisses_journalieres: {
+        Row: {
+          boutique_id: string
+          cloture_par: string | null
+          created_at: string | null
+          date: string
+          ecart: number | null
+          heure_cloture: string | null
+          heure_ouverture: string | null
+          id: string
+          notes_cloture: string | null
+          notes_ouverture: string | null
+          ouvert_par: string | null
+          solde_cloture: number | null
+          solde_ouverture: number | null
+          statut: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          boutique_id: string
+          cloture_par?: string | null
+          created_at?: string | null
+          date: string
+          ecart?: number | null
+          heure_cloture?: string | null
+          heure_ouverture?: string | null
+          id?: string
+          notes_cloture?: string | null
+          notes_ouverture?: string | null
+          ouvert_par?: string | null
+          solde_cloture?: number | null
+          solde_ouverture?: number | null
+          statut?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          boutique_id?: string
+          cloture_par?: string | null
+          created_at?: string | null
+          date?: string
+          ecart?: number | null
+          heure_cloture?: string | null
+          heure_ouverture?: string | null
+          id?: string
+          notes_cloture?: string | null
+          notes_ouverture?: string | null
+          ouvert_par?: string | null
+          solde_cloture?: number | null
+          solde_ouverture?: number | null
+          statut?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caisses_journalieres_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communication_logs: {
         Row: {
           created_at: string
@@ -1873,6 +1989,53 @@ export type Database = {
           },
         ]
       }
+      mouvements_caisse: {
+        Row: {
+          caisse_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          montant: number
+          moyen_paiement: string
+          reference_id: string | null
+          reference_type: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          caisse_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          montant: number
+          moyen_paiement: string
+          reference_id?: string | null
+          reference_type?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          caisse_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mouvements_caisse_caisse_id_fkey"
+            columns: ["caisse_id"]
+            isOneToOne: false
+            referencedRelation: "caisses_journalieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       my_business: {
         Row: {
           business_name: string
@@ -3367,6 +3530,8 @@ export type Database = {
       }
       vente_orders: {
         Row: {
+          boutique_id: string | null
+          caisse_id: string | null
           client_address: string | null
           client_email: string
           client_name: string
@@ -3375,6 +3540,7 @@ export type Database = {
           created_at: string | null
           delivered_at: string | null
           id: string
+          moyen_paiement: string | null
           notes: string | null
           number: string
           payment_status: string
@@ -3390,6 +3556,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          boutique_id?: string | null
+          caisse_id?: string | null
           client_address?: string | null
           client_email: string
           client_name: string
@@ -3398,6 +3566,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           id?: string
+          moyen_paiement?: string | null
           notes?: string | null
           number: string
           payment_status?: string
@@ -3413,6 +3582,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          boutique_id?: string | null
+          caisse_id?: string | null
           client_address?: string | null
           client_email?: string
           client_name?: string
@@ -3421,6 +3592,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           id?: string
+          moyen_paiement?: string | null
           notes?: string | null
           number?: string
           payment_status?: string
@@ -3436,6 +3608,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vente_orders_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_orders_caisse_id_fkey"
+            columns: ["caisse_id"]
+            isOneToOne: false
+            referencedRelation: "caisses_journalieres"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vente_orders_quote_id_fkey"
             columns: ["quote_id"]
@@ -4312,6 +4498,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculer_solde_theorique_caisse: {
+        Args: { p_caisse_id: string }
+        Returns: number
+      }
       check_stock_available: {
         Args: {
           p_product_id: string
