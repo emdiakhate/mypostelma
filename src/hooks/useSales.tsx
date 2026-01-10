@@ -16,7 +16,7 @@ export interface VenteSaleFormData {
   client_email: string;
   client_phone?: string;
   client_address?: string;
-  boutique_id: string; // IMPORTANT: Boutique où se fait la vente
+  warehouse_id: string; // IMPORTANT: Warehouse (boutique) où se fait la vente
   moyen_paiement: 'cash' | 'mobile_money' | 'carte' | 'cheque' | 'virement';
   items: VenteSaleItem[];
   tva_rate?: number;
@@ -61,37 +61,33 @@ export const useSales = () => {
 
         const today = new Date().toISOString().split('T')[0];
 
-        const { data: caisse, error: caisseCheckError } = await (supabase as any)
+        const { data: caisse, error: caisseCheckError } = await supabase
           .from('caisses_journalieres')
           .select('id, statut')
-          .eq('boutique_id', formData.boutique_id)
+          .eq('warehouse_id', formData.warehouse_id)
           .eq('date', today)
           .eq('statut', 'ouverte')
           .single();
 
         if (caisseCheckError || !caisse) {
           throw new Error(
-            'Aucune caisse ouverte pour cette boutique aujourd\'hui. Veuillez ouvrir la caisse d\'abord.'
+            'Aucune caisse ouverte pour ce warehouse aujourd\'hui. Veuillez ouvrir la caisse d\'abord.'
           );
         }
 
         // ============================================================
-        // ÉTAPE 2: VÉRIFIER LE STOCK DISPONIBLE (via calcul des mouvements)
+        // ÉTAPE 2: VÉRIFIER LE STOCK DISPONIBLE
         // ============================================================
 
         for (const item of formData.items) {
-          // Calculer le stock actuel à partir des mouvements
-          const { data: movementsData } = await (supabase as any)
-            .from('stock_movements')
-            .select('quantite')
-            .eq('boutique_id', formData.boutique_id)
-            .eq('produit_id', item.product_id)
-            .eq('statut', 'completed');
+          const { data: stockData } = await supabase
+            .from('stock_levels')
+            .select('current_quantity')
+            .eq('warehouse_id', formData.warehouse_id)
+            .eq('product_id', item.product_id)
+            .single();
 
-          const quantiteDisponible = (movementsData || []).reduce(
-            (sum: number, m: any) => sum + (m.quantite || 0),
-            0
-          );
+          const quantiteDisponible = stockData?.current_quantity || 0;
 
           if (quantiteDisponible < item.quantity) {
             throw new Error(
@@ -138,10 +134,10 @@ export const useSales = () => {
               tva_rate,
               confirmed_at: new Date().toISOString(),
               notes: formData.notes,
-              boutique_id: formData.boutique_id,
+              warehouse_id: formData.warehouse_id,
               caisse_id: caisse.id,
               moyen_paiement: formData.moyen_paiement,
-            } as any,
+            },
           ])
           .select()
           .single();
@@ -174,18 +170,18 @@ export const useSales = () => {
         // ============================================================
 
         const stockMovements = formData.items.map((item) => ({
-          boutique_id: formData.boutique_id,
-          produit_id: item.product_id,
-          quantite: -item.quantity, // NÉGATIF = SORTIE
-          type: 'sortie',
-          reference_type: 'vente',
+          warehouse_from_id: formData.warehouse_id,
+          warehouse_to_id: null, // NULL = sortie du système
+          product_id: item.product_id,
+          quantity: item.quantity,
+          movement_type: 'OUT',
+          reference_type: 'SALE',
           reference_id: order.id,
           user_id,
           notes: `Vente ${orderNumber} - ${item.product_name}`,
-          statut: 'completed',
         }));
 
-        const { error: stockError } = await (supabase as any)
+        const { error: stockError } = await supabase
           .from('stock_movements')
           .insert(stockMovements);
 
@@ -195,7 +191,7 @@ export const useSales = () => {
         // ÉTAPE 8: CRÉER LE MOUVEMENT DE CAISSE (ENTRÉE)
         // ============================================================
 
-        const { error: caisseError } = await (supabase as any)
+        const { error: caisseError } = await supabase
           .from('mouvements_caisse')
           .insert([
             {

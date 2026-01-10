@@ -21,9 +21,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { useBoutiques } from '@/hooks/useBoutiques';
+import { useWarehouses } from '@/hooks/useWarehouses';
 import { useSales, type VenteSaleItem } from '@/hooks/useSales';
-import { useStockMovements } from '@/hooks/useStockMovements';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
@@ -35,12 +34,12 @@ interface Product {
 
 const NouvelleVentePage = () => {
   const navigate = useNavigate();
-  const { boutiques } = useBoutiques();
+  const { warehouses } = useWarehouses('STORE'); // Filter for STORE type (boutiques)
   const { createSale, loading } = useSales();
-  const { stockActuel } = useStockMovements();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [boutiqueId, setBoutiqueId] = useState('');
+  const [stockLevels, setStockLevels] = useState<any[]>([]);
+  const [warehouseId, setWarehouseId] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -66,6 +65,27 @@ const NouvelleVentePage = () => {
 
     loadProducts();
   }, []);
+
+  // Charger les niveaux de stock pour le warehouse sélectionné
+  useEffect(() => {
+    const loadStockLevels = async () => {
+      if (!warehouseId) {
+        setStockLevels([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('stock_levels')
+        .select('product_id, current_quantity')
+        .eq('warehouse_id', warehouseId);
+
+      if (data) {
+        setStockLevels(data);
+      }
+    };
+
+    loadStockLevels();
+  }, [warehouseId]);
 
   const addItem = () => {
     if (products.length === 0) return;
@@ -112,11 +132,9 @@ const NouvelleVentePage = () => {
   };
 
   const getStockDisponible = (productId: string): number => {
-    if (!boutiqueId) return 0;
-    const stock = stockActuel.find(
-      (s) => s.boutique_id === boutiqueId && s.produit_id === productId
-    );
-    return stock?.quantite_disponible || 0;
+    if (!warehouseId) return 0;
+    const stock = stockLevels.find((s) => s.product_id === productId);
+    return stock?.current_quantity || 0;
   };
 
   const totalHT = items.reduce((sum, item) => sum + item.total, 0);
@@ -125,7 +143,7 @@ const NouvelleVentePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!boutiqueId) {
+    if (!warehouseId) {
       alert('Veuillez sélectionner une boutique');
       return;
     }
@@ -140,7 +158,7 @@ const NouvelleVentePage = () => {
       client_email: clientEmail,
       client_phone: clientPhone,
       client_address: clientAddress,
-      boutique_id: boutiqueId,
+      warehouse_id: warehouseId,
       moyen_paiement: moyenPaiement,
       items,
       notes,
@@ -180,17 +198,17 @@ const NouvelleVentePage = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="boutique">Boutique *</Label>
-                <Select value={boutiqueId} onValueChange={setBoutiqueId} required>
+                <Label htmlFor="warehouse">Boutique *</Label>
+                <Select value={warehouseId} onValueChange={setWarehouseId} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une boutique" />
                   </SelectTrigger>
                   <SelectContent>
-                    {boutiques
-                      .filter((b) => b.statut === 'active')
-                      .map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.nom}
+                    {warehouses
+                      .filter((w) => w.is_active)
+                      .map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}
                         </SelectItem>
                       ))}
                   </SelectContent>
