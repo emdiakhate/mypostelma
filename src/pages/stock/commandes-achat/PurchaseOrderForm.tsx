@@ -368,7 +368,6 @@ export default function PurchaseOrderForm({
                 <SelectValue placeholder="Sélectionner un entrepôt..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Aucun</SelectItem>
                 {warehouses
                   .filter((w) => w.is_active)
                   .map((warehouse) => (
