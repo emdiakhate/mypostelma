@@ -5,7 +5,7 @@
  * Création, édition, archivage et organisation par catégories.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,23 +48,11 @@ import {
   BarChart3,
   Grid3x3,
   List,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  type: 'product' | 'service';
-  category: string;
-  price: number;
-  cost?: number;
-  stock?: number;
-  unit: string;
-  sku?: string;
-  status: 'active' | 'archived';
-  createdAt: Date;
-}
+import { useProducts } from '@/hooks/useVente';
+import type { Product } from '@/types/vente';
 
 const CATEGORIES = [
   'Formation',
@@ -81,6 +69,8 @@ const UNITS = ['Unité', 'Heure', 'Jour', 'Mois', 'Forfait', 'Licence'];
 
 export default function CataloguePage() {
   const { toast } = useToast();
+  const { products, loading, loadProducts, createProduct, updateProduct, deleteProduct, toggleArchive } = useProducts();
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'product' | 'service'>('all');
@@ -88,125 +78,85 @@ export default function CataloguePage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('active');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Formation Social Media Marketing',
-      description: 'Formation complète sur le marketing des réseaux sociaux',
-      type: 'service',
-      category: 'Formation',
-      price: 1500,
-      cost: 400,
-      unit: 'Forfait',
-      status: 'active',
-      createdAt: new Date(2025, 10, 1),
-    },
-    {
-      id: '2',
-      name: 'Audit Réseaux Sociaux',
-      description: 'Analyse complète de votre présence sur les réseaux sociaux',
-      type: 'service',
-      category: 'Conseil',
-      price: 800,
-      cost: 200,
-      unit: 'Forfait',
-      status: 'active',
-      createdAt: new Date(2025, 11, 15),
-    },
-    {
-      id: '3',
-      name: 'Gestion de Campagne Publicitaire',
-      description: 'Création et gestion de campagnes publicitaires sur Meta et Google',
-      type: 'service',
-      category: 'Marketing',
-      price: 150,
-      cost: 50,
-      unit: 'Heure',
-      status: 'active',
-      createdAt: new Date(2025, 11, 20),
-    },
-    {
-      id: '4',
-      name: 'Abonnement MyPostelma Pro',
-      description: 'Accès complet à la plateforme MyPostelma',
-      type: 'service',
-      category: 'Abonnement',
-      price: 99,
-      unit: 'Mois',
-      status: 'active',
-      createdAt: new Date(2025, 9, 1),
-    },
-    {
-      id: '5',
-      name: 'Création de Site Web',
-      description: 'Développement de site web responsive',
-      type: 'service',
-      category: 'Développement',
-      price: 5000,
-      cost: 1500,
-      unit: 'Forfait',
-      status: 'archived',
-      createdAt: new Date(2025, 8, 10),
-    },
-  ]);
-
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+  const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
-    type: 'service',
+    type: 'service' as 'product' | 'service',
     category: CATEGORIES[0],
     price: 0,
     cost: 0,
     stock: 0,
     unit: UNITS[0],
     sku: '',
-    status: 'active',
   });
 
+  // Charger les produits au montage (le hook le fait déjà automatiquement)
+  
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || product.type === filterType;
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
-
     return matchesSearch && matchesType && matchesCategory && matchesStatus;
   });
 
-  const handleCreateProduct = () => {
-    const product: Product = {
-      id: Date.now().toString(),
-      name: newProduct.name!,
-      description: newProduct.description!,
-      type: newProduct.type!,
-      category: newProduct.category!,
-      price: newProduct.price!,
-      cost: newProduct.cost,
-      stock: newProduct.type === 'product' ? newProduct.stock : undefined,
-      unit: newProduct.unit!,
-      sku: newProduct.sku,
-      status: 'active',
-      createdAt: new Date(),
-    };
+  const handleCreateProduct = async () => {
+    setSaving(true);
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, {
+          name: newProduct.name,
+          description: newProduct.description,
+          type: newProduct.type,
+          category: newProduct.category,
+          price: newProduct.price,
+          cost: newProduct.cost || undefined,
+          stock: newProduct.type === 'product' ? newProduct.stock : undefined,
+          unit: newProduct.unit,
+          sku: newProduct.sku || undefined,
+        });
+        toast({
+          title: 'Produit mis à jour',
+          description: 'Le produit a été mis à jour avec succès.',
+        });
+      } else {
+        await createProduct({
+          name: newProduct.name,
+          description: newProduct.description,
+          type: newProduct.type,
+          category: newProduct.category,
+          price: newProduct.price,
+          cost: newProduct.cost || undefined,
+          stock: newProduct.type === 'product' ? newProduct.stock : undefined,
+          unit: newProduct.unit,
+          sku: newProduct.sku || undefined,
+          status: 'active',
+        });
+        toast({
+          title: 'Produit créé',
+          description: 'Le produit a été ajouté au catalogue.',
+        });
+      }
 
-    if (editingProduct) {
-      setProducts(products.map((p) => (p.id === editingProduct.id ? { ...product, id: editingProduct.id } : p)));
+      setIsCreateDialogOpen(false);
+      setEditingProduct(null);
+      resetForm();
+    } catch (error) {
       toast({
-        title: 'Produit mis à jour',
-        description: 'Le produit a été mis à jour avec succès.',
+        title: 'Erreur',
+        description: 'Une erreur est survenue.',
+        variant: 'destructive',
       });
-    } else {
-      setProducts([product, ...products]);
-      toast({
-        title: 'Produit créé',
-        description: 'Le produit a été ajouté au catalogue.',
-      });
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setIsCreateDialogOpen(false);
-    setEditingProduct(null);
+  const resetForm = () => {
     setNewProduct({
       name: '',
       description: '',
@@ -217,34 +167,57 @@ export default function CataloguePage() {
       stock: 0,
       unit: UNITS[0],
       sku: '',
-      status: 'active',
     });
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-    setNewProduct(product);
+    setNewProduct({
+      name: product.name,
+      description: product.description || '',
+      type: product.type,
+      category: product.category,
+      price: product.price,
+      cost: product.cost || 0,
+      stock: product.stock || 0,
+      unit: product.unit,
+      sku: product.sku || '',
+    });
     setIsCreateDialogOpen(true);
   };
 
-  const handleToggleArchive = (productId: string) => {
-    setProducts(
-      products.map((p) =>
-        p.id === productId ? { ...p, status: p.status === 'active' ? 'archived' : 'active' } : p
-      )
-    );
-    toast({
-      title: 'Statut modifié',
-      description: 'Le statut du produit a été modifié.',
-    });
+  const handleToggleArchive = async (product: Product) => {
+    try {
+      await updateProduct(product.id, {
+        status: product.status === 'active' ? 'archived' : 'active',
+      });
+      toast({
+        title: 'Statut modifié',
+        description: 'Le statut du produit a été modifié.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier le statut.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter((p) => p.id !== productId));
-    toast({
-      title: 'Produit supprimé',
-      description: 'Le produit a été supprimé du catalogue.',
-    });
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+      toast({
+        title: 'Produit supprimé',
+        description: 'Le produit a été supprimé du catalogue.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le produit.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const stats = {
@@ -296,18 +269,7 @@ export default function CataloguePage() {
               <Button
                 onClick={() => {
                   setEditingProduct(null);
-                  setNewProduct({
-                    name: '',
-                    description: '',
-                    type: 'service',
-                    category: CATEGORIES[0],
-                    price: 0,
-                    cost: 0,
-                    stock: 0,
-                    unit: UNITS[0],
-                    sku: '',
-                    status: 'active',
-                  });
+                  resetForm();
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -451,10 +413,11 @@ export default function CataloguePage() {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={saving}>
                   Annuler
                 </Button>
-                <Button onClick={handleCreateProduct} disabled={!newProduct.name || !newProduct.price}>
+                <Button onClick={handleCreateProduct} disabled={!newProduct.name || !newProduct.price || saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingProduct ? 'Mettre à jour' : 'Créer'}
                 </Button>
               </DialogFooter>
@@ -620,7 +583,7 @@ export default function CataloguePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleToggleArchive(product.id)}
+                    onClick={() => handleToggleArchive(product)}
                   >
                     <Archive className="h-3 w-3" />
                   </Button>
@@ -695,7 +658,7 @@ export default function CataloguePage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleToggleArchive(product.id)}
+                        onClick={() => handleToggleArchive(product)}
                       >
                         <Archive className="h-4 w-4" />
                       </Button>

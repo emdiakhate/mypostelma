@@ -287,6 +287,91 @@ export default function ComptaSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Signature */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Signature</CardTitle>
+            <CardDescription>
+              Signature pour vos documents officiels
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <input
+              ref={signatureInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleSignatureSelect}
+              className="hidden"
+            />
+
+            {settings?.signature_url ? (
+              <div className="space-y-3">
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <img
+                    src={settings.signature_url}
+                    alt="Signature"
+                    className="max-h-24 mx-auto object-contain"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => signatureInputRef.current?.click()}
+                    disabled={uploadingSignature}
+                    className="flex-1"
+                  >
+                    {uploadingSignature ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Upload...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Changer
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={deleteSignature}
+                    disabled={uploadingSignature}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <PenTool className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground mb-4">Aucune signature</p>
+                <Button
+                  onClick={() => signatureInputRef.current?.click()}
+                  disabled={uploadingSignature}
+                  size="sm"
+                >
+                  {uploadingSignature ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Upload...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Uploader une signature
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  PNG, JPG, WebP - Max 2 MB
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Coordonnées */}
         <Card className="lg:col-span-2">
           <CardHeader>
