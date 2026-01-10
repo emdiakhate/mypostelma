@@ -54,6 +54,7 @@ import {
   AlertCircle,
   Camera,
   Truck,
+  Store,
 } from 'lucide-react';
 import { isFeatureEnabled } from '@/config/featureFlags';
 
@@ -110,6 +111,7 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
     if (path.startsWith('/app/vente') || path.startsWith('/vente')) expanded.push('vente');
     if (path.startsWith('/app/stock') || path.startsWith('/stock')) expanded.push('stock');
     if (path.startsWith('/app/compta') || path.startsWith('/compta')) expanded.push('compta');
+    if (path.startsWith('/app/caisse') || path.startsWith('/caisse')) expanded.push('caisse');
     if (path.startsWith('/app/reporting') || path.startsWith('/reporting')) expanded.push('reporting');
     if (path.startsWith('/app/admin') || path.startsWith('/admin')) expanded.push('admin');
 
@@ -366,6 +368,32 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             icon: Settings,
             path: '/app/compta/settings',
             disabled: !isFeatureEnabled('ENABLE_COMPTA_MODULE'),
+          },
+        ],
+      },
+      {
+        id: 'caisse',
+        label: 'Caisse',
+        icon: Store,
+        badge: 'Nouveau',
+        children: [
+          {
+            id: 'caisse-dashboard',
+            label: 'Dashboard Multi-Boutiques',
+            icon: BarChart3,
+            path: '/app/caisse/dashboard',
+          },
+          {
+            id: 'caisse-journaliere',
+            label: 'Caisse Journalière',
+            icon: DollarSign,
+            path: '/app/caisse/journaliere',
+          },
+          {
+            id: 'caisse-boutiques',
+            label: 'Boutiques',
+            icon: Store,
+            path: '/app/caisse/boutiques',
           },
         ],
       },

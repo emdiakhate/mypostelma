@@ -97,6 +97,11 @@ import ComptaSettingsPage from "./pages/compta/settings/index";
 import GlobalDashboardPage from "./pages/dashboard-global/index";
 import RapportsPage from "./pages/rapports/index";
 
+// Caisse Module Pages
+import CaisseDashboardPage from "./pages/caisse/dashboard/index";
+import BoutiquesPage from "./pages/caisse/boutiques/index";
+import CaisseJournalierePage from "./pages/caisse/journaliere/index";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -185,6 +190,13 @@ function MainLayout() {
         <Route path="/compta/factures/:id/edit" element={<FactureFormPage />} />
         <Route path="/compta/scanner" element={<ScannerPage />} />
         <Route path="/compta/settings" element={<ComptaSettingsPage />} />
+
+        {/* ================================================================
+            MODULE CAISSE
+            ================================================================ */}
+        <Route path="/caisse/dashboard" element={<CaisseDashboardPage />} />
+        <Route path="/caisse/boutiques" element={<BoutiquesPage />} />
+        <Route path="/caisse/journaliere" element={<CaisseJournalierePage />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)
