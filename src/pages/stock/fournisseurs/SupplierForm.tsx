@@ -226,7 +226,6 @@ export default function SupplierForm({ supplier, onSuccess, onCancel }: Supplier
                 <SelectValue placeholder="Sélectionner..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Aucune</SelectItem>
                 <SelectItem value="Comptant">Comptant</SelectItem>
                 <SelectItem value="Net 15">Net 15 jours</SelectItem>
                 <SelectItem value="Net 30">Net 30 jours</SelectItem>
