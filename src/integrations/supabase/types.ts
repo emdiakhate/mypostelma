@@ -2542,6 +2542,13 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       quick_replies: {
