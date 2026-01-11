@@ -2462,6 +2462,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
             columns: ["purchase_order_id"]
             isOneToOne: false
@@ -2820,7 +2827,15 @@ export type Database = {
           user_id?: string
           warehouse_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventories_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "stock_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_inventory_items: {
         Row: {
@@ -2862,6 +2877,13 @@ export type Database = {
             columns: ["inventory_id"]
             isOneToOne: false
             referencedRelation: "stock_inventories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "vente_products"
             referencedColumns: ["id"]
           },
         ]
