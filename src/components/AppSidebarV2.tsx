@@ -1,20 +1,20 @@
 /**
  * AppSidebarV2 - Nouvelle Sidebar Modulaire
  *
- * Structure à 2 niveaux basée sur les 5 modules principaux :
+ * Structure à 2 niveaux basée sur les modules principaux :
  * - Dashboard
  * - CRM
  * - Marketing
  * - Vente
+ * - Stock
  * - Compta
- * - Reporting
+ * - Caisse
  * - Administration
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -82,24 +82,6 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
   const location = useLocation();
   const { user } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
-  const [isBetaUser, setIsBetaUser] = useState(false);
-
-  // Charger le statut beta_user
-  useEffect(() => {
-    const loadBetaStatus = async () => {
-      if (!user) return;
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('beta_user')
-        .eq('id', user.id)
-        .single();
-
-      setIsBetaUser(data?.beta_user || false);
-    };
-
-    loadBetaStatus();
-  }, [user]);
 
   // Auto-expand le menu actif
   useEffect(() => {
@@ -112,7 +94,6 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
     if (path.startsWith('/app/stock') || path.startsWith('/stock')) expanded.push('stock');
     if (path.startsWith('/app/compta') || path.startsWith('/compta')) expanded.push('compta');
     if (path.startsWith('/app/caisse') || path.startsWith('/caisse')) expanded.push('caisse');
-    if (path.startsWith('/app/reporting') || path.startsWith('/reporting')) expanded.push('reporting');
     if (path.startsWith('/app/admin') || path.startsWith('/admin')) expanded.push('admin');
 
     setExpandedMenus(expanded);
@@ -126,18 +107,6 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         label: 'Dashboard',
         icon: LayoutDashboard,
         path: '/app/dashboard',
-      },
-      {
-        id: 'dashboard-global',
-        label: 'Dashboard Global',
-        icon: BarChart3,
-        path: '/app/dashboard-global',
-      },
-      {
-        id: 'rapports',
-        label: 'Rapports',
-        icon: FileText,
-        path: '/app/rapports',
       },
       {
         id: 'crm',
@@ -404,29 +373,9 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         ],
       },
       {
-        id: 'reporting',
-        label: 'Reporting',
-        icon: BarChart3,
-        children: [
-          {
-            id: 'reporting-analytics',
-            label: 'Analytics',
-            icon: BarChart3,
-            path: '/app/reporting/analytics',
-          },
-          {
-            id: 'reporting-concurrence',
-            label: 'Concurrence',
-            icon: Target,
-            path: '/app/reporting/concurrence',
-          },
-        ],
-      },
-      {
         id: 'admin',
         label: 'Administration',
         icon: Shield,
-        adminOnly: true,
         children: [
           {
             id: 'admin-equipes',
@@ -456,9 +405,9 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
       },
     ];
 
-    // Filtrer les items admin si beta user
-    return items.filter((item) => !item.adminOnly || !isBetaUser);
-  }, [isBetaUser]);
+    // Retourner tous les items (pas de filtre)
+    return items;
+  }, []);
 
   // Vérifier si un path est actif
   const isPathActive = (path?: string): boolean => {
