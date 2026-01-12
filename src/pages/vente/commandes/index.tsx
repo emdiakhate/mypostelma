@@ -1,12 +1,12 @@
 /**
  * Commandes Page
  *
- * Gestion des commandes clients.
- * Suivi du traitement, livraison et facturation.
+ * Gestion des commandes clients - Connecté à la base de données
  */
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   ShoppingCart,
   Search,
   Eye,
@@ -35,143 +42,46 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  Send,
+  MoreVertical,
 } from 'lucide-react';
+import { useOrders } from '@/hooks/useVente';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { Order } from '@/types/vente';
 
-interface Order {
-  id: string;
-  number: string;
-  clientName: string;
-  clientEmail: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed';
-  totalHT: number;
-  totalTTC: number;
-  createdAt: Date;
-  shippedAt?: Date;
-  deliveredAt?: Date;
-  trackingNumber?: string;
-  items: OrderItem[];
-}
-
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-}
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'XOF',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 export default function CommandesPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: '1',
-      number: 'CMD-2026-001',
-      clientName: 'Entreprise ABC',
-      clientEmail: 'contact@abc.com',
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      totalHT: 5000,
-      totalTTC: 6000,
-      createdAt: new Date(2026, 0, 4),
-      items: [
-        { id: '1', name: 'Formation Social Media Marketing', quantity: 1, unitPrice: 1500, total: 1500 },
-        { id: '2', name: 'Audit Réseaux Sociaux', quantity: 1, unitPrice: 800, total: 800 },
-        { id: '3', name: 'Gestion de Campagne', quantity: 20, unitPrice: 145, total: 2900 },
-      ],
-    },
-    {
-      id: '2',
-      number: 'CMD-2026-002',
-      clientName: 'Startup XYZ',
-      clientEmail: 'hello@xyz.io',
-      status: 'processing',
-      paymentStatus: 'paid',
-      totalHT: 3500,
-      totalTTC: 4200,
-      createdAt: new Date(2026, 0, 6),
-      items: [
-        { id: '1', name: 'Abonnement MyPostelma Pro', quantity: 12, unitPrice: 99, total: 1188 },
-        { id: '2', name: 'Formation équipe', quantity: 1, unitPrice: 2312, total: 2312 },
-      ],
-    },
-    {
-      id: '3',
-      number: 'CMD-2026-003',
-      clientName: 'E-commerce Shop',
-      clientEmail: 'team@shop.fr',
-      status: 'shipped',
-      paymentStatus: 'paid',
-      totalHT: 450,
-      totalTTC: 540,
-      createdAt: new Date(2026, 0, 7),
-      shippedAt: new Date(2026, 0, 8),
-      trackingNumber: 'FR123456789',
-      items: [
-        { id: '1', name: 'Pack Starter', quantity: 3, unitPrice: 150, total: 450 },
-      ],
-    },
-    {
-      id: '4',
-      number: 'CMD-2026-004',
-      clientName: 'Agency Digital',
-      clientEmail: 'info@agency.com',
-      status: 'delivered',
-      paymentStatus: 'paid',
-      totalHT: 2800,
-      totalTTC: 3360,
-      createdAt: new Date(2025, 11, 28),
-      shippedAt: new Date(2025, 11, 29),
-      deliveredAt: new Date(2026, 0, 2),
-      trackingNumber: 'FR987654321',
-      items: [
-        { id: '1', name: 'Licence Pro', quantity: 10, unitPrice: 280, total: 2800 },
-      ],
-    },
-    {
-      id: '5',
-      number: 'CMD-2026-005',
-      clientName: 'Commerce Local',
-      clientEmail: 'info@local.com',
-      status: 'pending',
-      paymentStatus: 'pending',
-      totalHT: 1200,
-      totalTTC: 1440,
-      createdAt: new Date(2026, 0, 9),
-      items: [
-        { id: '1', name: 'Consultation', quantity: 8, unitPrice: 150, total: 1200 },
-      ],
-    },
-  ]);
+  const filters = useMemo(() => ({
+    search: searchQuery || undefined,
+    status: filterStatus !== 'all' ? filterStatus as Order['status'] : undefined,
+    payment_status: filterPayment !== 'all' ? filterPayment as Order['payment_status'] : undefined,
+  }), [searchQuery, filterStatus, filterPayment]);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.clientEmail.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchesPayment = filterPayment === 'all' || order.paymentStatus === filterPayment;
+  const { orders, loading, updateOrderStatus, updatePaymentStatus } = useOrders(filters);
 
-    return matchesSearch && matchesStatus && matchesPayment;
-  });
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: orders.length,
     pending: orders.filter((o) => o.status === 'pending').length,
-    processing: orders.filter((o) => o.status === 'processing' || o.status === 'confirmed').length,
+    processing: orders.filter((o) => o.status === 'confirmed' || o.status === 'processing').length,
     shipped: orders.filter((o) => o.status === 'shipped').length,
     revenue: orders
-      .filter((o) => o.paymentStatus === 'paid')
-      .reduce((sum, o) => sum + o.totalTTC, 0),
-  };
+      .filter((o) => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + o.total_ttc, 0),
+  }), [orders]);
 
   const getStatusBadge = (status: Order['status']) => {
     switch (status) {
@@ -220,38 +130,33 @@ export default function CommandesPage() {
     }
   };
 
-  const getPaymentBadge = (status: Order['paymentStatus']) => {
+  const getPaymentBadge = (status: Order['payment_status']) => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline">En attente</Badge>;
       case 'paid':
         return <Badge className="bg-green-600">Payée</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Échec</Badge>;
+      case 'refunded':
+        return <Badge variant="destructive">Remboursé</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(
-      orders.map((o) => {
-        if (o.id === orderId) {
-          const updates: Partial<Order> = { status: newStatus };
-          if (newStatus === 'shipped' && !o.shippedAt) {
-            updates.shippedAt = new Date();
-            updates.trackingNumber = `FR${Math.random().toString().slice(2, 11)}`;
-          }
-          if (newStatus === 'delivered' && !o.deliveredAt) {
-            updates.deliveredAt = new Date();
-          }
-          return { ...o, ...updates };
-        }
-        return o;
-      })
-    );
-    toast({
-      title: 'Statut mis à jour',
-      description: 'Le statut de la commande a été modifié.',
-    });
+  const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
+    try {
+      await updateOrderStatus(orderId, newStatus);
+      toast({
+        title: 'Statut mis à jour',
+        description: 'Le statut de la commande a été modifié.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le statut.',
+      });
+    }
   };
 
   return (
@@ -313,7 +218,7 @@ export default function CommandesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {stats.revenue.toLocaleString()}€
+              {formatCurrency(stats.revenue)}
             </div>
           </CardContent>
         </Card>
@@ -358,7 +263,7 @@ export default function CommandesPage() {
                 <SelectItem value="all">Tous paiements</SelectItem>
                 <SelectItem value="paid">Payées</SelectItem>
                 <SelectItem value="pending">En attente</SelectItem>
-                <SelectItem value="failed">Échec</SelectItem>
+                <SelectItem value="partial">Partiel</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -367,114 +272,127 @@ export default function CommandesPage() {
 
       {/* Orders List */}
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Numéro</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Paiement</TableHead>
-              <TableHead>Montant TTC</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Suivi</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>
-                  <div className="font-mono font-semibold">{order.number}</div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{order.clientName}</div>
-                    <div className="text-xs text-muted-foreground">{order.clientEmail}</div>
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(order.status)}</TableCell>
-                <TableCell>{getPaymentBadge(order.paymentStatus)}</TableCell>
-                <TableCell>
-                  <div className="font-semibold text-green-600">
-                    {order.totalTTC.toLocaleString()}€
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {format(order.createdAt, 'dd MMM yyyy', { locale: fr })}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {order.trackingNumber ? (
-                    <div className="text-xs">
-                      <div className="font-mono">{order.trackingNumber}</div>
-                      {order.shippedAt && (
-                        <div className="text-muted-foreground">
-                          {format(order.shippedAt, 'dd/MM/yyyy', { locale: fr })}
+        <CardHeader>
+          <CardTitle>{orders.length} commande(s)</CardTitle>
+          <CardDescription>Liste de toutes vos commandes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Chargement des commandes...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucune commande</h3>
+              <p className="text-muted-foreground">
+                Les commandes apparaîtront ici une fois créées
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Numéro</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Paiement</TableHead>
+                  <TableHead>Montant TTC</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Suivi</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <div className="font-mono font-semibold">{order.number}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.client_name}</div>
+                        <div className="text-xs text-muted-foreground">{order.client_email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>{getPaymentBadge(order.payment_status)}</TableCell>
+                    <TableCell>
+                      <div className="font-semibold text-green-600">
+                        {formatCurrency(order.total_ttc)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {format(order.created_at, 'dd MMM yyyy', { locale: fr })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {order.tracking_number ? (
+                        <div className="text-xs">
+                          <div className="font-mono">{order.tracking_number}</div>
+                          {order.shipped_at && (
+                            <div className="text-muted-foreground">
+                              {format(order.shipped_at, 'dd/MM/yyyy', { locale: fr })}
+                            </div>
+                          )}
                         </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
                       )}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" title="Voir détails">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {order.status === 'confirmed' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Marquer en préparation"
-                        onClick={() => handleUpdateStatus(order.id, 'processing')}
-                      >
-                        <Package className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {order.status === 'processing' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Marquer comme expédiée"
-                        onClick={() => handleUpdateStatus(order.id, 'shipped')}
-                      >
-                        <Truck className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {order.status === 'shipped' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Marquer comme livrée"
-                        onClick={() => handleUpdateStatus(order.id, 'delivered')}
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" title="Générer facture">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/vente/commandes/${order.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir détails
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {order.status === 'pending' && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'confirmed')}>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Confirmer
+                            </DropdownMenuItem>
+                          )}
+                          {order.status === 'confirmed' && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'processing')}>
+                              <Package className="mr-2 h-4 w-4" />
+                              En préparation
+                            </DropdownMenuItem>
+                          )}
+                          {order.status === 'processing' && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'shipped')}>
+                              <Truck className="mr-2 h-4 w-4" />
+                              Expédier
+                            </DropdownMenuItem>
+                          )}
+                          {order.status === 'shipped' && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'delivered')}>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Livré
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Générer facture
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
       </Card>
-
-      {filteredOrders.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Aucune commande</h3>
-            <p className="text-muted-foreground">
-              Les commandes apparaîtront ici une fois créées
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
