@@ -103,6 +103,11 @@ import BoutiquesPage from "./pages/caisse/boutiques/index";
 import CaisseJournalierePage from "./pages/caisse/journaliere/index";
 import NouvelleVentePage from "./pages/caisse/nouvelle-vente/index";
 
+// Admin Module Pages
+import EquipesPageNew from "./pages/admin/equipes";
+import ParametresPageNew from "./pages/admin/parametres";
+import SystemePageNew from "./pages/admin/systeme";
+
 const queryClient = new QueryClient();
 
 // MainLayout contient la sidebar + header + content
@@ -199,6 +204,13 @@ function MainLayout() {
         <Route path="/caisse/boutiques" element={<BoutiquesPage />} />
         <Route path="/caisse/journaliere" element={<CaisseJournalierePage />} />
         <Route path="/caisse/nouvelle-vente" element={<NouvelleVentePage />} />
+
+        {/* ================================================================
+            MODULE ADMINISTRATION
+            ================================================================ */}
+        <Route path="/admin/equipes" element={<EquipesPageNew />} />
+        <Route path="/admin/parametres" element={<ParametresPageNew />} />
+        <Route path="/admin/systeme" element={<SystemePageNew />} />
 
         {/* ================================================================
             ANCIENNES ROUTES (rétrocompatibilité)
