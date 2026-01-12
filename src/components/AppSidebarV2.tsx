@@ -114,6 +114,12 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         icon: Users,
         children: [
           {
+            id: 'crm-acquisition',
+            label: 'Acquisition',
+            icon: Search,
+            path: '/app/crm/acquisition',
+          },
+          {
             id: 'crm-prospects',
             label: 'Prospects',
             icon: Search,
@@ -381,19 +387,19 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
             id: 'admin-equipes',
             label: 'Équipes',
             icon: Users,
-            path: '/admin/equipes',
+            path: '/app/admin/equipes',
           },
           {
             id: 'admin-parametres',
             label: 'Paramètres',
             icon: Settings,
-            path: '/admin/parametres',
+            path: '/app/admin/parametres',
           },
           {
             id: 'admin-systeme',
             label: 'Système',
             icon: Shield,
-            path: '/admin/systeme',
+            path: '/app/admin/systeme',
           },
         ],
       },
