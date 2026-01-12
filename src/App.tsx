@@ -7,6 +7,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { isFeatureEnabled } from "@/config/featureFlags";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { TestAuthBypass } from "./components/TestAuthBypass";
 import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage";
 import DashboardOld from "./pages/Dashboard";
@@ -272,9 +273,11 @@ function App() {
         <TooltipProvider>
           <UserProvider>
             <BrowserRouter>
-              <Toaster />
-              <Sonner />
-              <ProtectedRoutes />
+              <TestAuthBypass>
+                <Toaster />
+                <Sonner />
+                <ProtectedRoutes />
+              </TestAuthBypass>
             </BrowserRouter>
           </UserProvider>
         </TooltipProvider>

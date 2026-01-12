@@ -25,6 +25,58 @@ interface UseAuthReturn {
 }
 
 export const useAuth = (): UseAuthReturn => {
+  // Vérifier le mode test en premier
+  const isTestMode = typeof window !== 'undefined' && localStorage.getItem('test-mode') === 'true';
+
+  // Si mode test, retourner un mock d'authentification
+  if (isTestMode) {
+    const testUserData = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('test-user') || '{}')
+      : null;
+
+    const mockUser = testUserData ? {
+      id: testUserData.id,
+      email: testUserData.email,
+      user_metadata: testUserData.user_metadata,
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as SupabaseUser : null;
+
+    return {
+      user: mockUser,
+      currentUser: mockUser,
+      session: null,
+      isAuthenticated: true,
+      loading: false,
+      logout: async () => {
+        localStorage.removeItem('test-mode');
+        localStorage.removeItem('test-user');
+        window.location.href = '/';
+      },
+      hasPermission: () => true, // En mode test, toutes les permissions
+      isRole: () => true,
+      canAccess: () => true,
+      role: 'owner' as UserRole, // En mode test, rôle owner (toutes permissions)
+      permissions: {
+        canManageUsers: true,
+        canManageSettings: true,
+        canViewAnalytics: true,
+        canCreateContent: true,
+        canPublish: true,
+        canModerate: true,
+        canManageTeams: true,
+        canViewReports: true,
+      },
+      isOwner: true,
+      isManager: true,
+      isCreator: true,
+      isViewer: true,
+      isAdmin: true,
+      userRole: 'owner' as UserRole,
+    };
+  }
+
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);

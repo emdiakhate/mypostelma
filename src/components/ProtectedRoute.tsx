@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTestAuth } from './TestAuthBypass';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -8,6 +9,13 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, loading } = useAuth();
+  const { isTestMode } = useTestAuth();
+
+  // En mode test, bypass l'authentification
+  if (isTestMode) {
+    console.log('🧪 ProtectedRoute: Mode test actif - Accès autorisé');
+    return <>{children}</>;
+  }
 
   // Affiche loader pendant vérification
   if (loading) {
