@@ -164,9 +164,9 @@ describe('DB Test 11: Module Configuration', () => {
     };
 
     const hasBankingInfo =
-      settings.bank_name &&
-      settings.bank_iban &&
-      settings.bank_bic;
+      !!settings.bank_name &&
+      !!settings.bank_iban &&
+      !!settings.bank_bic;
 
     expect(hasBankingInfo).toBe(true);
     console.log('✅ PASS - Banking information completeness validated');
