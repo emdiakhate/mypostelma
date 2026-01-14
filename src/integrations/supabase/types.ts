@@ -4405,14 +4405,14 @@ export type Database = {
       }
       stock_levels: {
         Row: {
-          average_cost: number | null
           category: string | null
           current_quantity: number | null
-          last_movement_at: string | null
+          min_stock_quantity: number | null
           product_id: string | null
           product_name: string | null
           product_type: string | null
           sku: string | null
+          stock_status: string | null
           user_id: string | null
           warehouse_city: string | null
           warehouse_id: string | null
