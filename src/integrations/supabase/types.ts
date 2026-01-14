@@ -4523,7 +4523,7 @@ export type Database = {
       reset_user_quotas: { Args: { p_user_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "manager"
+      app_role: "manager" | "owner" | "admin" | "viewer" | "creator"
       lead_status:
         | "new"
         | "contacted"
@@ -4658,7 +4658,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["manager"],
+      app_role: ["manager", "owner", "admin", "viewer", "creator"],
       lead_status: [
         "new",
         "contacted",
