@@ -1,6 +1,6 @@
 /**
  * Page d'acquisition de leads CRM IA
- * Scraping hybride (Jina.ai + Apify) avec assignation secteur/segment
+ * Recherche intelligente avec assignation secteur/segment
  */
 
 import React, { useState } from 'react';
@@ -52,9 +52,9 @@ import { toast } from 'sonner';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
 
 const AcquisitionPage: React.FC = () => {
-  const { sectors } = useSectors();
-  const { segments } = useSegments();
-  const { tags } = useTags();
+  const { sectors, createSector, loadSectors } = useSectors();
+  const { segments, createSegment, loadSegments } = useSegments();
+  const { tags, createTag, loadTags } = useTags();
   const { createLead } = useCRMLeads();
 
   // États de recherche
@@ -75,12 +75,23 @@ const AcquisitionPage: React.FC = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedSectorId, setSelectedSectorId] = useState<string>('');
   const [selectedSegmentId, setSelectedSegmentId] = useState<string>('');
-  
+
   // Modal de message
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [selectedLeadForMessage, setSelectedLeadForMessage] = useState<EnrichedLead | null>(null);
   const [messageChannel, setMessageChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  // Modals de création
+  const [showSectorDialog, setShowSectorDialog] = useState(false);
+  const [showSegmentDialog, setShowSegmentDialog] = useState(false);
+  const [showTagDialog, setShowTagDialog] = useState(false);
+  const [newSectorName, setNewSectorName] = useState('');
+  const [newSectorColor, setNewSectorColor] = useState('#3B82F6');
+  const [newSegmentName, setNewSegmentName] = useState('');
+  const [newSegmentColor, setNewSegmentColor] = useState('#10B981');
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagCategory, setNewTagCategory] = useState<'amenity' | 'feature' | 'service' | 'other'>('other');
 
   // Filtrage des segments par secteur sélectionné
   const filteredSegments = selectedSectorId
@@ -232,13 +243,88 @@ const AcquisitionPage: React.FC = () => {
     }
   };
 
+  // Créer un nouveau secteur
+  const handleCreateSector = async () => {
+    if (!newSectorName.trim()) {
+      toast.error('Veuillez entrer un nom de secteur');
+      return;
+    }
+
+    try {
+      const newSector = await createSector({
+        name: newSectorName,
+        color: newSectorColor,
+        description: '',
+      });
+      await loadSectors();
+      setSelectedSectorId(newSector.id);
+      setNewSectorName('');
+      setShowSectorDialog(false);
+      toast.success('Secteur créé avec succès');
+    } catch (error) {
+      console.error('Error creating sector:', error);
+    }
+  };
+
+  // Créer un nouveau segment
+  const handleCreateSegment = async () => {
+    if (!newSegmentName.trim()) {
+      toast.error('Veuillez entrer un nom de segment');
+      return;
+    }
+
+    if (!selectedSectorId) {
+      toast.error('Veuillez d\'abord sélectionner un secteur');
+      return;
+    }
+
+    try {
+      const newSegment = await createSegment({
+        name: newSegmentName,
+        color: newSegmentColor,
+        sector_id: selectedSectorId,
+        description: '',
+      });
+      await loadSegments();
+      setSelectedSegmentId(newSegment.id);
+      setNewSegmentName('');
+      setShowSegmentDialog(false);
+      toast.success('Segment créé avec succès');
+    } catch (error) {
+      console.error('Error creating segment:', error);
+    }
+  };
+
+  // Créer un nouveau tag
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) {
+      toast.error('Veuillez entrer un nom de tag');
+      return;
+    }
+
+    try {
+      const newTag = await createTag({
+        name: newTagName,
+        category: newTagCategory,
+        sector_id: selectedSectorId || undefined,
+      });
+      await loadTags();
+      setSelectedTagIds([...selectedTagIds, newTag.id]);
+      setNewTagName('');
+      setShowTagDialog(false);
+      toast.success('Tag créé avec succès');
+    } catch (error) {
+      console.error('Error creating tag:', error);
+    }
+  };
+
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Acquisition de Leads</h1>
         <p className="text-gray-600">
-          Trouvez automatiquement de nouveaux prospects via Google Search & Maps
+          Trouvez automatiquement de nouveaux prospects avec la recherche intelligente
         </p>
       </div>
 
@@ -248,7 +334,7 @@ const AcquisitionPage: React.FC = () => {
           <div>
             <CardTitle>Recherche de Leads</CardTitle>
             <CardDescription>
-              Recherche hybride (Google Search + Google Maps) - Gratuit et illimité
+              Recherche intelligente - Gratuit et illimité
             </CardDescription>
           </div>
         </CardHeader>
@@ -383,12 +469,12 @@ const AcquisitionPage: React.FC = () => {
                         <h3 className="font-semibold text-base line-clamp-2">
                           {lead.name}
                         </h3>
-                        <Badge
-                          variant={lead.source === 'apify' ? 'default' : 'secondary'}
-                          className="text-xs mt-1"
-                        >
-                          {lead.source === 'apify' ? 'Maps' : 'Search'}
-                        </Badge>
+                        {lead.google_rating && (
+                          <Badge variant="secondary" className="text-xs mt-1">
+                            ⭐ {lead.google_rating.toFixed(1)}/5
+                            {lead.google_reviews_count && ` (${lead.google_reviews_count})`}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -443,7 +529,7 @@ const AcquisitionPage: React.FC = () => {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MapPin className="w-3 h-3" />
-                          Voir sur Maps
+                          Voir la localisation
                         </a>
                       )}
                     </div>
@@ -678,88 +764,117 @@ const AcquisitionPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="sector">Secteur *</Label>
-              {sectors.length === 0 ? (
-                <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-2">
-                    Aucun secteur configuré. Vous devez créer au moins un secteur avant d'importer des leads.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.location.href = '/app/crm/config'}
+              <div className="flex gap-2">
+                {sectors.length === 0 ? (
+                  <div className="flex-1 p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                    <p className="text-sm text-yellow-800 mb-2">
+                      Aucun secteur configuré. Créez-en un pour continuer.
+                    </p>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedSectorId}
+                    onValueChange={(value) => {
+                      setSelectedSectorId(value);
+                      setSelectedSegmentId(''); // Reset segment
+                    }}
                   >
-                    Configurer les secteurs
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={selectedSectorId}
-                  onValueChange={(value) => {
-                    setSelectedSectorId(value);
-                    setSelectedSegmentId(''); // Reset segment
-                  }}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un secteur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sectors.map((sector) => (
+                        <SelectItem key={sector.id} value={sector.id}>
+                          {sector.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSectorDialog(true)}
+                  title="Créer un nouveau secteur"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez un secteur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sectors.map((sector) => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
-            {selectedSectorId && filteredSegments.length > 0 && (
+            {selectedSectorId && (
               <div>
                 <Label htmlFor="segment">Segment (optionnel)</Label>
-                <Select
-                  value={selectedSegmentId}
-                  onValueChange={setSelectedSegmentId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez un segment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun segment</SelectItem>
-                    {filteredSegments.map((segment) => (
-                      <SelectItem key={segment.id} value={segment.id}>
-                        {segment.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedSegmentId}
+                    onValueChange={setSelectedSegmentId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun segment</SelectItem>
+                      {filteredSegments.map((segment) => (
+                        <SelectItem key={segment.id} value={segment.id}>
+                          {segment.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowSegmentDialog(true)}
+                    disabled={!selectedSectorId}
+                    title="Créer un nouveau segment"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
 
-            {selectedSectorId && filteredTags.length > 0 && (
+            {selectedSectorId && (
               <div>
-                <Label>Tags (optionnel)</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {filteredTags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={
-                        selectedTagIds.includes(tag.id) ? 'default' : 'outline'
-                      }
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (selectedTagIds.includes(tag.id)) {
-                          setSelectedTagIds(
-                            selectedTagIds.filter((id) => id !== tag.id)
-                          );
-                        } else {
-                          setSelectedTagIds([...selectedTagIds, tag.id]);
-                        }
-                      }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Tags (optionnel)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTagDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Nouveau tag
+                  </Button>
                 </div>
+                {filteredTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {filteredTags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant={
+                          selectedTagIds.includes(tag.id) ? 'default' : 'outline'
+                        }
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (selectedTagIds.includes(tag.id)) {
+                            setSelectedTagIds(
+                              selectedTagIds.filter((id) => id !== tag.id)
+                            );
+                          } else {
+                            setSelectedTagIds([...selectedTagIds, tag.id]);
+                          }
+                        }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -800,6 +915,139 @@ const AcquisitionPage: React.FC = () => {
           channel={messageChannel}
         />
       )}
+
+      {/* Dialog pour créer un nouveau secteur */}
+      <Dialog open={showSectorDialog} onOpenChange={setShowSectorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau secteur</DialogTitle>
+            <DialogDescription>Ajouter un nouveau secteur d'activité</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newSectorName">Nom du secteur *</Label>
+              <Input
+                id="newSectorName"
+                value={newSectorName}
+                onChange={(e) => setNewSectorName(e.target.value)}
+                placeholder="Ex: Restauration, Commerce, Services..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="newSectorColor">Couleur</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="newSectorColor"
+                  type="color"
+                  value={newSectorColor}
+                  onChange={(e) => setNewSectorColor(e.target.value)}
+                  className="w-20 h-10"
+                />
+                <span className="text-sm text-muted-foreground">{newSectorColor}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSectorDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateSector}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour créer un nouveau segment */}
+      <Dialog open={showSegmentDialog} onOpenChange={setShowSegmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau segment</DialogTitle>
+            <DialogDescription>Ajouter un nouveau segment pour le secteur sélectionné</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newSegmentName">Nom du segment *</Label>
+              <Input
+                id="newSegmentName"
+                value={newSegmentName}
+                onChange={(e) => setNewSegmentName(e.target.value)}
+                placeholder="Ex: PME, TPE, Grande entreprise..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="newSegmentColor">Couleur</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="newSegmentColor"
+                  type="color"
+                  value={newSegmentColor}
+                  onChange={(e) => setNewSegmentColor(e.target.value)}
+                  className="w-20 h-10"
+                />
+                <span className="text-sm text-muted-foreground">{newSegmentColor}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSegmentDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateSegment}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour créer un nouveau tag */}
+      <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau tag</DialogTitle>
+            <DialogDescription>Ajouter un nouveau tag pour catégoriser les leads</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newTagName">Nom du tag *</Label>
+              <Input
+                id="newTagName"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="Ex: Parking, WiFi, Terrasse..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="newTagCategory">Catégorie</Label>
+              <Select
+                value={newTagCategory}
+                onValueChange={(value: any) => setNewTagCategory(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="amenity">Commodité</SelectItem>
+                  <SelectItem value="feature">Caractéristique</SelectItem>
+                  <SelectItem value="service">Service</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTagDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateTag}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
