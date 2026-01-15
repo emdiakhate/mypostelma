@@ -229,22 +229,27 @@ export const useCRMLeads = (filters?: LeadFilters) => {
 
       if (error) throw error;
 
-      setLeads((prev) =>
-        prev.map((lead) => (lead.id === leadId ? (data as EnrichedLead) : lead))
-      );
+      // Vérifier que data existe avant de mettre à jour l'état
+      if (data) {
+        setLeads((prev) =>
+          prev.map((lead) => (lead.id === leadId ? (data as EnrichedLead) : lead))
+        );
 
-      // Créer une interaction pour le changement de statut
-      await createInteraction(leadId, {
-        type: 'status_change',
-        content: `Statut changé vers: ${newStatus}`,
-      });
+        // Créer une interaction pour le changement de statut
+        await createInteraction(leadId, {
+          type: 'status_change',
+          content: `Statut changé vers: ${newStatus}`,
+        });
 
-      toast({
-        title: 'Statut mis à jour',
-        description: `Lead marqué comme ${newStatus}`,
-      });
+        toast({
+          title: 'Statut mis à jour',
+          description: `Lead marqué comme ${newStatus}`,
+        });
 
-      return data as EnrichedLead;
+        return data as EnrichedLead;
+      } else {
+        throw new Error('No data returned from update');
+      }
     } catch (error: any) {
       console.error('Error updating lead status:', error);
       toast({
@@ -252,9 +257,11 @@ export const useCRMLeads = (filters?: LeadFilters) => {
         title: 'Erreur',
         description: 'Impossible de mettre à jour le statut',
       });
+      // Recharger les leads en cas d'erreur pour synchroniser l'état
+      await loadLeads();
       throw error;
     }
-  }, [toast]);
+  }, [toast, loadLeads, createInteraction]);
 
   // Supprimer un lead
   const deleteLead = useCallback(async (leadId: string) => {
@@ -616,6 +623,148 @@ export const useSegments = () => {
     updateSegment,
     deleteSegment,
     loadSegments,
+  };
+};
+
+// ==============================================
+// Hook: useTags
+// ==============================================
+
+export const useTags = () => {
+  const [tags, setTags] = useState<CRMTag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const loadTags = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('crm_tags')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      setTags(data || []);
+    } catch (error: any) {
+      console.error('Error loading tags:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de charger les tags',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const createTag = useCallback(async (tagData: TagFormData) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('crm_tags')
+        .insert([{
+          user_id: user.id,
+          ...tagData,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTags((prev) => [...prev, data as CRMTag]);
+
+      toast({
+        title: 'Succès',
+        description: 'Tag créé',
+      });
+
+      return data as CRMTag;
+    } catch (error: any) {
+      console.error('Error creating tag:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de créer le tag',
+      });
+      throw error;
+    }
+  }, [toast]);
+
+  const updateTag = useCallback(async (tagId: string, updates: Partial<TagFormData>) => {
+    try {
+      const { data, error } = await supabase
+        .from('crm_tags')
+        .update(updates)
+        .eq('id', tagId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTags((prev) =>
+        prev.map((tag) => (tag.id === tagId ? (data as CRMTag) : tag))
+      );
+
+      toast({
+        title: 'Succès',
+        description: 'Tag mis à jour',
+      });
+
+      return data as CRMTag;
+    } catch (error: any) {
+      console.error('Error updating tag:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le tag',
+      });
+      throw error;
+    }
+  }, [toast]);
+
+  const deleteTag = useCallback(async (tagId: string) => {
+    try {
+      const { error } = await supabase
+        .from('crm_tags')
+        .delete()
+        .eq('id', tagId);
+
+      if (error) throw error;
+
+      setTags((prev) => prev.filter((tag) => tag.id !== tagId));
+
+      toast({
+        title: 'Succès',
+        description: 'Tag supprimé',
+      });
+    } catch (error: any) {
+      console.error('Error deleting tag:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de supprimer le tag',
+      });
+      throw error;
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
+
+  return {
+    tags,
+    loading,
+    createTag,
+    updateTag,
+    deleteTag,
+    loadTags,
   };
 };
 

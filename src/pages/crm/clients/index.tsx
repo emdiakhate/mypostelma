@@ -39,8 +39,11 @@ import { useCRMLeads, useSectors, useLeadStatusHelpers } from '@/hooks/useCRM';
 import type { EnrichedLead, LeadFilters } from '@/types/crm';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
 import { LeadDetailModal } from '@/components/leads/LeadDetailModal';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const ClientsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { getStatusColor, getStatusLabel } = useLeadStatusHelpers();
   const { sectors } = useSectors();
 
@@ -163,17 +166,22 @@ const ClientsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       {client.phone && (<Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); window.open(`tel:${client.phone}`); }}><Phone className="w-4 h-4 mr-2" />Appeler</Button>)}
                       {client.email && (<Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setMessageModal({ open: true, lead: client, channel: 'email' }); }}><Mail className="w-4 h-4 mr-2" />Email</Button>)}
-                      <Button variant="default" size="sm" onClick={(e) => { e.stopPropagation(); /* TODO: Rediriger vers nouvelle commande */ }}><Package className="w-4 h-4 mr-2" />Commander</Button>
+                      <Button variant="default" size="sm" onClick={(e) => { e.stopPropagation(); navigate('/app/orders/new', { state: { client } }); }}><Package className="w-4 h-4 mr-2" />Commander</Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* TODO: Voir historique commandes */ }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Fonctionnalité en développement'); }}>
                             <Package className="w-4 h-4 mr-2" />Historique commandes
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* TODO: Voir factures */ }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Fonctionnalité en développement'); }}>
                             <DollarSign className="w-4 h-4 mr-2" />Voir factures
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateLeadStatus(client.id, 'qualified'); }}>
+                          <DropdownMenuItem onClick={async (e) => {
+                            e.stopPropagation();
+                            await updateLeadStatus(client.id, 'interested');
+                            await loadLeads();
+                            toast.success('Client retourné dans les prospects');
+                          }}>
                             <TrendingUp className="w-4 h-4 mr-2" />Retour en prospect
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteLead(client.id); }} className="text-red-600">Supprimer</DropdownMenuItem>

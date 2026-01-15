@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -33,8 +33,8 @@ interface AddLeadModalProps {
 }
 
 const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) => {
-  const { sectors } = useSectors();
-  const { segments } = useSegments();
+  const { sectors, createSector, loadSectors } = useSectors();
+  const { segments, createSegment, loadSegments } = useSegments();
 
   const [formData, setFormData] = useState<LeadFormData>({
     name: '',
@@ -64,6 +64,12 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
   });
 
   const [loading, setLoading] = useState(false);
+  const [showSectorDialog, setShowSectorDialog] = useState(false);
+  const [showSegmentDialog, setShowSegmentDialog] = useState(false);
+  const [newSectorName, setNewSectorName] = useState('');
+  const [newSectorColor, setNewSectorColor] = useState('#3B82F6');
+  const [newSegmentName, setNewSegmentName] = useState('');
+  const [newSegmentColor, setNewSegmentColor] = useState('#10B981');
 
   const handleChange = (field: keyof LeadFormData, value: any) => {
     setFormData((prev) => ({
@@ -135,6 +141,56 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
     ? segments.filter((s) => s.sector_id === formData.sector_id)
     : [];
 
+  const handleCreateSector = async () => {
+    if (!newSectorName.trim()) {
+      toast.error('Veuillez entrer un nom de secteur');
+      return;
+    }
+
+    try {
+      const newSector = await createSector({
+        name: newSectorName,
+        color: newSectorColor,
+        description: '',
+      });
+      await loadSectors();
+      setFormData((prev) => ({ ...prev, sector_id: newSector.id }));
+      setNewSectorName('');
+      setShowSectorDialog(false);
+      toast.success('Secteur créé avec succès');
+    } catch (error) {
+      console.error('Error creating sector:', error);
+    }
+  };
+
+  const handleCreateSegment = async () => {
+    if (!newSegmentName.trim()) {
+      toast.error('Veuillez entrer un nom de segment');
+      return;
+    }
+
+    if (!formData.sector_id) {
+      toast.error('Veuillez d\'abord sélectionner un secteur');
+      return;
+    }
+
+    try {
+      const newSegment = await createSegment({
+        name: newSegmentName,
+        color: newSegmentColor,
+        sector_id: formData.sector_id,
+        description: '',
+      });
+      await loadSegments();
+      setFormData((prev) => ({ ...prev, segment_id: newSegment.id }));
+      setNewSegmentName('');
+      setShowSegmentDialog(false);
+      toast.success('Segment créé avec succès');
+    } catch (error) {
+      console.error('Error creating segment:', error);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -164,46 +220,69 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
 
               <div>
                 <Label htmlFor="sector">Secteur</Label>
-                <Select
-                  value={formData.sector_id || 'none'}
-                  onValueChange={(value) => {
-                    handleChange('sector_id', value === 'none' ? undefined : value);
-                    handleChange('segment_id', undefined); // Reset segment
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un secteur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun secteur</SelectItem>
-                    {sectors.map((sector) => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.sector_id || 'none'}
+                    onValueChange={(value) => {
+                      handleChange('sector_id', value === 'none' ? undefined : value);
+                      handleChange('segment_id', undefined); // Reset segment
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un secteur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun secteur</SelectItem>
+                      {sectors.map((sector) => (
+                        <SelectItem key={sector.id} value={sector.id}>
+                          {sector.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowSectorDialog(true)}
+                    title="Créer un nouveau secteur"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div>
                 <Label htmlFor="segment">Segment</Label>
-                <Select
-                  value={formData.segment_id || 'none'}
-                  onValueChange={(value) => handleChange('segment_id', value === 'none' ? undefined : value)}
-                  disabled={!formData.sector_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un segment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun segment</SelectItem>
-                    {filteredSegments.map((segment) => (
-                      <SelectItem key={segment.id} value={segment.id}>
-                        {segment.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.segment_id || 'none'}
+                    onValueChange={(value) => handleChange('segment_id', value === 'none' ? undefined : value)}
+                    disabled={!formData.sector_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun segment</SelectItem>
+                      {filteredSegments.map((segment) => (
+                        <SelectItem key={segment.id} value={segment.id}>
+                          {segment.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowSegmentDialog(true)}
+                    disabled={!formData.sector_id}
+                    title="Créer un nouveau segment"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -454,6 +533,92 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
           </div>
         </form>
       </DialogContent>
+
+      {/* Dialog pour créer un nouveau secteur */}
+      <Dialog open={showSectorDialog} onOpenChange={setShowSectorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau secteur</DialogTitle>
+            <DialogDescription>Ajouter un nouveau secteur d'activité</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newSectorName">Nom du secteur *</Label>
+              <Input
+                id="newSectorName"
+                value={newSectorName}
+                onChange={(e) => setNewSectorName(e.target.value)}
+                placeholder="Ex: Restauration, Commerce, Services..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="newSectorColor">Couleur</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="newSectorColor"
+                  type="color"
+                  value={newSectorColor}
+                  onChange={(e) => setNewSectorColor(e.target.value)}
+                  className="w-20 h-10"
+                />
+                <span className="text-sm text-muted-foreground">{newSectorColor}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowSectorDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateSector}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour créer un nouveau segment */}
+      <Dialog open={showSegmentDialog} onOpenChange={setShowSegmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau segment</DialogTitle>
+            <DialogDescription>Ajouter un nouveau segment pour le secteur sélectionné</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newSegmentName">Nom du segment *</Label>
+              <Input
+                id="newSegmentName"
+                value={newSegmentName}
+                onChange={(e) => setNewSegmentName(e.target.value)}
+                placeholder="Ex: PME, TPE, Grande entreprise..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="newSegmentColor">Couleur</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="newSegmentColor"
+                  type="color"
+                  value={newSegmentColor}
+                  onChange={(e) => setNewSegmentColor(e.target.value)}
+                  className="w-20 h-10"
+                />
+                <span className="text-sm text-muted-foreground">{newSegmentColor}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowSegmentDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleCreateSegment}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
