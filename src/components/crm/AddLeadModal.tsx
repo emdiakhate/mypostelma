@@ -177,7 +177,6 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ open, onClose, onSubmit }) 
     try {
       const newSegment = await createSegment({
         name: newSegmentName,
-        color: newSegmentColor,
         sector_id: formData.sector_id,
         description: '',
       });
