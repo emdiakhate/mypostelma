@@ -235,16 +235,27 @@ export const useCRMLeads = (filters?: LeadFilters) => {
           prev.map((lead) => (lead.id === leadId ? (data as EnrichedLead) : lead))
         );
 
-        // Créer une interaction pour le changement de statut
-        await createInteraction(leadId, {
-          type: 'status_change',
-          content: `Statut changé vers: ${newStatus}`,
-        });
-
         toast({
           title: 'Statut mis à jour',
           description: `Lead marqué comme ${newStatus}`,
         });
+
+        // Créer une interaction pour le changement de statut (en arrière-plan, ne pas bloquer)
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('crm_lead_interactions').insert([{
+              lead_id: leadId,
+              user_id: user.id,
+              type: 'status_change',
+              content: `Statut changé vers: ${newStatus}`,
+              created_at: new Date().toISOString(),
+            }]);
+          }
+        } catch (interactionError) {
+          // Ne pas bloquer si l'interaction échoue
+          console.warn('Failed to create interaction:', interactionError);
+        }
 
         return data as EnrichedLead;
       } else {
@@ -261,7 +272,7 @@ export const useCRMLeads = (filters?: LeadFilters) => {
       await loadLeads();
       throw error;
     }
-  }, [toast, loadLeads, createInteraction]);
+  }, [toast, loadLeads]);
 
   // Supprimer un lead
   const deleteLead = useCallback(async (leadId: string) => {

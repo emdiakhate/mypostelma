@@ -39,6 +39,7 @@ import { useCRMLeads, useSectors, useLeadStatusHelpers } from '@/hooks/useCRM';
 import type { EnrichedLead, LeadFilters } from '@/types/crm';
 import { SendMessageModal } from '@/components/leads/SendMessageModal';
 import { LeadDetailModal } from '@/components/leads/LeadDetailModal';
+import ClientHistoryModal from '@/components/crm/ClientHistoryModal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -63,6 +64,11 @@ const ClientsPage: React.FC = () => {
     lead: EnrichedLead | null;
     channel: 'whatsapp' | 'email';
   }>({ open: false, lead: null, channel: 'whatsapp' });
+  const [historyModal, setHistoryModal] = useState<{
+    open: boolean;
+    client: EnrichedLead | null;
+    type: 'orders' | 'invoices';
+  }>({ open: false, client: null, type: 'orders' });
 
   const stats = useMemo(() => ({
     total: clients.length,
@@ -92,7 +98,7 @@ const ClientsPage: React.FC = () => {
           </h1>
           <p className="text-gray-600 mt-1">Leads convertis en clients actifs</p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/app/orders/new')}>
           <Package className="w-4 h-4 mr-2" />
           Nouvelle commande
         </Button>
@@ -170,10 +176,10 @@ const ClientsPage: React.FC = () => {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Fonctionnalité en développement'); }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setHistoryModal({ open: true, client, type: 'orders' }); }}>
                             <Package className="w-4 h-4 mr-2" />Historique commandes
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Fonctionnalité en développement'); }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setHistoryModal({ open: true, client, type: 'invoices' }); }}>
                             <DollarSign className="w-4 h-4 mr-2" />Voir factures
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={async (e) => {
@@ -213,6 +219,15 @@ const ClientsPage: React.FC = () => {
 
       {messageModal.lead && (
         <SendMessageModal open={messageModal.open} onClose={() => setMessageModal({ open: false, lead: null, channel: 'whatsapp' })} lead={messageModal.lead} channel={messageModal.channel} />
+      )}
+
+      {historyModal.client && (
+        <ClientHistoryModal
+          open={historyModal.open}
+          onClose={() => setHistoryModal({ open: false, client: null, type: 'orders' })}
+          client={historyModal.client}
+          type={historyModal.type}
+        />
       )}
     </div>
   );
