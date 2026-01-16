@@ -281,7 +281,6 @@ const AcquisitionPage: React.FC = () => {
     try {
       const newSegment = await createSegment({
         name: newSegmentName,
-        color: newSegmentColor,
         sector_id: selectedSectorId,
         description: '',
       });
