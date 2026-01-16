@@ -366,6 +366,7 @@ export interface SegmentFormData {
   sector_id: string;
   name: string;
   description?: string;
+  color?: string;
 }
 
 export interface TagFormData {

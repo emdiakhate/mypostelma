@@ -24,8 +24,13 @@ export interface UserPermissions {
   canManageUsers: boolean;      // Gérer l'équipe
   canManageAccounts: boolean;   // Connecter/déconnecter comptes sociaux
   canViewAnalytics: boolean;    // Voir les analytics
-  canApproveContent: boolean;  // Approuver queue
-  canManageBilling: boolean;   // Gérer abonnement
+  canApproveContent: boolean;   // Approuver queue
+  canManageBilling: boolean;    // Gérer abonnement
+  canManageSettings?: boolean;  // Gérer les paramètres
+  canCreateContent?: boolean;   // Créer du contenu
+  canModerate?: boolean;        // Modérer le contenu
+  canManageTeams?: boolean;     // Gérer les équipes
+  canViewReports?: boolean;     // Voir les rapports
 }
 
 // Permissions par rôle (hardcodé pour MVP)

@@ -4,20 +4,14 @@
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { EnrichedLead } from '@/types/crm';
 
 interface OrderItem {
@@ -32,6 +26,7 @@ const NewOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const client: EnrichedLead | undefined = location.state?.client;
+  const [saving, setSaving] = useState(false);
 
   const [orderData, setOrderData] = useState({
     client_name: client?.name || '',
@@ -39,7 +34,7 @@ const NewOrderPage: React.FC = () => {
     client_phone: client?.phone || '',
     client_address: client?.address || '',
     notes: '',
-    status: 'draft',
+    status: 'pending',
   });
 
   const [items, setItems] = useState<OrderItem[]>([
@@ -89,17 +84,72 @@ const NewOrderPage: React.FC = () => {
       return;
     }
 
+    setSaving(true);
     try {
-      // TODO: Implémenter la sauvegarde dans Supabase
-      toast.info('Fonctionnalité en développement - Les commandes seront bientôt intégrées au système de vente');
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error('Vous devez être connecté pour créer une commande');
+        return;
+      }
 
-      // Pour l'instant, on retourne juste à la page clients
-      setTimeout(() => {
+      const totalHT = calculateTotal();
+      const tvaRate = 18; // TVA 18%
+      const totalTTC = totalHT * (1 + tvaRate / 100);
+
+      // Créer la commande
+      const { data: orderResult, error: orderError } = await supabase
+        .from('vente_orders' as any)
+        .insert([{
+          user_id: userData.user.id,
+          lead_id: client?.id || null,
+          client_name: orderData.client_name,
+          client_email: orderData.client_email || '',
+          client_phone: orderData.client_phone,
+          client_address: orderData.client_address,
+          shipping_address: orderData.client_address,
+          status: 'pending',
+          payment_status: 'pending',
+          total_ht: totalHT,
+          total_ttc: totalTTC,
+          tva_rate: tvaRate,
+          notes: orderData.notes,
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Créer les articles de la commande
+      const orderResultData = orderResult as any;
+      const orderItems = items.map((item, index) => ({
+        order_id: orderResultData.id,
+        product_name: item.description,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total: item.total,
+        order_index: index,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('vente_order_items' as any)
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast.success(`Commande ${orderResultData.number} créée avec succès`);
+      
+      // Redirection vers la page des commandes ou du client
+      if (client) {
         navigate('/app/crm/clients');
-      }, 2000);
-    } catch (error) {
+      } else {
+        navigate('/app/vente/commandes');
+      }
+    } catch (error: any) {
       console.error('Error saving order:', error);
-      toast.error('Erreur lors de la sauvegarde de la commande');
+      toast.error(error.message || 'Erreur lors de la sauvegarde de la commande');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -266,12 +316,16 @@ const NewOrderPage: React.FC = () => {
 
       {/* Actions */}
       <div className="flex justify-end gap-4 pb-8">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="outline" onClick={() => navigate(-1)} disabled={saving}>
           Annuler
         </Button>
-        <Button onClick={handleSaveOrder}>
-          <Save className="w-4 h-4 mr-2" />
-          Enregistrer la commande
+        <Button onClick={handleSaveOrder} disabled={saving}>
+          {saving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          {saving ? 'Enregistrement...' : 'Enregistrer la commande'}
         </Button>
       </div>
     </div>
