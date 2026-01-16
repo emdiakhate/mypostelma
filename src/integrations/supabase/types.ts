@@ -3520,6 +3520,7 @@ export type Database = {
           created_at: string | null
           delivered_at: string | null
           id: string
+          lead_id: string | null
           moyen_paiement: string | null
           notes: string | null
           number: string
@@ -3546,6 +3547,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           id?: string
+          lead_id?: string | null
           moyen_paiement?: string | null
           notes?: string | null
           number: string
@@ -3572,6 +3574,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           id?: string
+          lead_id?: string | null
           moyen_paiement?: string | null
           notes?: string | null
           number?: string
@@ -3594,6 +3597,13 @@ export type Database = {
             columns: ["caisse_id"]
             isOneToOne: false
             referencedRelation: "caisses_journalieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vente_orders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
