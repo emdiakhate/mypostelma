@@ -10,15 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import type { EnrichedLead } from '@/types/crm';
+import { useOrders } from '@/hooks/useVente';
+import type { CreateOrderItemInput } from '@/types/vente';
 
 interface OrderItem {
   id: string;
@@ -32,14 +27,15 @@ const NewOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const client: EnrichedLead | undefined = location.state?.client;
+  const { createOrder } = useOrders();
 
+  const [saving, setSaving] = useState(false);
   const [orderData, setOrderData] = useState({
     client_name: client?.name || '',
     client_email: client?.email || '',
     client_phone: client?.phone || '',
     client_address: client?.address || '',
     notes: '',
-    status: 'draft',
   });
 
   const [items, setItems] = useState<OrderItem[]>([
@@ -89,17 +85,36 @@ const NewOrderPage: React.FC = () => {
       return;
     }
 
-    try {
-      // TODO: Implémenter la sauvegarde dans Supabase
-      toast.info('Fonctionnalité en développement - Les commandes seront bientôt intégrées au système de vente');
+    setSaving(true);
 
-      // Pour l'instant, on retourne juste à la page clients
-      setTimeout(() => {
-        navigate('/app/crm/clients');
-      }, 2000);
+    try {
+      const orderItems: CreateOrderItemInput[] = items.map(item => ({
+        product_name: item.description,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }));
+
+      const result = await createOrder({
+        client_name: orderData.client_name,
+        client_email: orderData.client_email,
+        client_phone: orderData.client_phone,
+        client_address: orderData.client_address,
+        notes: orderData.notes,
+        items: orderItems,
+      });
+
+      if (result) {
+        toast.success(`Commande ${result.number} créée avec succès !`);
+        setTimeout(() => {
+          navigate('/app/vente/commandes');
+        }, 1500);
+      }
     } catch (error) {
       console.error('Error saving order:', error);
-      toast.error('Erreur lors de la sauvegarde de la commande');
+      toast.error('Erreur lors de la création de la commande');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -266,12 +281,12 @@ const NewOrderPage: React.FC = () => {
 
       {/* Actions */}
       <div className="flex justify-end gap-4 pb-8">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="outline" onClick={() => navigate(-1)} disabled={saving}>
           Annuler
         </Button>
-        <Button onClick={handleSaveOrder}>
+        <Button onClick={handleSaveOrder} disabled={saving}>
           <Save className="w-4 h-4 mr-2" />
-          Enregistrer la commande
+          {saving ? 'Enregistrement...' : 'Enregistrer la commande'}
         </Button>
       </div>
     </div>
