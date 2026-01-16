@@ -74,6 +74,7 @@ import CataloguePageNew from "./pages/vente/catalogue";
 import DevisPageNew from "./pages/vente/devis/index";
 import CommandesPageNew from "./pages/vente/commandes/index";
 import ServiceClientPageNew from "./pages/vente/service-client";
+import NewOrderPage from "./pages/orders/NewOrderPage";
 
 
 // Stock Module Pages
@@ -172,7 +173,9 @@ function MainLayout() {
         <Route path="/vente/devis" element={<DevisPageNew />} />
         <Route path="/vente/commandes" element={<CommandesPageNew />} />
         <Route path="/vente/service-client" element={<ServiceClientPageNew />} />
-        
+
+        {/* Orders */}
+        <Route path="/orders/new" element={<NewOrderPage />} />
 
         {/* ================================================================
             MODULE STOCK
