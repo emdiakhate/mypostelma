@@ -4,13 +4,14 @@
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { EnrichedLead } from '@/types/crm';
 import { useOrders } from '@/hooks/useVente';
 import type { CreateOrderItemInput } from '@/types/vente';
@@ -28,7 +29,6 @@ const NewOrderPage: React.FC = () => {
   const location = useLocation();
   const client: EnrichedLead | undefined = location.state?.client;
   const { createOrder } = useOrders();
-
   const [saving, setSaving] = useState(false);
   const [orderData, setOrderData] = useState({
     client_name: client?.name || '',
@@ -102,6 +102,7 @@ const NewOrderPage: React.FC = () => {
         client_address: orderData.client_address,
         notes: orderData.notes,
         items: orderItems,
+        lead_id: client?.id,
       });
 
       if (result) {
@@ -285,7 +286,11 @@ const NewOrderPage: React.FC = () => {
           Annuler
         </Button>
         <Button onClick={handleSaveOrder} disabled={saving}>
-          <Save className="w-4 h-4 mr-2" />
+          {saving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
           {saving ? 'Enregistrement...' : 'Enregistrer la commande'}
         </Button>
       </div>

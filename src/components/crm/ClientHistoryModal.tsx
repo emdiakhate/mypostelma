@@ -1,10 +1,10 @@
 /**
- * Modal pour afficher l'historique d'un client (commandes, factures, etc.)
+ * Modal pour afficher l'historique d'un client (commandes, factures)
+ * Connecté à Supabase pour récupérer les données réelles
  */
 
-import React, { useMemo } from 'react';
-import { Package, FileText, Calendar, DollarSign, Eye, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Package, FileText, Calendar, DollarSign, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,18 +15,12 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import type { EnrichedLead } from '@/types/crm';
-import { useOrders } from '@/hooks/useVente';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { EnrichedLead } from '@/types/crm';
 
 interface ClientHistoryModalProps {
   open: boolean;
@@ -35,12 +29,50 @@ interface ClientHistoryModalProps {
   type: 'orders' | 'invoices';
 }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'XOF',
-    minimumFractionDigits: 0,
-  }).format(amount);
+interface Order {
+  id: string;
+  number: string;
+  status: string;
+  payment_status: string;
+  total_ttc: number;
+  created_at: string;
+  client_name: string;
+}
+
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  status: string;
+  total: number;
+  issue_date: string;
+  due_date: string;
+  balance_due: number;
+}
+
+const getOrderStatusBadge = (status: string) => {
+  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    pending: { label: 'En attente', variant: 'secondary' },
+    confirmed: { label: 'Confirmée', variant: 'default' },
+    processing: { label: 'En préparation', variant: 'default' },
+    shipped: { label: 'Expédiée', variant: 'default' },
+    delivered: { label: 'Livrée', variant: 'default' },
+    cancelled: { label: 'Annulée', variant: 'destructive' },
+  };
+  const config = statusConfig[status] || { label: status, variant: 'outline' as const };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+const getInvoiceStatusBadge = (status: string) => {
+  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    draft: { label: 'Brouillon', variant: 'secondary' },
+    sent: { label: 'Envoyée', variant: 'outline' },
+    paid: { label: 'Payée', variant: 'default' },
+    partial: { label: 'Partielle', variant: 'secondary' },
+    overdue: { label: 'En retard', variant: 'destructive' },
+    cancelled: { label: 'Annulée', variant: 'destructive' },
+  };
+  const config = statusConfig[status] || { label: status, variant: 'outline' as const };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
 const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
@@ -51,58 +83,79 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const isOrders = type === 'orders';
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filtrer les commandes par nom de client
-  const clientFilters = useMemo(() => ({
-    client_name: client.name,
-  }), [client.name]);
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('vente_orders')
+        .select('id, number, status, payment_status, total_ttc, created_at, client_name')
+        .eq('lead_id', client.id)
+        .order('created_at', { ascending: false });
 
-  const { orders, loading } = useOrders(clientFilters);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100">En attente</Badge>;
-      case 'confirmed':
-        return <Badge className="bg-blue-600">Confirmée</Badge>;
-      case 'processing':
-        return <Badge className="bg-purple-600">En préparation</Badge>;
-      case 'shipped':
-        return <Badge className="bg-orange-600">Expédiée</Badge>;
-      case 'delivered':
-        return <Badge className="bg-green-600">Livrée</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Annulée</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getPaymentBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline">En attente</Badge>;
-      case 'paid':
-        return <Badge className="bg-green-600">Payée</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Échec</Badge>;
-      case 'refunded':
-        return <Badge variant="destructive">Remboursée</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const loadInvoices = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('compta_invoices')
+        .select('id, invoice_number, status, total, issue_date, due_date, balance_due')
+        .eq('client_id', client.id)
+        .order('issue_date', { ascending: false });
+
+      if (error) throw error;
+      setInvoices(data || []);
+    } catch (error) {
+      console.error('Error loading invoices:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const stats = useMemo(() => ({
-    total: orders.length,
-    totalSpent: orders.reduce((sum, order) => sum + order.total_ttc, 0),
-    pending: orders.filter(o => o.status === 'pending').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
-  }), [orders]);
+  useEffect(() => {
+    if (open) {
+      if (isOrders) {
+        loadOrders();
+      } else {
+        loadInvoices();
+      }
+    }
+  }, [open, isOrders, client.id]);
+
+  const handleViewOrder = (orderId: string) => {
+    onClose();
+    navigate(`/app/vente/commandes/${orderId}`);
+  };
+
+  const handleViewInvoice = (invoiceId: string) => {
+    onClose();
+    navigate(`/app/compta/factures/${invoiceId}`);
+  };
+
+  const handleCreateOrder = () => {
+    onClose();
+    navigate('/app/orders/new', { state: { client } });
+  };
+
+  const handleCreateInvoice = () => {
+    onClose();
+    navigate('/app/compta/factures/new', { state: { client } });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isOrders ? (
@@ -124,172 +177,118 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          {isOrders ? (
-            <>
-              {/* Statistiques */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-primary">{stats.total}</div>
-                    <div className="text-xs text-muted-foreground">Commandes</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(stats.totalSpent)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Total dépensé</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-                    <div className="text-xs text-muted-foreground">En attente</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-green-600">{stats.delivered}</div>
-                    <div className="text-xs text-muted-foreground">Livrées</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Liste des commandes */}
-              {loading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Chargement des commandes...
-                </div>
-              ) : orders.length === 0 ? (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-6 text-center">
-                    <Package className="w-12 h-12 mx-auto text-blue-600 mb-3" />
-                    <h3 className="font-semibold text-blue-900 mb-1">
-                      Aucune commande
-                    </h3>
-                    <p className="text-sm text-blue-800">
-                      Ce client n'a pas encore passé de commande.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Numéro</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead>Paiement</TableHead>
-                          <TableHead className="text-right">Montant</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell>
-                              <div className="font-mono font-semibold">{order.number}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                {format(order.created_at, 'dd MMM yyyy', { locale: fr })}
-                              </div>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(order.status)}</TableCell>
-                            <TableCell>{getPaymentBadge(order.payment_status)}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="font-semibold text-green-600">
-                                {formatCurrency(order.total_ttc)}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  navigate(`/app/vente/commandes/${order.id}`);
-                                  onClose();
-                                }}
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Voir
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+        <div className="flex-1 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
           ) : (
-            /* Factures - lien vers module Compta */
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-blue-900 mb-2">
-                      Gestion des factures
-                    </h3>
-                    <p className="text-sm text-blue-800 mb-4">
-                      Les factures sont gérées dans le module Comptabilité. Cliquez sur le bouton ci-dessous pour accéder à toutes les factures de ce client.
-                    </p>
-                    <Button
-                      onClick={() => {
-                        navigate(`/app/compta/factures?client=${encodeURIComponent(client.name)}`);
-                        onClose();
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Voir les factures dans Compta
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Informations client */}
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="font-medium text-gray-700 mb-3">
-                Informations du client
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Nom:</span>
-                  <span className="font-medium">{client.name}</span>
-                </div>
-                {client.email && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-medium">{client.email}</span>
-                  </div>
-                )}
-                {client.phone && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Téléphone:</span>
-                    <span className="font-medium">{client.phone}</span>
-                  </div>
-                )}
-                {client.city && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Ville:</span>
-                    <span className="font-medium">{client.city}</span>
-                  </div>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {isOrders ? (
+                  orders.length === 0 ? (
+                    <Card className="bg-muted/50">
+                      <CardContent className="p-6 text-center">
+                        <Package className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-muted-foreground mb-4">
+                          Aucune commande trouvée pour ce client
+                        </p>
+                        <Button onClick={handleCreateOrder}>
+                          Créer une commande
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    orders.map((order) => (
+                      <Card key={order.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleViewOrder(order.id)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium">{order.number}</span>
+                                {getOrderStatusBadge(order.status)}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {format(new Date(order.created_at), 'dd MMM yyyy', { locale: fr })}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3" />
+                                  {order.total_ttc.toLocaleString()} FCFA
+                                </span>
+                              </div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )
+                ) : (
+                  invoices.length === 0 ? (
+                    <Card className="bg-muted/50">
+                      <CardContent className="p-6 text-center">
+                        <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-muted-foreground mb-4">
+                          Aucune facture trouvée pour ce client
+                        </p>
+                        <Button onClick={handleCreateInvoice}>
+                          Créer une facture
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    invoices.map((invoice) => (
+                      <Card key={invoice.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleViewInvoice(invoice.id)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium">{invoice.invoice_number}</span>
+                                {getInvoiceStatusBadge(invoice.status)}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {format(new Date(invoice.issue_date), 'dd MMM yyyy', { locale: fr })}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3" />
+                                  {invoice.total.toLocaleString()} FCFA
+                                </span>
+                                {invoice.balance_due > 0 && (
+                                  <span className="text-destructive">
+                                    Reste: {invoice.balance_due.toLocaleString()} FCFA
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </ScrollArea>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between items-center pt-4 border-t">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => isOrders ? loadOrders() : loadInvoices()}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+          <Button onClick={isOrders ? handleCreateOrder : handleCreateInvoice}>
+            {isOrders ? 'Nouvelle commande' : 'Nouvelle facture'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
