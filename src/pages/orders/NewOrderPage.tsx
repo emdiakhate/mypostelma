@@ -10,14 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import type { EnrichedLead } from '@/types/crm';
-import { useOrders } from '@/hooks/useVente';
+import { useOrders, useProducts } from '@/hooks/useVente';
 import type { CreateOrderItemInput } from '@/types/vente';
 
 interface OrderItem {
   id: string;
+  product_id?: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -29,6 +36,7 @@ const NewOrderPage: React.FC = () => {
   const location = useLocation();
   const client: EnrichedLead | undefined = location.state?.client;
   const { createOrder } = useOrders();
+  const { products, loading: loadingProducts } = useProducts({ status: 'active' });
   const [saving, setSaving] = useState(false);
   const [orderData, setOrderData] = useState({
     client_name: client?.name || '',
@@ -54,6 +62,25 @@ const NewOrderPage: React.FC = () => {
     if (items.length > 1) {
       setItems(items.filter(item => item.id !== id));
     }
+  };
+
+  const handleProductSelect = (itemId: string, productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        const updated = {
+          ...item,
+          product_id: productId,
+          description: product.name,
+          unit_price: product.price,
+          total: item.quantity * product.price,
+        };
+        return updated;
+      }
+      return item;
+    }));
   };
 
   const handleItemChange = (id: string, field: keyof OrderItem, value: any) => {
@@ -89,6 +116,7 @@ const NewOrderPage: React.FC = () => {
 
     try {
       const orderItems: CreateOrderItemInput[] = items.map(item => ({
+        product_id: item.product_id,
         product_name: item.description,
         description: item.description,
         quantity: item.quantity,
@@ -203,13 +231,38 @@ const NewOrderPage: React.FC = () => {
               <div key={item.id} className="flex gap-4 items-start p-4 border rounded-lg">
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-2">
-                    <Label htmlFor={`desc-${item.id}`}>Description *</Label>
-                    <Input
-                      id={`desc-${item.id}`}
-                      value={item.description}
-                      onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                      placeholder="Nom du produit ou service"
-                    />
+                    <Label htmlFor={`product-${item.id}`}>Produit *</Label>
+                    {loadingProducts ? (
+                      <div className="flex items-center gap-2 h-10 px-3 border rounded-md text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Chargement des produits...
+                      </div>
+                    ) : products.length === 0 ? (
+                      <Input
+                        id={`product-${item.id}`}
+                        value={item.description}
+                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                        placeholder="Nom du produit ou service"
+                      />
+                    ) : (
+                      <Select
+                        value={item.product_id || ''}
+                        onValueChange={(value) => handleProductSelect(item.id, value)}
+                      >
+                        <SelectTrigger id={`product-${item.id}`}>
+                          <SelectValue placeholder="Choisir un produit du catalogue">
+                            {item.description || 'Choisir un produit'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name} - {product.price.toLocaleString()} FCFA
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor={`qty-${item.id}`}>Quantité *</Label>
