@@ -40,7 +40,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
-    window.location.href = '/app/dashboard';
+    window.location.href = '/dashboard';
   };
 
   render() {
@@ -50,11 +50,11 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="max-w-lg w-full">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-6 w-6 text-red-500" />
+                <AlertCircle className="h-6 w-6 text-destructive" />
                 <CardTitle>Une erreur est survenue</CardTitle>
               </div>
               <CardDescription>
@@ -63,16 +63,16 @@ class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               {!import.meta.env.PROD && this.state.error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <p className="text-sm font-mono text-red-800 break-all">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+                  <p className="text-sm font-mono text-destructive break-all">
                     {this.state.error.toString()}
                   </p>
                   {this.state.errorInfo && (
                     <details className="mt-2">
-                      <summary className="text-sm text-red-700 cursor-pointer">
+                      <summary className="text-sm text-destructive/80 cursor-pointer">
                         Stack trace
                       </summary>
-                      <pre className="mt-2 text-xs text-red-600 overflow-auto">
+                      <pre className="mt-2 text-xs text-destructive/70 overflow-auto">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>
