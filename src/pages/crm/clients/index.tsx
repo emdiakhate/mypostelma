@@ -98,7 +98,7 @@ const ClientsPage: React.FC = () => {
           </h1>
           <p className="text-gray-600 mt-1">Leads convertis en clients actifs</p>
         </div>
-        <Button onClick={() => navigate('/app/orders/new')}>
+        <Button onClick={() => navigate('/orders/new')}>
           <Package className="w-4 h-4 mr-2" />
           Nouvelle commande
         </Button>
@@ -172,7 +172,7 @@ const ClientsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       {client.phone && (<Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); window.open(`tel:${client.phone}`); }}><Phone className="w-4 h-4 mr-2" />Appeler</Button>)}
                       {client.email && (<Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setMessageModal({ open: true, lead: client, channel: 'email' }); }}><Mail className="w-4 h-4 mr-2" />Email</Button>)}
-                      <Button variant="default" size="sm" onClick={(e) => { e.stopPropagation(); navigate('/app/orders/new', { state: { client } }); }}><Package className="w-4 h-4 mr-2" />Commander</Button>
+                      <Button variant="default" size="sm" onClick={(e) => { e.stopPropagation(); navigate('/orders/new', { state: { client } }); }}><Package className="w-4 h-4 mr-2" />Commander</Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

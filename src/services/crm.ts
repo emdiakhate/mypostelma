@@ -452,10 +452,11 @@ export class CRMLeadService {
     id: string,
     status: LeadStatus
   ): Promise<EnrichedLead> {
-    const supportedStatuses: Array<'new' | 'contacted' | 'interested' | 'client' | 'not_interested'> = 
-      ['new', 'contacted', 'interested', 'client', 'not_interested'];
-    const dbStatus: 'new' | 'contacted' | 'interested' | 'client' | 'not_interested' = 
-      (supportedStatuses.includes(status as any)) ? status as any : 'new';
+    type DbLeadStatus = 'new' | 'contacted' | 'interested' | 'client' | 'not_interested';
+    const supportedStatuses: DbLeadStatus[] = ['new', 'contacted', 'interested', 'client', 'not_interested'];
+    const dbStatus: DbLeadStatus = supportedStatuses.includes(status as DbLeadStatus) 
+      ? (status as DbLeadStatus) 
+      : 'new';
 
     const { data, error } = await supabase
       .from('leads')
