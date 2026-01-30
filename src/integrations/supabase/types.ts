@@ -718,6 +718,7 @@ export type Database = {
           issue_date: string
           notes: string | null
           ocr_scan_id: string | null
+          order_id: string | null
           paid_at: string | null
           quote_id: string | null
           status: string
@@ -744,6 +745,7 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           ocr_scan_id?: string | null
+          order_id?: string | null
           paid_at?: string | null
           quote_id?: string | null
           status?: string
@@ -770,6 +772,7 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           ocr_scan_id?: string | null
+          order_id?: string | null
           paid_at?: string | null
           quote_id?: string | null
           status?: string
@@ -788,6 +791,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compta_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vente_orders"
             referencedColumns: ["id"]
           },
           {
