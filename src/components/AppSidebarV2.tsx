@@ -99,9 +99,12 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
     setExpandedMenus(expanded);
   }, [location.pathname]);
 
+  // Sections temporairement masquées pour les tests Marketing
+  const HIDDEN_SECTIONS = ['vente', 'stock', 'compta', 'caisse'];
+
   // Définition de la structure de menu
   const menuStructure: MenuItem[] = useMemo(() => {
-    const items: MenuItem[] = [
+    const allItems: MenuItem[] = [
       {
         id: 'dashboard',
         label: 'Dashboard',
@@ -405,8 +408,8 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
       },
     ];
 
-    // Retourner tous les items (pas de filtre)
-    return items;
+    // Filtrer les sections temporairement masquées
+    return allItems.filter(item => !HIDDEN_SECTIONS.includes(item.id));
   }, []);
 
   // Vérifier si un path est actif
