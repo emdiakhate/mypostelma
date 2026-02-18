@@ -578,7 +578,13 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       if (failedResults.length > 0) {
         failedResults.forEach(r => {
-          toast.error(`Erreur ${r.platform}: ${r.error}`);
+          const errorMsg = r.error || 'Erreur inconnue';
+          // Afficher un message clair pour les erreurs de plan
+          if (errorMsg.toLowerCase().includes('free plan') || errorMsg.toLowerCase().includes('upgrade') || errorMsg.toLowerCase().includes('paid plan')) {
+            toast.error(`${r.platform.charAt(0).toUpperCase() + r.platform.slice(1)} : ${errorMsg}`, { duration: 6000 });
+          } else {
+            toast.error(`Erreur ${r.platform}: ${errorMsg}`);
+          }
         });
       }
 
