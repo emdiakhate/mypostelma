@@ -75,9 +75,27 @@ export const publishContent = async (params: PublishParams): Promise<PublishResp
 
     if (error) {
       console.error('Error calling edge function:', error);
+      // Try to extract the real error message from the HTTP response
+      let errorMessage = error.message;
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          const errorBody = await error.context.json();
+          if (errorBody?.error) {
+            // Parse nested error if it's a JSON string
+            try {
+              const nested = JSON.parse(errorBody.error);
+              errorMessage = nested?.message || errorBody.error;
+            } catch {
+              errorMessage = errorBody.error;
+            }
+          }
+        }
+      } catch {
+        // keep original error.message
+      }
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       };
     }
 
