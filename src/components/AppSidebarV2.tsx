@@ -99,8 +99,8 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
     setExpandedMenus(expanded);
   }, [location.pathname]);
 
-  // Sections temporairement masquées pour les tests Marketing
-  const HIDDEN_SECTIONS = ['vente', 'stock', 'compta', 'caisse'];
+  // Sections temporairement masquées
+  const HIDDEN_SECTIONS = ['crm', 'vente', 'stock', 'compta', 'caisse'];
 
   // Définition de la structure de menu
   const menuStructure: MenuItem[] = useMemo(() => {
@@ -111,105 +111,73 @@ export const AppSidebarV2: React.FC<AppSidebarV2Props> = ({
         icon: LayoutDashboard,
         path: '/app/dashboard',
       },
+      // Marketing items affichés directement (sans groupe)
+      {
+        id: 'marketing-publications',
+        label: 'Publications',
+        icon: FileText,
+        path: '/app/marketing/publications',
+      },
+      {
+        id: 'marketing-calendar',
+        label: 'Calendrier',
+        icon: Calendar,
+        path: '/app/marketing/publications/calendar',
+      },
+      {
+        id: 'marketing-creation',
+        label: 'Studio Création',
+        icon: Wand2,
+        path: '/app/marketing/creation',
+      },
+      {
+        id: 'marketing-archives',
+        label: 'Archives',
+        icon: FolderOpen,
+        path: '/app/marketing/archives',
+      },
+      {
+        id: 'marketing-campagnes',
+        label: 'Campagnes',
+        icon: Send,
+        path: '/app/marketing/campagnes',
+      },
+      {
+        id: 'marketing-automation',
+        label: 'Automation',
+        icon: Bot,
+        path: '/app/marketing/automation',
+        badge: 'Nouveau',
+      },
+      {
+        id: 'marketing-templates',
+        label: 'Templates',
+        icon: FileText,
+        path: '/app/marketing/templates',
+      },
+      {
+        id: 'marketing-comptes',
+        label: 'Comptes Sociaux',
+        icon: LinkIcon,
+        path: '/app/marketing/comptes-sociaux',
+      },
+      {
+        id: 'marketing-inbox',
+        label: 'Messagerie',
+        icon: MessageCircle,
+        path: '/app/marketing/inbox',
+      },
+      // CRM (masqué)
       {
         id: 'crm',
         label: 'CRM',
         icon: Users,
         children: [
-          {
-            id: 'crm-acquisition',
-            label: 'Acquisition',
-            icon: Search,
-            path: '/app/crm/acquisition',
-          },
-          {
-            id: 'crm-prospects',
-            label: 'Prospects',
-            icon: Search,
-            path: '/app/crm/prospects',
-            disabled: !isFeatureEnabled('ENABLE_NEW_CRM'),
-          },
-          {
-            id: 'crm-leads',
-            label: 'Leads',
-            icon: UserPlus,
-            path: '/app/crm/leads',
-          },
-          {
-            id: 'crm-clients',
-            label: 'Clients',
-            icon: Users,
-            path: '/app/crm/clients',
-            disabled: !isFeatureEnabled('ENABLE_NEW_CRM'),
-          },
-          {
-            id: 'crm-config',
-            label: 'Configuration',
-            icon: Settings,
-            path: '/app/crm/config',
-          },
-        ],
-      },
-      {
-        id: 'marketing',
-        label: 'Marketing',
-        icon: Megaphone,
-        children: [
-          {
-            id: 'marketing-publications',
-            label: 'Publications',
-            icon: FileText,
-            path: '/app/marketing/publications',
-          },
-          {
-            id: 'marketing-calendar',
-            label: 'Calendrier',
-            icon: Calendar,
-            path: '/app/marketing/publications/calendar',
-          },
-          {
-            id: 'marketing-creation',
-            label: 'Studio Création',
-            icon: Wand2,
-            path: '/app/marketing/creation',
-          },
-          {
-            id: 'marketing-archives',
-            label: 'Archives',
-            icon: FolderOpen,
-            path: '/app/marketing/archives',
-          },
-          {
-            id: 'marketing-campagnes',
-            label: 'Campagnes',
-            icon: Send,
-            path: '/app/marketing/campagnes',
-          },
-          {
-            id: 'marketing-automation',
-            label: 'Automation',
-            icon: Bot,
-            path: '/app/marketing/automation',
-            badge: 'Nouveau',
-          },
-          {
-            id: 'marketing-templates',
-            label: 'Templates',
-            icon: FileText,
-            path: '/app/marketing/templates',
-          },
-          {
-            id: 'marketing-comptes',
-            label: 'Comptes Sociaux',
-            icon: LinkIcon,
-            path: '/app/marketing/comptes-sociaux',
-          },
-          {
-            id: 'marketing-inbox',
-            label: 'Messagerie',
-            icon: MessageCircle,
-            path: '/app/marketing/inbox',
-          },
+          { id: 'crm-acquisition', label: 'Acquisition', icon: Search, path: '/app/crm/acquisition' },
+          { id: 'crm-prospects', label: 'Prospects', icon: Search, path: '/app/crm/prospects', disabled: !isFeatureEnabled('ENABLE_NEW_CRM') },
+          { id: 'crm-leads', label: 'Leads', icon: UserPlus, path: '/app/crm/leads' },
+          { id: 'crm-clients', label: 'Clients', icon: Users, path: '/app/crm/clients', disabled: !isFeatureEnabled('ENABLE_NEW_CRM') },
+          { id: 'crm-config', label: 'Configuration', icon: Settings, path: '/app/crm/config' },
         ],
       },
       {
