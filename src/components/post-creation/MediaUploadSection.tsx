@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useQuotas } from '@/hooks/useQuotas';
+
 
 // Fonction pour générer une miniature vidéo
 const generateVideoThumbnail = (file: File, callback: (thumbnail: string) => void) => {
@@ -130,7 +130,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   generatedVideoUrl,
   onUseGeneratedVideo
 }) => {
-  const { canUseQuota, getQuotaErrorMessage, refetch: refetchQuotas } = useQuotas();
+  
 
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -190,15 +190,6 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
   }, [onVideoImageChange]);
 
   const handleGenerateVideo = useCallback(async () => {
-    // Vérifier les quotas AVANT d'appeler l'Edge Function
-    if (!canUseQuota('ai_videos')) {
-      toast.error(getQuotaErrorMessage('ai_videos'), {
-        description: 'Consultez vos quotas dans la sidebar.',
-        duration: 6000,
-      });
-      return;
-    }
-
     if (isGeneratingVideo) return;
 
     if (onGenerateVideo) {
@@ -210,7 +201,6 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
 
       let imageUrl = null;
 
-      // Si mode image-to-video, uploader l'image vers Supabase Storage
       if (videoMode === 'image-to-video' && videoImage) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Utilisateur non authentifié');
@@ -238,51 +228,26 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = memo(({
         }
       });
 
-      if (error) {
-        // Vérifier si c'est une erreur 429 (quota dépassé)
-        if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
-          toast.error('Quota de vidéos IA dépassé', {
-            description: 'Vous avez atteint votre limite mensuelle. Consultez vos quotas dans la sidebar.',
-            duration: 6000,
-          });
-          await refetchQuotas(); // Rafraîchir les quotas
-          if (onGenerateVideo) {
-            onGenerateVideo();
-          }
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data.success || !data.videoUrl) {
         throw new Error('Échec de la génération vidéo');
       }
 
-      // Arrêter le chargement en appelant onGenerateVideo avec l'URL
       if (onGenerateVideo) {
         onGenerateVideo(data.videoUrl);
       }
 
       toast.success('Vidéo générée avec succès !');
-      await refetchQuotas(); // Rafraîchir les quotas après succès
 
     } catch (error: any) {
       console.error('Erreur génération vidéo:', error);
-      if (error.message?.includes('Quota exceeded')) {
-        toast.error('Quota de vidéos IA dépassé', {
-          description: 'Vous avez atteint votre limite mensuelle.',
-          duration: 6000,
-        });
-        await refetchQuotas();
-      } else {
-        toast.error('Erreur lors de la génération de la vidéo');
-      }
-      // Arrêter le chargement en cas d'erreur
+      toast.error('Erreur lors de la génération de la vidéo');
       if (onGenerateVideo) {
         onGenerateVideo();
       }
     }
-  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo, canUseQuota, getQuotaErrorMessage, refetchQuotas]);
+  }, [videoMode, videoImage, videoPrompt, textVideoPrompt, videoDuration, textVideoDuration, onGenerateVideo]);
 
   const handleAiSourceImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
