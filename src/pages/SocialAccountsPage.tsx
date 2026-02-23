@@ -30,8 +30,7 @@ import type { SocialPlatform } from '@/types/uploadPost.types';
 import { supabase } from '@/integrations/supabase/client';
 
 // Flag pour utiliser Meta API pour Facebook au lieu de Upload Post
-// const USE_META_FOR_FACEBOOK = true; // DÉSACTIVÉ - on utilise Upload-Post pour tous les réseaux
-const USE_META_FOR_FACEBOOK = false;
+const USE_META_FOR_FACEBOOK = true;
 
 // Icône TikTok personnalisée
 const TikTokIcon = ({ className }: { className?: string }) => (

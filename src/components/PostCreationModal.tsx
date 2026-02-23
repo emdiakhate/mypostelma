@@ -170,7 +170,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   isEditing = false
 }) => {
   const { hasPermission, currentUser } = useAuth();
-  const { quotas } = useQuotas();
+  const { quotas, canUseQuota, getQuotaErrorMessage, refetch: refetchQuotas } = useQuotas();
   const [content, setContent] = useState(initialData?.content || '');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialData?.platforms || ['instagram']);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(
@@ -312,7 +312,17 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
   }, [hashtagSets]);
 
   const handleAiImageGeneration = useCallback(async () => {
+    // Vérifier les quotas AVANT d'appeler l'Edge Function
+    if (!canUseQuota('ai_images')) {
+      toast.error(getQuotaErrorMessage('ai_images'), {
+        description: 'Consultez vos quotas dans la sidebar.',
+        duration: 6000,
+      });
+      return;
+    }
+
     if (aiGenerationType === 'edit') {
+      // Utiliser le webhook N8N pour l'édition et la combinaison
       if (!aiPrompt.trim()) {
         toast.error('Veuillez saisir un prompt pour la génération');
         return;
@@ -323,11 +333,15 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
         return;
       }
 
-      if (isGeneratingImage) return;
+      // Empêcher les appels multiples
+      if (isGeneratingImage) {
+        return;
+      }
 
       setIsGeneratingImage(true);
       try {
         const { supabase } = await import('@/integrations/supabase/client');
+
 
         const { data, error } = await supabase.functions.invoke('fal-image-generation', {
           body: {
@@ -337,30 +351,59 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erreur edge function:', error);
+          // Vérifier si c'est une erreur 429 (quota dépassé)
+          if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+            toast.error('Quota d\'images IA dépassé', {
+              description: 'Vous avez atteint votre limite mensuelle. Consultez vos quotas dans la sidebar.',
+              duration: 6000,
+            });
+            await refetchQuotas(); // Rafraîchir les quotas
+            return;
+          }
+          throw error;
+        }
+
 
         if (data && data.success && data.imageUrl) {
           setGeneratedImages([data.imageUrl]);
           toast.success('Image générée avec succès !');
+          await refetchQuotas(); // Rafraîchir les quotas après succès
         } else {
+          console.error('Réponse invalide de FAL.ai:', data);
           toast.error(data?.error || 'Échec de la génération d\'image');
         }
       } catch (error: any) {
         console.error('Erreur génération IA:', error);
-        toast.error('Erreur lors de la génération d\'images');
+        if (error.message?.includes('Quota exceeded')) {
+          toast.error('Quota d\'images IA dépassé', {
+            description: 'Vous avez atteint votre limite mensuelle.',
+            duration: 6000,
+          });
+          await refetchQuotas();
+        } else {
+          toast.error('Erreur lors de la génération d\'images');
+        }
       } finally {
         setIsGeneratingImage(false);
       }
     } else if (aiGenerationType === 'simple') {
+      // Génération simple avec FAL.ai
       if (!aiPrompt.trim()) {
         toast.error('Veuillez saisir un prompt pour la génération');
         return;
       }
 
-      if (isGeneratingImage) return;
+      if (isGeneratingImage) {
+        
+        return;
+      }
 
       setIsGeneratingImage(true);
       try {
+        
+
         const { data, error } = await supabase.functions.invoke('fal-image-generation', {
           body: {
             prompt: aiPrompt,
@@ -368,22 +411,53 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erreur edge function:', error);
+          // Vérifier si c'est une erreur 429 (quota dépassé)
+          if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+            toast.error('Quota d\'images IA dépassé', {
+              description: 'Vous avez atteint votre limite mensuelle. Consultez vos quotas dans la sidebar.',
+              duration: 6000,
+            });
+            await refetchQuotas(); // Rafraîchir les quotas
+            return;
+          }
+          throw error;
+        }
+
+        
 
         if (data && data.success && data.imageUrl) {
           setGeneratedImages([data.imageUrl]);
           toast.success('Image générée avec succès !');
+          await refetchQuotas(); // Rafraîchir les quotas après succès
         } else {
-          toast.error(data?.error || 'Échec de la génération');
+          console.error('Réponse invalide de FAL.ai:', data);
+          
+          // Vérifier si c'est une erreur de quota dans la réponse
+          const dataError = data?.error || '';
+          if (dataError.includes('Quota') || dataError.includes('quota') || dataError.includes('exceeded')) {
+            toast.error('❌ Quota de génération épuisé. Veuillez réessayer plus tard.');
+          } else {
+            toast.error(dataError || 'Échec de la génération');
+          }
         }
       } catch (error: any) {
         console.error('Erreur génération simple IA:', error);
-        toast.error('Erreur lors de la génération d\'image');
+        if (error.message?.includes('Quota exceeded')) {
+          toast.error('Quota d\'images IA dépassé', {
+            description: 'Vous avez atteint votre limite mensuelle.',
+            duration: 6000,
+          });
+          await refetchQuotas();
+        } else {
+          toast.error('Erreur lors de la génération d\'image');
+        }
       } finally {
         setIsGeneratingImage(false);
       }
     }
-  }, [aiGenerationType, aiPrompt, aiSourceImages]);
+  }, [aiGenerationType, aiPrompt, aiSourceImages, canUseQuota, getQuotaErrorMessage, refetchQuotas]);
 
   const handleAddGeneratedImage = useCallback((imageUrl: string) => {
     setSelectedImages([imageUrl]);
@@ -504,13 +578,7 @@ const PostCreationModal: React.FC<PostCreationModalProps> = ({
 
       if (failedResults.length > 0) {
         failedResults.forEach(r => {
-          const errorMsg = r.error || 'Erreur inconnue';
-          // Afficher un message clair pour les erreurs de plan
-          if (errorMsg.toLowerCase().includes('free plan') || errorMsg.toLowerCase().includes('upgrade') || errorMsg.toLowerCase().includes('paid plan')) {
-            toast.error(`${r.platform.charAt(0).toUpperCase() + r.platform.slice(1)} : ${errorMsg}`, { duration: 6000 });
-          } else {
-            toast.error(`Erreur ${r.platform}: ${errorMsg}`);
-          }
+          toast.error(`Erreur ${r.platform}: ${r.error}`);
         });
       }
 

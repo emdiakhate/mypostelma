@@ -11,8 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 // =============================================================================
 // CONFIGURATION: Activer Meta API pour Facebook (commenter Upload-Post)
 // =============================================================================
-// const USE_META_FOR_FACEBOOK = true; // DÉSACTIVÉ - Meta API nécessite app review (pages_manage_posts)
-const USE_META_FOR_FACEBOOK = false; // false = utiliser Upload-Post pour tous les réseaux (Facebook inclus)
+const USE_META_FOR_FACEBOOK = true; // true = utiliser Meta API, false = utiliser Upload-Post
 
 interface PublishParams {
   accountId: string;
