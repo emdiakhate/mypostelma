@@ -88,8 +88,16 @@ serve(async (req) => {
       }
     );
 
-    const data = await response.json();
-    logStep('Upload-Post API response', { status: response.status, ok: response.ok });
+    const responseText = await response.text();
+    logStep('Upload-Post API response', { status: response.status, ok: response.ok, bodyPreview: responseText.substring(0, 200) });
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      logStep('Upload-Post API returned non-JSON response', { body: responseText.substring(0, 500) });
+      throw new Error(`Upload-Post API unavailable: ${responseText.trim().substring(0, 100)}`);
+    }
 
     // Si le profil n'existe pas (404), le créer automatiquement
     if (!response.ok && response.status === 404) {
