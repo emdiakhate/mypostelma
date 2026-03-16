@@ -38,7 +38,7 @@ export const TestAuthBypass: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const testMode = urlParams.get('testMode') === 'true';
-    const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+    const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
 
     if (testMode && isDevelopment) {
       console.log('🧪 MODE TEST ACTIVÉ - Authentification bypassée');
