@@ -81,7 +81,7 @@ export const disableTestMode = () => {
 };
 
 // Exposer les fonctions de test dans la console en dev
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).testMode = {
     enable: () => {
       window.location.href = '/?testMode=true';

@@ -139,7 +139,9 @@ serve(async (req) => {
         }
       );
 
-      const retryData = await retryResponse.json();
+      const retryText = await retryResponse.text();
+      let retryData;
+      try { retryData = JSON.parse(retryText); } catch { throw new Error(`Upload-Post API unavailable: ${retryText.trim().substring(0, 100)}`); }
       
       if (!retryResponse.ok) {
         throw new Error('Failed to fetch profile after creation');

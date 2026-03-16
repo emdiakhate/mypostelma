@@ -62,7 +62,7 @@ export const debugFeatureFlags = (): void => {
 };
 
 // Exposer dans window en dev pour debug facile
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).featureFlags = {
     toggle: toggleFeature,
     debug: debugFeatureFlags,
