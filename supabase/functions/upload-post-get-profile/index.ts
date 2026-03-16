@@ -88,8 +88,16 @@ serve(async (req) => {
       }
     );
 
-    const data = await response.json();
-    logStep('Upload-Post API response', { status: response.status, ok: response.ok });
+    const responseText = await response.text();
+    logStep('Upload-Post API response', { status: response.status, ok: response.ok, bodyPreview: responseText.substring(0, 200) });
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      logStep('Upload-Post API returned non-JSON response', { body: responseText.substring(0, 500) });
+      throw new Error(`Upload-Post API unavailable: ${responseText.trim().substring(0, 100)}`);
+    }
 
     // Si le profil n'existe pas (404), le créer automatiquement
     if (!response.ok && response.status === 404) {
@@ -107,7 +115,9 @@ serve(async (req) => {
         }
       );
 
-      const createData = await createResponse.json();
+      const createText = await createResponse.text();
+      let createData;
+      try { createData = JSON.parse(createText); } catch { throw new Error(`Upload-Post API unavailable: ${createText.trim().substring(0, 100)}`); }
       logStep('Profile creation response', { status: createResponse.status });
 
       if (!createResponse.ok) {
@@ -129,7 +139,9 @@ serve(async (req) => {
         }
       );
 
-      const retryData = await retryResponse.json();
+      const retryText = await retryResponse.text();
+      let retryData;
+      try { retryData = JSON.parse(retryText); } catch { throw new Error(`Upload-Post API unavailable: ${retryText.trim().substring(0, 100)}`); }
       
       if (!retryResponse.ok) {
         throw new Error('Failed to fetch profile after creation');
