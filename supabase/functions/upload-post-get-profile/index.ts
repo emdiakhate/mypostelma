@@ -115,7 +115,9 @@ serve(async (req) => {
         }
       );
 
-      const createData = await createResponse.json();
+      const createText = await createResponse.text();
+      let createData;
+      try { createData = JSON.parse(createText); } catch { throw new Error(`Upload-Post API unavailable: ${createText.trim().substring(0, 100)}`); }
       logStep('Profile creation response', { status: createResponse.status });
 
       if (!createResponse.ok) {
